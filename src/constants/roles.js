@@ -48,18 +48,10 @@ export const ROLE_META = Object.freeze({
   }),
 })
 
-/**
- * Landing route per role after sign-in (00 §9).
- * Prompt 08 introduces `src/routes/paths.js` as the canonical route registry;
- * it should build its role-home helpers on top of these values rather than
- * restating them.
- */
-export const ROLE_HOME_PATH = Object.freeze({
-  [ROLES.BUYER]: '/buyer',
-  [ROLES.CREATOR]: '/creator',
-  [ROLES.ADMIN]: '/admin',
-  [ROLES.SUPER_ADMIN]: '/admin',
-})
+// Landing route per role after sign-in (00 §9) now lives with every other route
+// in `src/routes/paths.js` — call `paths.roleHome(role)`. It cannot live here:
+// 00 §2.6 keeps route strings in one file, and this module is imported by the
+// plain-Node seed scripts, which cannot resolve the `@/` alias.
 
 /** True when the role belongs to the admin console (admin or super admin). */
 export function isAdminRole(role) {

@@ -39,6 +39,7 @@ import SideSheet from '@/components/layout/SideSheet'
 import StickyActionBar from '@/components/layout/StickyActionBar'
 import DataTable from '@/components/table/DataTable'
 import { CONTENT_TYPE, ORDER_STATUS, PAYMENT_STATUS, imageUrl } from '@/constants'
+import { paths } from '@/routes/paths'
 import { formatCurrency, formatDate } from '@/utils/formatters'
 import GalleryBlock from './GalleryBlock'
 
@@ -655,7 +656,7 @@ function DataDisplayDemos() {
             deltaLabel="vs last month"
             icon="tabler:briefcase"
             iconTone="info"
-            to="/orders"
+            to={paths.BUYER_ORDERS}
           />
           <StatCard
             label="Open disputes"
