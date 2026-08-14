@@ -1,10 +1,24 @@
-/* Placeholder shell styles — Prompt 02 replaces this with the real
-   global stylesheet and design tokens. System font stack only. */
+/*
+ * Global stylesheet — supplements MUI CssBaseline.
+ * Color/radius/motion values come from src/styles/tokens.css.
+ */
+
+/* Fonts — self-hosted via @fontsource, no external font CDN. */
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/plus-jakarta-sans/600.css';
+@import '@fontsource/plus-jakarta-sans/700.css';
+@import '@fontsource/plus-jakarta-sans/800.css';
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 html,
@@ -15,39 +29,65 @@ body,
 }
 
 body {
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
-    Arial, sans-serif;
-  background-color: #fafafc;
-  color: #171223;
+  background-color: var(--bb-bg);
+  color: var(--bb-text);
+  text-rendering: optimizelegibility;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.shell {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 24px;
-  text-align: center;
+/* Media never overflows its container. */
+img,
+video {
+  max-width: 100%;
+  height: auto;
 }
 
-.shell-title {
-  margin: 0;
-  font-size: 2.5rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+/* Visible keyboard focus everywhere (MUI ButtonBase gets the same ring via
+   the theme's Mui-focusVisible override). */
+:focus-visible {
+  outline: 2px solid var(--bb-primary);
+  outline-offset: 2px;
 }
 
-.shell-tagline {
-  margin: 0;
-  font-size: 1.125rem;
-  color: #6e6880;
+::selection {
+  background-color: var(--bb-primary-tint);
+  color: var(--bb-text);
 }
 
-.shell-env {
-  margin: 16px 0 0;
-  font-size: 0.875rem;
-  color: #6e6880;
+/* Thin, quiet scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bb-divider) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--bb-divider);
+  border-radius: var(--bb-radius-pill);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--bb-text-secondary);
+}
+
+/* Reduced motion: zero out non-Framer CSS effects. Framer Motion honors the
+   same preference via <MotionConfig reducedMotion="user"> in AppProviders. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
