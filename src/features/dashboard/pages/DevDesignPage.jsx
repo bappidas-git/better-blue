@@ -3,18 +3,20 @@ import { useState } from 'react'
 import { Box, Chip, Container, Stack, Tab, Tabs, Typography } from '@mui/material'
 
 import Logo from '@/components/brand/Logo'
+import { appConfig } from '@/config/appConfig'
 import ApiGallery from '@/features/dashboard/components/devGallery/ApiGallery'
 import ComponentsGallery from '@/features/dashboard/components/devGallery/ComponentsGallery'
 import FormsGallery from '@/features/dashboard/components/devGallery/FormsGallery'
 import MotionGallery from '@/features/dashboard/components/devGallery/MotionGallery'
 import TokensGallery from '@/features/dashboard/components/devGallery/TokensGallery'
+import useDocumentTitle from '@/hooks/useDocumentTitle'
 
-// Dev-only design gallery. Mounted from App.jsx while routing does not exist
-// yet; Prompt 08 moves it to /dev/design. Every tab renders real library
-// components — the gallery is the acceptance surface for Prompts 02–04, so
-// anything added to `src/components` should show up here in every state it
-// supports. Sample copy and fixtures are business-safe (00 §1) and inline
-// fixtures are allowed only in this gallery (Prompt 04 §9).
+// Dev-only design gallery, mounted at /dev/design inside PublicLayout and only
+// when `import.meta.env.DEV && env.enableDevPages` (see src/routes/index.jsx).
+// Every tab renders real library components — the gallery is the acceptance
+// surface for Prompts 02–04, so anything added to `src/components` should show
+// up here in every state it supports. Sample copy and fixtures are business-safe
+// (00 §1) and inline fixtures are allowed only in this gallery (Prompt 04 §9).
 
 const TABS = [
   { value: 'tokens', label: 'Tokens', Panel: TokensGallery },
@@ -28,9 +30,10 @@ export default function DevDesignPage() {
   const [tab, setTab] = useState('tokens')
   const active = TABS.find((entry) => entry.value === tab) ?? TABS[0]
   const { Panel } = active
+  useDocumentTitle('Design gallery')
 
   return (
-    <Box component="main" sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ bgcolor: 'background.default' }}>
       <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 }, py: { xs: 4, md: 8 } }}>
         <Box component="header" sx={{ mb: { xs: 3, md: 4 } }}>
           <Stack
@@ -50,16 +53,16 @@ export default function DevDesignPage() {
           <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '68ch' }}>
             Visual verification for the BetterBlue design system and shared component library:
             locked tokens, feedback and data-display components, form fields with validation,
-            motion wrappers, and the API layer running against the seeded mock database. Prompt 08
-            moves this page to /dev/design.
+            motion wrappers, and the API layer running against the seeded mock database.
           </Typography>
         </Box>
 
         <Box
           sx={{
             position: 'sticky',
-            top: 0,
-            zIndex: (theme) => theme.zIndex.appBar,
+            // Parks under the sticky public top nav instead of behind it.
+            top: { xs: appConfig.topNavHeight.xs, md: appConfig.topNavHeight.md },
+            zIndex: (theme) => theme.zIndex.appBar - 1,
             bgcolor: 'background.default',
             borderBottom: 1,
             borderColor: 'divider',

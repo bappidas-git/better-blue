@@ -2,6 +2,8 @@ import { useId } from 'react'
 
 import Box from '@mui/material/Box'
 
+import { useLinkProps } from '@/hooks/useLinkProps'
+import { paths } from '@/routes/paths'
 import { palette } from '@/theme/palette'
 import { headingFontFamily } from '@/theme/typography'
 
@@ -26,6 +28,7 @@ const BOTTOM_LOBE =
  * @param {boolean} [props.asLink] wraps the logo in a home link
  */
 export default function Logo({ variant = 'full', size = 32, asLink = false }) {
+  const homeLinkProps = useLinkProps(paths.HOME)
   const gradientId = useId()
   const tileGradient = `${gradientId}-tile`
   const wordGradient = `${gradientId}-word`
@@ -91,12 +94,12 @@ export default function Logo({ variant = 'full', size = 32, asLink = false }) {
 
   if (!asLink) return svg
 
-  // Placeholder home link — Prompt 08 re-points this at the router home path
-  // from src/routes/paths.js.
+  // Client-side home link inside the router, plain <a> outside it (the dev
+  // gallery renders both ways) — `useLinkProps` picks; the path comes from
+  // src/routes/paths.js either way.
   return (
     <Box
-      component="a"
-      href="/"
+      {...homeLinkProps}
       aria-label="BetterBlue — home"
       sx={{
         display: 'inline-flex',
