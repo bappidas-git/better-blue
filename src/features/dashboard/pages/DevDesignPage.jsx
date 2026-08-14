@@ -35,6 +35,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { motion, useReducedMotion } from 'framer-motion'
 
@@ -46,7 +47,33 @@ import {
   scaleIn,
   staggerContainer,
 } from '@/components/motion/motionPresets'
+import {
+  ACCOUNT_STATUS,
+  AFFILIATE_EARNING_STATUS,
+  AVATAR_TINT_NAMES,
+  CATEGORY_ID,
+  CONTENT_STATUS,
+  ORDER_STATUS,
+  ORDER_STATUS_MACHINE,
+  PAYMENT_STATUS,
+  PAYOUT_STATUS,
+  PROPOSAL_STATUS,
+  REQUEST_STATUS,
+  TRANSACTION_TYPE,
+  avatarDataUri,
+  categoryImageUrl,
+  getFallbackCategory,
+  getStatusMeta,
+} from '@/constants'
 import { brandGradient, palette } from '@/theme/palette'
+import {
+  formatCurrency,
+  formatDate,
+  formatNumberCompact,
+  formatPercent,
+  formatRelativeTime,
+} from '@/utils/formatters'
+import { nextStates } from '@/utils/stateMachine'
 
 // Temporary dev-only design gallery for visually verifying the Prompt 02
 // theme. Mounted from App.jsx while routing doesn't exist yet; Prompt 08
@@ -130,6 +157,289 @@ const TABLE_ROWS = [
     budget: '$860.00',
   },
 ]
+
+// --- Domain section (Prompt 03) -------------------------------------------
+// Temporary verification of the domain constants + utilities: one tinted chip
+// per tone (the StatusChip precursor built for real in Prompt 04), generated
+// initials avatars, seeded picsum imagery, and formatter output.
+
+const TONE_SAMPLES = [
+  {
+    tone: 'neutral',
+    statuses: [
+      REQUEST_STATUS.DRAFT,
+      ORDER_STATUS.CANCELLED,
+      CONTENT_STATUS.ARCHIVED,
+      AFFILIATE_EARNING_STATUS.VOID,
+    ],
+  },
+  {
+    tone: 'info',
+    statuses: [
+      REQUEST_STATUS.OPEN,
+      ORDER_STATUS.IN_PROGRESS,
+      CONTENT_STATUS.UNDER_REVIEW,
+      PAYMENT_STATUS.HELD,
+    ],
+  },
+  {
+    tone: 'warning',
+    statuses: [
+      ORDER_STATUS.PENDING_PAYMENT,
+      ORDER_STATUS.REVISION_REQUESTED,
+      CONTENT_STATUS.RESTRICTED,
+      ACCOUNT_STATUS.SUSPENDED,
+    ],
+  },
+  {
+    tone: 'success',
+    statuses: [
+      ORDER_STATUS.COMPLETED,
+      CONTENT_STATUS.APPROVED,
+      PAYMENT_STATUS.RELEASED,
+      PAYOUT_STATUS.PAID,
+    ],
+  },
+  {
+    tone: 'error',
+    statuses: [
+      PAYMENT_STATUS.FAILED,
+      CONTENT_STATUS.REJECTED,
+      ORDER_STATUS.DISPUTED,
+      ACCOUNT_STATUS.BLACKLISTED,
+    ],
+  },
+  {
+    tone: 'brand',
+    statuses: [
+      REQUEST_STATUS.AWARDED,
+      PROPOSAL_STATUS.SHORTLISTED,
+      CONTENT_STATUS.PUBLISHED,
+      TRANSACTION_TYPE.COMMISSION,
+    ],
+  },
+]
+
+const toneColor = (theme, tone) =>
+  ({
+    info: theme.palette.info,
+    warning: theme.palette.warning,
+    success: theme.palette.success,
+    error: theme.palette.error,
+    brand: theme.palette.primary,
+  })[tone] ?? { main: theme.palette.text.secondary, dark: theme.palette.text.primary }
+
+function ToneChip({ status }) {
+  const meta = getStatusMeta(status)
+  return (
+    <Tooltip title={meta.description}>
+      <Box
+        component="span"
+        sx={(theme) => {
+          const color = toneColor(theme, meta.tone)
+          return {
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.75,
+            px: 1.25,
+            py: 0.5,
+            borderRadius: 999,
+            bgcolor: alpha(color.main, 0.12),
+            color: color.dark,
+            ...theme.typography.caption,
+            fontWeight: 600,
+          }
+        }}
+      >
+        <Box
+          component="span"
+          sx={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            bgcolor: 'currentColor',
+          }}
+        />
+        {meta.label}
+      </Box>
+    </Tooltip>
+  )
+}
+
+const AVATAR_SAMPLES = [
+  'Ava Martinez',
+  'Marcus Bell',
+  'Verde Kitchen',
+  'Nimbus Fitness',
+  'Atlas Travel Co',
+]
+
+const IMAGE_SAMPLES = [
+  CATEGORY_ID.FOOD_BEVERAGE,
+  CATEGORY_ID.TECHNOLOGY_SAAS,
+  CATEGORY_ID.FITNESS_WELLNESS,
+]
+
+const SAMPLE_ISO_DATE = '2026-03-04T09:30:00Z'
+
+const FORMATTER_SAMPLES = [
+  ['formatCurrency(1250)', formatCurrency(1250)],
+  ['formatCurrency(12500, "USD", { compact: true })', formatCurrency(12500, 'USD', { compact: true })],
+  ['formatNumberCompact(12500)', formatNumberCompact(12500)],
+  ['formatPercent(0.2)', formatPercent(0.2)],
+  [`formatDate('${SAMPLE_ISO_DATE}')`, formatDate(SAMPLE_ISO_DATE)],
+  [`formatRelativeTime('${SAMPLE_ISO_DATE}')`, formatRelativeTime(SAMPLE_ISO_DATE)],
+]
+
+function DomainDemo() {
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+          Status tones — STATUS_META
+        </Typography>
+        <Stack spacing={1.5}>
+          {TONE_SAMPLES.map((group) => (
+            <Stack
+              key={group.tone}
+              direction="row"
+              spacing={1.5}
+              alignItems="center"
+              flexWrap="wrap"
+              useFlexGap
+            >
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ width: 64, flexShrink: 0 }}
+              >
+                {group.tone}
+              </Typography>
+              {group.statuses.map((status) => (
+                <ToneChip key={status} status={status} />
+              ))}
+            </Stack>
+          ))}
+        </Stack>
+      </Box>
+
+      <Box>
+        <Typography variant="subtitle1" sx={{ mb: 0.5 }}>
+          Order state machine
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+          nextStates(ORDER_STATUS_MACHINE, &apos;{ORDER_STATUS.DELIVERED}&apos;)
+        </Typography>
+        <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+          {nextStates(ORDER_STATUS_MACHINE, ORDER_STATUS.DELIVERED).map((status) => (
+            <ToneChip key={status} status={status} />
+          ))}
+        </Stack>
+      </Box>
+
+      <Box>
+        <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+          Generated avatars — avatarDataUri
+        </Typography>
+        <Stack spacing={2}>
+          <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+            {AVATAR_SAMPLES.map((name) => (
+              <Stack key={name} spacing={0.75} alignItems="center" sx={{ width: 96 }}>
+                <Box
+                  component="img"
+                  src={avatarDataUri(name)}
+                  alt={`Initials avatar for ${name}`}
+                  sx={{ width: 56, height: 56, borderRadius: '50%' }}
+                />
+                <Typography variant="caption" color="text.secondary" align="center">
+                  {name}
+                </Typography>
+              </Stack>
+            ))}
+          </Stack>
+          <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+            {AVATAR_TINT_NAMES.map((tint) => (
+              <Stack key={tint} spacing={0.75} alignItems="center" sx={{ width: 96 }}>
+                <Box
+                  component="img"
+                  src={avatarDataUri('Bloom Coffee', tint)}
+                  alt={`Initials avatar in the ${tint} tint`}
+                  sx={{ width: 40, height: 40, borderRadius: 1 }}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  {tint}
+                </Typography>
+              </Stack>
+            ))}
+          </Stack>
+        </Stack>
+      </Box>
+
+      <Box>
+        <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+          Seeded imagery — imageUrl / CATEGORY_IMAGE_SEEDS
+        </Typography>
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 2,
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+          }}
+        >
+          {IMAGE_SAMPLES.map((categoryId) => {
+            const category = getFallbackCategory(categoryId)
+            return (
+              <Paper key={categoryId} variant="outlined" sx={{ overflow: 'hidden' }}>
+                <Box
+                  component="img"
+                  src={categoryImageUrl(categoryId, 400, 260)}
+                  alt={`Placeholder photography for the ${category.name} category`}
+                  sx={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }}
+                />
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  sx={{ px: 2, py: 1.5 }}
+                >
+                  <Icon icon={category.icon} width={20} />
+                  <Typography variant="subtitle2">{category.name}</Typography>
+                </Stack>
+              </Paper>
+            )
+          })}
+        </Box>
+      </Box>
+
+      <Box>
+        <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+          Formatters
+        </Typography>
+        <Stack spacing={0.75}>
+          {FORMATTER_SAMPLES.map(([expression, result]) => (
+            <Stack
+              key={expression}
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={{ xs: 0, sm: 2 }}
+            >
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                  minWidth: 320,
+                }}
+              >
+                {expression}
+              </Typography>
+              <Typography variant="body2">{result}</Typography>
+            </Stack>
+          ))}
+        </Stack>
+      </Box>
+    </Stack>
+  )
+}
 
 function GallerySection({ title, caption, children }) {
   return (
@@ -723,6 +1033,14 @@ export default function DevDesignPage() {
                 <Logo variant="full" size={32} asLink />
               </Paper>
             </Stack>
+          </GallerySection>
+
+          {/* Domain */}
+          <GallerySection
+            title="Domain"
+            caption="Prompt 03 constants and utilities: status tones behind the future StatusChip, an order state machine read-out, locally generated avatars, seeded picsum imagery, and formatter output."
+          >
+            <DomainDemo />
           </GallerySection>
 
           {/* Motion */}
