@@ -1,0 +1,57 @@
+/*
+ * BetterBlue CSS custom-property tokens.
+ * Mirrors the locked design tokens in src/theme/palette.js — the only other
+ * place hex values may live (prompts/00-architecture-and-rules.md §6).
+ * Intended for CSS Modules and global styles; MUI components consume the
+ * theme instead.
+ */
+
+:root {
+  /* Brand — purple */
+  --bb-primary: #7c3aed;
+  --bb-primary-light: #a78bfa;
+  --bb-primary-dark: #5b21b6;
+  --bb-primary-tint: #ede9fe;
+  --bb-primary-surface: #f5f3ff;
+
+  /* Brand — pink */
+  --bb-secondary: #ec4899;
+  --bb-secondary-light: #f9a8d4;
+  --bb-secondary-dark: #be185d;
+  --bb-secondary-surface: #fdf2f8;
+
+  /* Gradient — accent use only (CTAs, logo, small highlights) */
+  --bb-gradient-brand: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+
+  /* Neutrals */
+  --bb-bg: #fafafc;
+  --bb-paper: #ffffff;
+  --bb-text: #171223;
+  --bb-text-secondary: #6e6880;
+  --bb-divider: #e5e2ec;
+
+  /* Semantic */
+  --bb-success: #16a34a;
+  --bb-warning: #f59e0b;
+  --bb-error: #dc2626;
+  --bb-info: #0ea5e9;
+
+  /* Radii — buttons/inputs 10, base 12, cards 16, dialogs/sheets 20 */
+  --bb-radius-sm: 10px;
+  --bb-radius-md: 12px;
+  --bb-radius-lg: 16px;
+  --bb-radius-xl: 20px;
+  --bb-radius-pill: 999px;
+
+  /* Elevation — 3 subtle levels (theme.customShadows) */
+  --bb-shadow-1: 0 1px 2px rgba(23, 18, 35, 0.05), 0 1px 3px rgba(23, 18, 35, 0.06);
+  --bb-shadow-2: 0 6px 16px rgba(23, 18, 35, 0.08);
+  --bb-shadow-3: 0 16px 40px rgba(23, 18, 35, 0.14);
+
+  /* Motion — mirrors src/theme/motionTokens.js */
+  --bb-duration-fast: 150ms;
+  --bb-duration-base: 250ms;
+  --bb-duration-slow: 400ms;
+  --bb-duration-hero: 650ms;
+  --bb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
