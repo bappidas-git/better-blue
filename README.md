@@ -71,4 +71,5 @@ specific message if anything fails.
 
 Project documentation lives in [`docs/`](docs/) and grows as the build progresses (API contract, data model, payments, QA checklist, migration guide). The architecture and permanent project rules are defined in [`prompts/00-architecture-and-rules.md`](prompts/00-architecture-and-rules.md).
 
+- [`docs/api-contract.md`](docs/api-contract.md) — the REST contract the frontend codes against: conventions, auth, errors, pagination, every endpoint, and the composite operations that become single Laravel endpoints later.
 - [`docs/data-model.md`](docs/data-model.md) — every collection, its fields and relations, the seed system, and the MySQL mapping for each table.
