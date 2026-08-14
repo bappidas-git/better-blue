@@ -4,10 +4,12 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { MotionConfig } from 'framer-motion'
 
+import ConfirmDialogProvider from '@/components/feedback/ConfirmDialogProvider'
+import ToastProvider from '@/components/feedback/ToastProvider'
 import theme from '@/theme'
 
-// Global provider stack. Router, auth, and feedback providers are layered in
-// by later prompts (08+); keep this the single composition point.
+// Global provider stack. Router and auth are layered in by later prompts (08+);
+// keep this the single composition point.
 export default function AppProviders({ children }) {
   return (
     <ThemeProvider theme={theme}>
@@ -16,7 +18,12 @@ export default function AppProviders({ children }) {
           prefers-reduced-motion setting — mandatory per 00 §7. */}
       <MotionConfig reducedMotion="user">
         <LocalizationProvider dateAdapter={AdapterDayjs}>
-          {children}
+          {/* Feedback providers sit above the app so any feature can call
+              useToast()/useConfirm() (00 §12). Confirm is nested inside Toast so
+              a confirmed action can raise its result toast. */}
+          <ToastProvider>
+            <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
+          </ToastProvider>
         </LocalizationProvider>
       </MotionConfig>
     </ThemeProvider>
