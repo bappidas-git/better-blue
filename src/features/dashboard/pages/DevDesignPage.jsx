@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Box, Chip, Container, Stack, Tab, Tabs, Typography } from '@mui/material'
 
 import Logo from '@/components/brand/Logo'
+import ApiGallery from '@/features/dashboard/components/devGallery/ApiGallery'
 import ComponentsGallery from '@/features/dashboard/components/devGallery/ComponentsGallery'
 import FormsGallery from '@/features/dashboard/components/devGallery/FormsGallery'
 import MotionGallery from '@/features/dashboard/components/devGallery/MotionGallery'
@@ -20,6 +21,7 @@ const TABS = [
   { value: 'components', label: 'Components', Panel: ComponentsGallery },
   { value: 'forms', label: 'Forms', Panel: FormsGallery },
   { value: 'motion', label: 'Motion', Panel: MotionGallery },
+  { value: 'api', label: 'API', Panel: ApiGallery },
 ]
 
 export default function DevDesignPage() {
@@ -47,8 +49,9 @@ export default function DevDesignPage() {
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ maxWidth: '68ch' }}>
             Visual verification for the BetterBlue design system and shared component library:
-            locked tokens, feedback and data-display components, form fields with validation, and
-            motion wrappers. Prompt 08 moves this page to /dev/design.
+            locked tokens, feedback and data-display components, form fields with validation,
+            motion wrappers, and the API layer running against the seeded mock database. Prompt 08
+            moves this page to /dev/design.
           </Typography>
         </Box>
 

@@ -458,19 +458,29 @@ Every non-2xx response has exactly this shape:
 | `rate_limited` | `429` | Too many requests | `{ retryAfterSeconds }` |
 | `server_error` | `500` | Anything unhandled | — |
 
-This list is **closed**. New failure modes map onto an existing code rather than
-adding a ninth, so the client's error handling never needs a default branch it
-cannot reason about.
+This list is **closed for the server**. New failure modes map onto an existing
+code rather than adding a ninth, so the client's error handling never needs a
+default branch it cannot reason about.
+
+One code exists **only on the client**, and no backend ever sends it:
+
+| `code` | HTTP | When | `details` |
+|---|---|---|---|
+| `network_error` | — (`status: 0`) | No response arrived at all: offline, DNS failure, timeout, CORS | — |
 
 Two deliberate consequences:
 
 - **`404` hides existence.** A buyer requesting another buyer's order gets
   `404`, not `403`. Returning `403` would confirm the record exists. `403` is
   reserved for resources the caller can legitimately see but not act on.
-- **Transport failures are not a new code.** When no HTTP response arrives at
-  all — offline, DNS failure, timeout, CORS — the client synthesises
-  `server_error` with `status: 0`. Consumers only ever branch on the eight
-  codes above.
+- **Transport failures are their own code, not a fake `500`.** When no HTTP
+  response arrives, `apiError.js` synthesises `network_error` with `status: 0`.
+  Folding it into `server_error` would make the two most common failures in
+  development — "the API is down" and "the API broke" — indistinguishable, and
+  the recovery differs: one is "start `npm run api`", the other is "retry".
+  In development the message says so outright: *"Can't reach the BetterBlue API
+  — is `npm run api` running?"* Everything else still branches on the eight
+  server codes above.
 
 ### 3.3 Validation details
 
@@ -513,11 +523,31 @@ this is the only error type the rest of the app ever sees (00 §10):
 ```js
 ApiError {
   status,    // number — HTTP status, or 0 when no response arrived
-  code,      // string — one of the eight canonical codes
+  code,      // string — one of the eight canonical codes, or `network_error`
   message,   // string — safe to display
   details,   // object | undefined
 }
 ```
+
+Status codes map to codes as follows. `400` and `413` are not in the table above
+— no endpoint in this contract returns them — but a proxy or a provider might,
+so the client folds both into `validation_failed` rather than reporting a
+`server_error` a member cannot act on:
+
+| Status | `code` |
+|---|---|
+| `400`, `413`, `422` | `validation_failed` |
+| `401` | `unauthorized` |
+| `402` | `payment_failed` |
+| `403` | `forbidden` |
+| `404` | `not_found` |
+| `409` | `conflict` |
+| `429` | `rate_limited` |
+| any other non-2xx | `server_error` |
+| no response | `network_error` (`status: 0`) |
+
+A response body carrying the §3.1 envelope always wins over this table — that is
+what makes the client Laravel-ready before Laravel exists.
 
 The mock era needs this badly, because JSON Server's failures carry no envelope
 at all. Verified behaviour and how it is normalised:
@@ -528,7 +558,7 @@ at all. Verified behaviour and how it is normalised:
 | `500` on `POST` with a duplicate `id` | `ApiError { status: 500, code: 'conflict' }` — the only cause of a 500 on create here |
 | `500` on `DELETE` (the `platformSettings` cascade bug, §1.7) | `ApiError { status: 500, code: 'server_error' }` — and the client never issues `DELETE` |
 | Any other non-2xx | `ApiError { status, code: 'server_error' }` |
-| No response (offline, timeout, CORS) | `ApiError { status: 0, code: 'server_error' }` |
+| No response (offline, timeout, CORS) | `ApiError { status: 0, code: 'network_error' }` |
 | `401` (Laravel era) | `ApiError { status: 401, code: 'unauthorized' }` → interceptor clears the session |
 
 Client-side guards that the real backend will enforce — an illegal status
@@ -765,8 +795,22 @@ client-side:
   `src/constants/images.js` (`https://picsum.photos/seed/<id>/…`), seeded on the
   generated file id, so the same upload always renders the same image.
 - Enforces the same type and size rules the server will, and rejects with the
-  same `ApiError { code: 'validation_failed', details: { file } }`.
+  same `ApiError { code: 'validation_failed', details: { file } }`. Limits are
+  per `purpose` (`UPLOAD_RULES` in `src/services/uploadService.js`).
 - **Returns the identical `{ file: … }` shape.**
+
+A `video` upload has no real asset to point at, so its `url` is one shared
+placeholder built through `constants/images.js`; `thumbnailUrl` is still seeded
+per file, so a delivery of three clips shows three distinct posters.
+
+**Batch helper.** Uploading is per-file at the endpoint, but every caller
+attaches a *set* of files, so `uploadService.uploadFiles(files, { kind })`
+wraps `upload` and resolves to the `file[]` array itself — ready to drop into
+`deliveries.files` or `disputes[].evidence`. It validates the whole selection
+before waiting on any of it and rejects the batch if any file fails, so a
+half-attached delivery is never possible. `kind` is an alias of `purpose`. On
+migration it becomes N parallel `POST /uploads` calls, or one multi-part
+endpoint — either way its signature holds.
 
 No bytes leave the browser and nothing is persisted; a page reload loses the
 "file" while the record still references its URL. That is an accepted prototype
