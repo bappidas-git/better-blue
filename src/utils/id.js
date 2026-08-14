@@ -33,6 +33,11 @@ export const ID_PREFIX = Object.freeze({
   AFFILIATE_REFERRAL: 'ref',
   AFFILIATE_EARNING: 'aer',
   AUDIT_LOG: 'aud',
+  // Embedded file records — these live inline on `deliveries.files` and
+  // `disputes[].evidence` rather than in their own collection (contract §1.4),
+  // and are minted by `uploadService`.
+  DELIVERY_FILE: 'dfl',
+  DISPUTE_EVIDENCE: 'evd',
 })
 
 /**

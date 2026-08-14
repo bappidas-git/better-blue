@@ -14,4 +14,9 @@ export const env = Object.freeze({
   apiProvider: raw.VITE_API_PROVIDER || 'json-server',
   appName: raw.VITE_APP_NAME || 'BetterBlue',
   enableDevPages: String(raw.VITE_ENABLE_DEV_PAGES ?? 'true') === 'true',
+  // Vite's build-time mode flag, surfaced here so the rest of the app keeps its
+  // single access point. Used for developer-facing diagnostics only (e.g. the
+  // "is `npm run api` running?" hint in `services/api/apiError.js`) — never to
+  // change product behaviour.
+  isDev: raw.DEV === true,
 })
