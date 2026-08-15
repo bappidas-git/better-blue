@@ -21,12 +21,13 @@ const ContactPage = lazy(() => import('@/features/staticPages/pages/ContactPage'
 const TermsPage = lazy(() => import('@/features/staticPages/pages/TermsPage'))
 const PrivacyPage = lazy(() => import('@/features/staticPages/pages/PrivacyPage'))
 
-// STUBS (Prompt 11): both are linked from the public top nav and the footer, and
-// Prompt 11 requires every nav and footer link to resolve — so they are mounted
-// now with placeholder pages rather than left to hit the 404. Prompt 12
-// (discovery) and Prompt 23 (request board) replace the page components; these
-// entries stay as they are.
+// Creator discovery (Prompt 12) — the marketplace's primary buyer entry point.
 const CreatorsPage = lazy(() => import('@/features/discovery/pages/CreatorsPage'))
+
+// STUB (Prompt 11): linked from the public top nav and the footer, and Prompt 11
+// requires every nav and footer link to resolve — so it is mounted now with a
+// placeholder page rather than left to hit the 404. Prompt 23 replaces the page
+// component; this entry stays as it is.
 const RequestBoardPage = lazy(() => import('@/features/requests/pages/RequestBoardPage'))
 
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
@@ -46,7 +47,7 @@ const DevDesignPage = import.meta.env.DEV
  * route of `paths.HOME`; everything else registers an absolute path.
  *
  * Waiting to be appended here:
- * - Prompt 12 — CREATOR_PROFILE_PATTERN (CREATORS is mounted below, as a stub)
+ * - Prompt 13 — CREATOR_PROFILE_PATTERN (the target of every discovery card)
  * - Prompt 23 — REQUEST_DETAIL_PATTERN (REQUESTS is mounted below, as a stub)
  * - Prompt 32 — REFERRAL_PATTERN
  */
@@ -63,7 +64,7 @@ export const publicRoutes = [
   { path: paths.TERMS, element: <TermsPage /> },
   { path: paths.PRIVACY, element: <PrivacyPage /> },
 
-  /* Marketplace discovery — stubs until Prompts 12 and 23. */
+  /* Marketplace discovery — the request board is a stub until Prompt 23. */
   { path: paths.CREATORS, element: <CreatorsPage /> },
   { path: paths.REQUESTS, element: <RequestBoardPage /> },
 ]

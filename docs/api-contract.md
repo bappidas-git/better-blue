@@ -1035,7 +1035,37 @@ The creator's public storefront, and the resource behind the discovery grid.
 | `ratingMin` | `ratingAvg_gte` | e.g. `4.5` |
 | `verified` / `featured` | booleans | |
 | `search` | `displayName`, `tagline`, `bio`, `location` | |
-| `sort` | `ratingAvg` (default `desc`), `startingPrice`, `completedOrders`, `responseTimeHours`, `createdAt` | |
+| `sort` | `recommended` (default), `ratingAvg`, `startingPrice`, `completedOrders`, `responseTimeHours`, `createdAt` | |
+
+**`sort=recommended`** *(added by Prompt 12)* — the discovery grid's default
+ordering: `featured` storefronts first, then a rating composite that weights
+`ratingAvg` by `ratingCount` against a marketplace prior, so a lone five-star
+review does not outrank a 4.7 earned over thirty orders. Clients send the token,
+never the columns behind it.
+
+> **Mock reality** — the contract's list parameters carry a single `order`
+> (§4.1), so a two-column ordering in independent directions is unreachable
+> through the adapter. The page is fetched ordered by `featured` — which decides
+> *which* records land on the page — and the composite is applied to the page in
+> `creatorProfileService`. Within a featured group the composite therefore orders
+> each page internally rather than across page boundaries.
+
+> **Laravel** — `ORDER BY featured DESC, recommendation_score DESC`, ideally
+> against a stored `recommendation_score` column refreshed on review write. The
+> client-side pass is deleted.
+
+**`include=preview`** *(reserved by Prompt 12)* — the discovery card shows three
+published portfolio thumbnails per creator.
+
+> **Mock reality** — JSON Server has no `include`, so
+> `creatorProfileService.listPortfolioPreviews(ids)` issues one
+> `GET /portfolioItems?creatorId=…&status=published&_limit=3` per creator, at
+> most four in flight. It is a separate call from the search rather than part of
+> it, so the grid paints before the thumbnails resolve.
+
+> **Laravel** — `GET /creators?include=preview` returns each item with a
+> `portfolioPreview` array, resolved by an eager-loaded
+> `hasMany … where status = 'published' limit 3`. One request, one round trip.
 
 **Discovery request**
 
