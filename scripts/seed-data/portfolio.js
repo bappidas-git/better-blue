@@ -71,6 +71,38 @@ const PORTFOLIO_SOURCE = {
       contentType: PHOTO,
       tags: ['gifting', 'ecommerce', 'product', 'holiday'],
     },
+    {
+      title: 'Barista process film for a seasonal drinks menu',
+      description:
+        'Counter-level film following three seasonal drinks from build to serve, cut as one hero film and three vertical menu teasers.',
+      category: CATEGORY_ID.FOOD_BEVERAGE,
+      contentType: VIDEO,
+      tags: ['cafe', 'process', 'seasonal', 'short form'],
+    },
+    {
+      title: 'Ingredient sourcing stills for a supplier story page',
+      description:
+        'Farm and market visit documented alongside the kitchen prep it feeds, shot for a restaurant group’s sourcing page.',
+      category: CATEGORY_ID.FOOD_BEVERAGE,
+      contentType: PHOTO,
+      tags: ['sourcing', 'documentary', 'restaurant', 'story'],
+    },
+    {
+      title: 'Ceramic serveware tabletop set for a homeware launch',
+      description:
+        'Full serveware range styled as complete table settings and as individual pieces, with matched cutouts for the product grid.',
+      category: CATEGORY_ID.ECOMMERCE_PRODUCTS,
+      contentType: PHOTO,
+      tags: ['tabletop', 'serveware', 'styling', 'launch'],
+    },
+    {
+      title: 'Bakery counter lifestyle set for a cafe group',
+      description:
+        'Morning service photographed across two sites — counter displays, pastry detail, and unposed customer moments cleared for use.',
+      category: CATEGORY_ID.FOOD_BEVERAGE,
+      contentType: PHOTO,
+      tags: ['bakery', 'lifestyle', 'cafe', 'in situ'],
+    },
   ],
   liam: [
     {
@@ -115,6 +147,22 @@ const PORTFOLIO_SOURCE = {
       tags: ['event', 'recap', 'trade show', 'b2b'],
       status: CONTENT_STATUS.UNDER_REVIEW,
     },
+    {
+      title: 'Integration launch film for a payments partnership',
+      description:
+        'Joint launch film explaining a payments integration end to end, approved by both brands and delivered with co-branded end cards.',
+      category: CATEGORY_ID.TECHNOLOGY_SAAS,
+      contentType: VIDEO,
+      tags: ['integration', 'launch', 'partnership', 'b2b'],
+    },
+    {
+      title: 'Admin training bundle for a rollout programme',
+      description:
+        'Six short admin training films plus a printable quick-reference set, produced for a multi-site software rollout.',
+      category: CATEGORY_ID.EDUCATION_COACHING,
+      contentType: BUNDLE,
+      tags: ['training', 'rollout', 'series', 'enablement'],
+    },
   ],
   zoe: [
     {
@@ -157,6 +205,22 @@ const PORTFOLIO_SOURCE = {
       contentType: PHOTO,
       tags: ['packaging', 'haircare', 'refill', 'product'],
       status: CONTENT_STATUS.SUBMITTED,
+    },
+    {
+      title: 'Fragrance launch still life for a boutique perfumer',
+      description:
+        'Bottle and packaging still life for a three-scent launch, lit to hold the glass edges without losing the label copy.',
+      category: CATEGORY_ID.BEAUTY_SKINCARE,
+      contentType: PHOTO,
+      tags: ['fragrance', 'still life', 'glass', 'launch'],
+    },
+    {
+      title: 'Accessory styling film for a spring apparel drop',
+      description:
+        'Styling film pairing accessories with the season’s core apparel, delivered as a hero cut plus six product-tagged verticals.',
+      category: CATEGORY_ID.FASHION_APPAREL,
+      contentType: VIDEO,
+      tags: ['styling', 'accessories', 'spring', 'social'],
     },
   ],
   diego: [

@@ -24,6 +24,10 @@ const PrivacyPage = lazy(() => import('@/features/staticPages/pages/PrivacyPage'
 // Creator discovery (Prompt 12) — the marketplace's primary buyer entry point.
 const CreatorsPage = lazy(() => import('@/features/discovery/pages/CreatorsPage'))
 
+// The public creator storefront (Prompt 13) — where every discovery card, every
+// featured shelf tile, and every shared profile link lands.
+const CreatorProfilePage = lazy(() => import('@/features/creatorProfile/pages/CreatorProfilePage'))
+
 // STUB (Prompt 11): linked from the public top nav and the footer, and Prompt 11
 // requires every nav and footer link to resolve — so it is mounted now with a
 // placeholder page rather than left to hit the 404. Prompt 23 replaces the page
@@ -47,7 +51,6 @@ const DevDesignPage = import.meta.env.DEV
  * route of `paths.HOME`; everything else registers an absolute path.
  *
  * Waiting to be appended here:
- * - Prompt 13 — CREATOR_PROFILE_PATTERN (the target of every discovery card)
  * - Prompt 23 — REQUEST_DETAIL_PATTERN (REQUESTS is mounted below, as a stub)
  * - Prompt 32 — REFERRAL_PATTERN
  */
@@ -66,6 +69,7 @@ export const publicRoutes = [
 
   /* Marketplace discovery — the request board is a stub until Prompt 23. */
   { path: paths.CREATORS, element: <CreatorsPage /> },
+  { path: paths.CREATOR_PROFILE_PATTERN, element: <CreatorProfilePage /> },
   { path: paths.REQUESTS, element: <RequestBoardPage /> },
 ]
 

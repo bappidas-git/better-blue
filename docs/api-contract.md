@@ -1136,6 +1136,30 @@ cannot join.
 > approximate `total` both disappear. This is the clearest example of a mock
 > workaround the real backend deletes outright.
 
+**`profileStatus` on the single profile** *(added by Prompt 13)* — the same
+problem, one record at a time. `GET /creatorProfiles/:id` serves the public
+profile page, which has to distinguish three states: live, *paused* (the creator
+set `availability: false` and gets a banner plus a disabled CTA), and *not
+public at all* (the account is `suspended`, `blacklisted`, or `deactivated`, and
+the visitor gets a respectful unavailable screen). Only the last one needs the
+account, so the response carries `profileStatus` — an `ACCOUNT_STATUS` value
+describing the owner.
+
+```
+GET /creatorProfiles/cpr_ava   →   { …, "availability": true, "profileStatus": "active" }
+```
+
+> **Mock reality** — `creatorProfileService.getPublicProfile(id)` issues a
+> second `GET /users/:id` and copies `accountStatus` onto the record. It fails
+> **open** (`active`) when that lookup fails, exactly as the grid's filter does:
+> an unreachable users endpoint is not evidence of a suspension, and hiding a
+> working storefront over it is the worse error. This is presentation, not
+> enforcement — see §9.1.
+
+> **Laravel** — serialise `profile_status` from the joined account on the public
+> profile resource (or 404 the suspended ones, if product prefers that), and the
+> second request disappears.
+
 Errors: `403` (editing another creator's profile, or a non-admin setting
 `verified`/`featured`) · `404` · `422`.
 
@@ -2068,6 +2092,45 @@ Creating a review updates the creator's derived `ratingAvg` / `ratingCount`.
 > 5`, and recompute the aggregate in the same transaction (or as a queued
 > listener). A creator's `ratingCount` legitimately trails `completedOrders` —
 > not every completed order gets reviewed.
+
+**Rating breakdown** *(added by Prompt 13)* — the public profile's summary card
+shows the 5→1 distribution, not just the average: it is what tells a buyer
+whether a 4.5 is "consistently good" or "mostly great with two bad days".
+
+```
+GET /reviews/breakdown?creatorId=usr_creator_ava
+```
+
+`200 OK`
+
+```json
+{
+  "total": 6,
+  "average": 4.5,
+  "distribution": { "5": 4, "4": 1, "3": 1, "2": 0, "1": 0 }
+}
+```
+
+> **Mock reality** — JSON Server cannot group, so `reviewService.getBreakdown`
+> pages the creator's ratings in (100 at a time, five pages at most) and tallies
+> them client-side. Past 500 ratings the distribution describes the newest ones
+> rather than all of them, which the return value flags as `isPartial` instead
+> of implying an exactness it does not have.
+
+> **Laravel** — one query:
+> `SELECT rating, COUNT(*) FROM reviews WHERE creator_id = ? GROUP BY rating`.
+> Exact, uncapped, and the paging loop is deleted.
+
+**`include=buyer`** *(reserved by Prompt 13)* — a public review card names the
+business that left it.
+
+> **Mock reality** — `reviewService.listByCreatorWithBuyers` follows the page
+> with two batched lookups (`GET /users?id=…` and `GET /buyerProfiles?userId=…`)
+> and attaches `buyer: { name, companyName }` to each review. If either fails
+> the reviews still render, attributed to "Verified buyer".
+
+> **Laravel** — eager-load the buyer and its business profile on the review
+> resource; one round trip, and the two follow-ups disappear.
 
 Errors: `403` (not the order's buyer) · `404` · `409` `conflict` (order not
 `completed`; already reviewed) · `422`.

@@ -44,13 +44,10 @@ function CreatorCard({ profile, categoryNames }) {
   return (
     <Card sx={[cardLiftSx, { height: '100%' }]}>
       {/* One link for the whole card: a single tab stop, and the announced name
-          is the creator plus everything else in the tile.
-          TODO(prompt-13): swap to `paths.creatorProfile(profile.id)` once the
-          public storefront route is registered — until then that URL 404s, so
-          the shelf routes into discovery instead. */}
+          is the creator plus everything else in the tile. */}
       <CardActionArea
         component={RouterLink}
-        to={paths.CREATORS}
+        to={paths.creatorProfile(profile.id)}
         sx={{
           height: '100%',
           display: 'flex',

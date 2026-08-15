@@ -607,6 +607,13 @@ export const HISTORY_ENGAGEMENTS = [
   { key: 'h22', buyer: 'verde', creator: 'sara', category: CATEGORY_ID.EDUCATION_COACHING, contentType: VIDEO, title: 'Training films for the new kitchen onboarding programme', quantity: 5, price: 580, deliveryDays: 9, createdDaysAgo: 34 },
   { key: 'h23', buyer: 'pulse', creator: 'liam', category: CATEGORY_ID.TECHNOLOGY_SAAS, contentType: VIDEO, title: 'Feature launch teaser for the mobile release', quantity: 1, price: 690, deliveryDays: 6, createdDaysAgo: 30 },
   { key: 'h24', buyer: 'cocoa', creator: 'amara', category: CATEGORY_ID.EVENTS_ENTERTAINMENT, contentType: PHOTO, title: 'Launch event coverage for the flagship cafe opening', quantity: 28, price: 660, deliveryDays: 6, createdDaysAgo: 26 },
+  // h25–h28 (Prompt 13): a deeper review history for the marketplace's most
+  // visited storefront, so the public profile demonstrates a real rating
+  // distribution and its paginated review list rather than three cards.
+  { key: 'h25', buyer: 'urbannest', creator: 'ava', category: CATEGORY_ID.ECOMMERCE_PRODUCTS, contentType: PHOTO, title: 'Tabletop stills for the ceramic serveware launch', quantity: 22, price: 610, deliveryDays: 7, createdDaysAgo: 24 },
+  { key: 'h26', buyer: 'cocoa', creator: 'ava', category: CATEGORY_ID.FOOD_BEVERAGE, contentType: VIDEO, title: 'Barista process films for the seasonal drinks menu', quantity: 3, price: 720, deliveryDays: 8, createdDaysAgo: 21 },
+  { key: 'h27', buyer: 'verde', creator: 'ava', category: CATEGORY_ID.FOOD_BEVERAGE, contentType: PHOTO, title: 'Ingredient sourcing stills for the supplier story page', quantity: 18, price: 560, deliveryDays: 6, createdDaysAgo: 18 },
+  { key: 'h28', buyer: 'craftware', creator: 'ava', category: CATEGORY_ID.ECOMMERCE_PRODUCTS, contentType: PHOTO, title: 'Packaging stills for the gift tool range refresh', quantity: 20, price: 530, deliveryDays: 6, createdDaysAgo: 15 },
 ]
 
 /** Boilerplate brief copy for history requests, rotated by content type. */
