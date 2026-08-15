@@ -1,0 +1,120 @@
+/*
+ * Hero visuals — the one place on the landing page that needs bespoke CSS
+ * (00 §6: theme + `sx` for layout, CSS Modules for bespoke visuals). Colors,
+ * radii, and shadows come from src/styles/tokens.css, which mirrors the locked
+ * palette; no raw hex values live here.
+ */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  /* Keeps the negative-z glows behind the hero content but in front of the
+     page background, without dragging them under the page itself. */
+  isolation: isolate;
+}
+
+/* Soft brand accent behind the composition — the token gradient at low opacity
+   (00 §6: gradient is a hero accent, never a full surface wash). */
+.glow {
+  position: absolute;
+  z-index: -1;
+  aspect-ratio: 1;
+  border-radius: var(--bb-radius-pill);
+  background-image: var(--bb-gradient-brand);
+  filter: blur(90px);
+  pointer-events: none;
+}
+
+.glowPrimary {
+  top: -14%;
+  right: -10%;
+  width: 46%;
+  opacity: 0.18;
+}
+
+.glowSecondary {
+  bottom: -22%;
+  left: -12%;
+  width: 32%;
+  opacity: 0.1;
+}
+
+/* The floating card composition: two columns, the second dropped so the cards
+   read as a settled arrangement rather than a grid. */
+.stage {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.columnLower {
+  margin-top: 32px;
+}
+
+.card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--bb-divider);
+  border-radius: var(--bb-radius-lg);
+  background-color: var(--bb-paper);
+  box-shadow: var(--bb-shadow-2);
+  /* Four elements only — these are the ones GSAP moves on scroll. */
+  will-change: transform;
+}
+
+/* aspect-ratio + explicit width/height on the <img> reserve the box before the
+   photo arrives, so nothing on the page shifts as the hero loads. */
+.media {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  background-color: var(--bb-primary-surface);
+}
+
+.mediaWide {
+  aspect-ratio: 4 / 3;
+}
+
+.caption {
+  padding: 10px 12px 12px;
+}
+
+@media (max-width: 899.95px) {
+  /* Cheaper raster on phones, and one accent instead of two. */
+  .glow {
+    filter: blur(60px);
+  }
+
+  .glowPrimary {
+    top: -6%;
+    right: -18%;
+    width: 72%;
+    opacity: 0.14;
+  }
+
+  .glowSecondary {
+    display: none;
+  }
+
+  .stage {
+    gap: 12px;
+  }
+
+  .column {
+    gap: 12px;
+  }
+
+  .columnLower {
+    margin-top: 24px;
+  }
+}

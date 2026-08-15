@@ -2674,6 +2674,7 @@ are the reason these belong on the server:
 | 10 | `processConversion` | `affiliateService` | 9 | internal (order-completed handler) |
 | 11 | `requestPayout` | `payoutService` | 4 | `POST /payouts` |
 | 12 | `broadcastAnnouncement` | `notificationService` | 1 + N | `POST /announcements` |
+| 13 | `getStats` | `landingService` | 4 | `GET /stats/landing` |
 
 ### 7.2 The sequences
 
@@ -3001,6 +3002,39 @@ on the client.
 `audience` ∈ `all` \| `buyers` \| `creators`. One request; the server fans out
 in a queued job, respects each recipient's
 `notificationPrefs.system.inApp`, and writes the audit entry once.
+
+---
+
+#### 13. `getStats()`
+
+The four marketplace counts printed on the public landing page. The only
+composite here that is a **read**, and the only one that never throws.
+
+**Mock — nothing aggregates, so each count is its own request:**
+
+1. `GET /creatorProfiles?_page=1&_limit=1` → `X-Total-Count` (creator storefronts)
+2. `GET /categories?_page=1&_limit=100&active=true` → `items.length`, served from
+   `categoryService`'s session cache when it is already warm
+3. `GET /orders?_page=1&_limit=1&status=completed` → `X-Total-Count`
+4. `GET /contentRequests?_page=1&_limit=1` → `X-Total-Count`
+
+The four run in parallel and each is caught independently: a count that fails
+resolves to `null` and the landing page drops that tile rather than the page.
+The result is cached for the session, and only when every count succeeded — a
+partial result would pin a missing tile until reload. Requesting one row purely
+to read a header is wasteful but correct; it is also why this is the first
+endpoint worth adding server-side.
+
+**Laravel — `GET /stats/landing` → `{ creators, categories, completedOrders, contentRequests }`**
+
+```json
+{ "creators": 512, "categories": 12, "completedOrders": 8431, "contentRequests": 10277 }
+```
+
+Four `COUNT(*)` queries in one request, cached server-side (the numbers move
+slowly and this is the most-requested route in the product). Public and
+unauthenticated: it exposes nothing a visitor cannot already count by paging the
+public collections.
 
 ---
 

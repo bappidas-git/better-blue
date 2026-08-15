@@ -47,6 +47,7 @@ export { reportService } from './reportService'
 export { reviewService } from './reviewService'
 
 /* Platform ---------------------------------------------------------------- */
+export { landingService } from './landingService'
 export { notificationService } from './notificationService'
 export { supportService } from './supportService'
 export { affiliateService } from './affiliateService'
