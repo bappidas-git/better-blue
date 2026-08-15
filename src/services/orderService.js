@@ -14,12 +14,15 @@ import {
   REQUEST_STATUS_MACHINE,
 } from '@/constants/stateMachines'
 import {
+  DELIVERY_STATUS,
   ORDER_STATUS,
+  PAYMENT_STATUS,
   PROPOSAL_STATUS,
   REQUEST_STATUS,
 } from '@/constants/statuses'
 import { REFUND_CONTEXT } from '@/constants/transactionTemplates'
 import { appConfig } from '@/config/appConfig'
+import { formatCurrency, formatNumber } from '@/utils/formatters'
 import { ID_PREFIX } from '@/utils/id'
 import { applyRate, subtractMoney } from '@/utils/money'
 import { assertTransition } from '@/utils/stateMachine'
@@ -27,7 +30,9 @@ import { assertTransition } from '@/utils/stateMachine'
 import { API_ERROR_CODE, createApiError } from './api/apiError'
 import { createCrudService } from './api/crudFactory'
 import { SORT_ORDER } from './api/listAdapter'
+import { creatorProfileService } from './creatorProfileService'
 import { deliveryService } from './deliveryService'
+import { disputeService } from './disputeService'
 import { notificationService } from './notificationService'
 import { auditService } from './auditService'
 import { paymentService } from './paymentService'
@@ -53,7 +58,57 @@ const ADMIN_CANCELLABLE_STATUSES = [
   ORDER_STATUS.DISPUTED,
 ]
 
+/**
+ * Rows folded when counting a buyer's orders by status (contract §4.1 caps a
+ * page at 100). Comfortably above any seeded account; a buyer past it gets a
+ * count flagged `capped` rather than a quietly wrong one.
+ */
+const COUNT_LIMIT = 100
+
 const nowIso = () => new Date().toISOString()
+
+/**
+ * The kinds of thing that happen to an order. Composed by
+ * {@link orderService.getOrderTimeline} and rendered by `TimelineList`, so the
+ * buyer's, the creator's, and the admin's history of an order are the same
+ * history (Prompt 20 §4.1).
+ */
+export const ORDER_EVENT_TYPE = Object.freeze({
+  ORDER_CREATED: 'order_created',
+  PAYMENT_FAILED: 'payment_failed',
+  PAYMENT_HELD: 'payment_held',
+  DELIVERY_SUBMITTED: 'delivery_submitted',
+  REVISION_REQUESTED: 'revision_requested',
+  DELIVERY_ACCEPTED: 'delivery_accepted',
+  PAYMENT_RELEASED: 'payment_released',
+  PAYMENT_REFUNDED: 'payment_refunded',
+  DISPUTE_OPENED: 'dispute_opened',
+  DISPUTE_RESOLVED: 'dispute_resolved',
+  ORDER_COMPLETED: 'order_completed',
+  ORDER_CANCELLED: 'order_cancelled',
+})
+
+/** `{ icon, tone }` per event type — the visual half of the timeline. */
+const EVENT_STYLE = Object.freeze({
+  [ORDER_EVENT_TYPE.ORDER_CREATED]: { icon: 'solar:medal-ribbon-linear', tone: 'brand' },
+  [ORDER_EVENT_TYPE.PAYMENT_FAILED]: { icon: 'solar:card-linear', tone: 'error' },
+  [ORDER_EVENT_TYPE.PAYMENT_HELD]: { icon: 'solar:lock-keyhole-linear', tone: 'success' },
+  [ORDER_EVENT_TYPE.DELIVERY_SUBMITTED]: { icon: 'solar:box-linear', tone: 'info' },
+  [ORDER_EVENT_TYPE.REVISION_REQUESTED]: { icon: 'solar:restart-linear', tone: 'warning' },
+  [ORDER_EVENT_TYPE.DELIVERY_ACCEPTED]: { icon: 'solar:check-circle-linear', tone: 'success' },
+  [ORDER_EVENT_TYPE.PAYMENT_RELEASED]: { icon: 'solar:wallet-money-linear', tone: 'success' },
+  [ORDER_EVENT_TYPE.PAYMENT_REFUNDED]: { icon: 'solar:card-recive-linear', tone: 'info' },
+  [ORDER_EVENT_TYPE.DISPUTE_OPENED]: { icon: 'solar:danger-triangle-linear', tone: 'error' },
+  [ORDER_EVENT_TYPE.DISPUTE_RESOLVED]: { icon: 'solar:shield-check-linear', tone: 'success' },
+  [ORDER_EVENT_TYPE.ORDER_COMPLETED]: { icon: 'solar:verified-check-linear', tone: 'success' },
+  [ORDER_EVENT_TYPE.ORDER_CANCELLED]: { icon: 'solar:close-circle-linear', tone: 'neutral' },
+})
+
+/** One timeline entry, or `null` when the moment it describes never happened. */
+function event(type, at, title, description) {
+  if (!at) return null
+  return { id: `${type}:${at}`, type, at, title, description, ...EVENT_STYLE[type] }
+}
 
 /** `conflict` is the contract's code for "not in the right state" (§3.2). */
 const invalidState = (message, details) =>
@@ -68,6 +123,35 @@ function transitionTo(machine, from, to, message) {
     return assertTransition(machine, from, to)
   } catch (failure) {
     throw invalidState(message, { from, to, transition: failure.message })
+  }
+}
+
+/**
+ * Brings a creator's `completedOrders` back in line after an order closes.
+ *
+ * MOCK-AGGREGATE (contract §6.4): `creatorProfiles.completedOrders` is a derived
+ * column with nothing deriving it, and the public profile prints it beside the
+ * rating. `seed-db.js` recomputes it from `orders`; this does the same thing at
+ * runtime, folding one capped page. Never throws — the order is the record and
+ * the counter is a cache of it, so a completion must not fail over a stale tile.
+ */
+async function recountCompletedOrders(creatorId) {
+  if (!creatorId) return null
+
+  try {
+    const [{ total }, profile] = await Promise.all([
+      orders.list({
+        page: 1,
+        limit: 1,
+        filters: { creatorId, status: ORDER_STATUS.COMPLETED },
+      }),
+      creatorProfileService.getByUserId(creatorId),
+    ])
+    if (!profile) return null
+    await creatorProfileService.update(profile.id, { completedOrders: total })
+    return total
+  } catch {
+    return null
   }
 }
 
@@ -164,6 +248,199 @@ export const orderService = Object.freeze({
       revisions: revisions.items,
       payment,
     }
+  },
+
+  /**
+   * How many orders a buyer has in each status — the counts on the tab strip of
+   * `/buyer/orders`.
+   *
+   * A separate read from the list itself on purpose: the tabs describe the whole
+   * account, so they must not change when someone searches or turns a page.
+   *
+   * MOCK-AGGREGATE: JSON Server cannot group, so one capped page is folded here
+   * (contract §4.1). `capped` says so out loud rather than implying an
+   * exactness the fold does not have.
+   *
+   * @param {string} buyerId `usr_…`
+   * @returns {Promise<{total: number, capped: boolean, byStatus: Object<string, number>}>}
+   *
+   * **Future endpoint:** `GET /buyer/orders/counts` — one `GROUP BY status`.
+   */
+  async countsByStatus(buyerId) {
+    const byStatus = Object.fromEntries(Object.values(ORDER_STATUS).map((status) => [status, 0]))
+    if (!buyerId) return { total: 0, capped: false, byStatus }
+
+    const { items, total } = await orderService.listByBuyer(buyerId, {
+      page: 1,
+      limit: COUNT_LIMIT,
+    })
+
+    items.forEach((order) => {
+      if (byStatus[order.status] !== undefined) byStatus[order.status] += 1
+    })
+
+    return { total, capped: total > items.length, byStatus }
+  },
+
+  /**
+   * The nav badge: deliveries sitting on this buyer's desk. An order at
+   * `delivered` is the one state where the marketplace is waiting on the buyer
+   * and money is standing still, so it is the number worth putting on the nav.
+   *
+   * @param {string} buyerId `usr_…`
+   * @returns {Promise<number>} `0` when nothing is waiting
+   */
+  async countAwaitingReview(buyerId) {
+    if (!buyerId) return 0
+    const { total } = await orderService.listByBuyer(buyerId, {
+      page: 1,
+      limit: 1,
+      filters: { status: ORDER_STATUS.DELIVERED },
+    })
+    return total
+  },
+
+  /**
+   * **The history of one order**, oldest first — the single source behind the
+   * buyer's, the creator's, and the admin's timeline (Prompt 20 §4.1).
+   *
+   * Composed rather than stored: there is no `events` collection, and there does
+   * not need to be, because every moment worth showing already has a timestamp
+   * on the record it belongs to. Anything that has not happened yet has a `null`
+   * timestamp and simply produces no entry.
+   *
+   * MOCK-JOIN: five list calls in parallel (contract §7). A failure in any of
+   * the *related* reads leaves that strand out rather than failing the timeline —
+   * a missing dispute row must not cost the reader the delivery history — but a
+   * missing order still throws, because there is no timeline without it.
+   *
+   * @param {string} orderId `ord_…`
+   * @returns {Promise<{id: string, type: string, title: string,
+   *   description?: string, at: string, tone: string, icon: string}[]>}
+   * @throws {ApiError} `not_found` when the order does not exist
+   *
+   * **Future endpoint:** `GET /orders/:id/timeline` — composed server-side from
+   * the same rows, or from a real `order_events` table.
+   */
+  async getOrderTimeline(orderId) {
+    const order = await orders.getById(orderId)
+
+    const emptyList = { items: [] }
+    const [payments, deliveries, revisions, disputes] = await Promise.all([
+      paymentService.list({ page: 1, limit: FOLD_LIMIT, filters: { orderId } }).catch(() => emptyList),
+      deliveryService.listByOrder(orderId).catch(() => emptyList),
+      revisionService.listByOrder(orderId).catch(() => emptyList),
+      disputeService.list({ page: 1, limit: FOLD_LIMIT, filters: { orderId } }).catch(() => emptyList),
+    ])
+
+    const currency = order.currency ?? appConfig.defaultCurrency
+    const money = (amount) => formatCurrency(amount, currency)
+
+    const entries = [
+      event(
+        ORDER_EVENT_TYPE.ORDER_CREATED,
+        order.createdAt,
+        'Order opened',
+        `The proposal was accepted at ${money(order.price)} and this order was created.`
+      ),
+    ]
+
+    payments.items.forEach((payment) => {
+      entries.push(
+        event(
+          ORDER_EVENT_TYPE.PAYMENT_FAILED,
+          payment.status === PAYMENT_STATUS.FAILED ? payment.createdAt : null,
+          'Payment declined',
+          payment.failureReason ?? 'The card was declined and nothing was charged.'
+        ),
+        event(
+          ORDER_EVENT_TYPE.PAYMENT_HELD,
+          payment.heldAt,
+          'Payment held in escrow',
+          `${money(payment.amount)} was taken and held by BetterBlue. Work could start.`
+        ),
+        event(
+          ORDER_EVENT_TYPE.PAYMENT_RELEASED,
+          payment.status === PAYMENT_STATUS.RELEASED ? payment.releasedAt : null,
+          'Escrow released',
+          'The payment was released to the creator, less the BetterBlue commission.'
+        ),
+        event(
+          ORDER_EVENT_TYPE.PAYMENT_REFUNDED,
+          payment.refundedAt,
+          payment.status === PAYMENT_STATUS.PARTIALLY_REFUNDED
+            ? 'Partial refund issued'
+            : 'Refund issued',
+          `${money(payment.refundedAmount ?? payment.amount)} went back to the card it came from.`
+        )
+      )
+    })
+
+    deliveries.items.forEach((delivery) => {
+      entries.push(
+        event(
+          ORDER_EVENT_TYPE.DELIVERY_SUBMITTED,
+          delivery.submittedAt,
+          `Delivery v${delivery.version} submitted`,
+          `${formatNumber(delivery.files?.length ?? 0)} file${
+            (delivery.files?.length ?? 0) === 1 ? '' : 's'
+          } were handed over for review.`
+        ),
+        event(
+          ORDER_EVENT_TYPE.DELIVERY_ACCEPTED,
+          delivery.status === DELIVERY_STATUS.ACCEPTED ? delivery.respondedAt : null,
+          `Delivery v${delivery.version} accepted`,
+          'The buyer approved the work, which released the escrow.'
+        )
+      )
+    })
+
+    revisions.items.forEach((revision) => {
+      entries.push(
+        event(
+          ORDER_EVENT_TYPE.REVISION_REQUESTED,
+          revision.createdAt,
+          'Changes requested',
+          revision.notes
+        )
+      )
+    })
+
+    disputes.items.forEach((dispute) => {
+      entries.push(
+        event(
+          ORDER_EVENT_TYPE.DISPUTE_OPENED,
+          dispute.createdAt,
+          'Dispute opened',
+          dispute.reason ?? 'The order was referred to the BetterBlue team.'
+        ),
+        event(
+          ORDER_EVENT_TYPE.DISPUTE_RESOLVED,
+          dispute.resolvedAt,
+          'Dispute resolved',
+          dispute.resolutionNote ?? 'The BetterBlue team issued a decision.'
+        )
+      )
+    })
+
+    entries.push(
+      event(
+        ORDER_EVENT_TYPE.ORDER_COMPLETED,
+        order.completedAt,
+        'Order completed',
+        'Everything on this engagement is settled.'
+      ),
+      event(
+        ORDER_EVENT_TYPE.ORDER_CANCELLED,
+        order.cancelledAt,
+        'Order cancelled',
+        'The engagement was called off.'
+      )
+    )
+
+    return entries
+      .filter(Boolean)
+      .sort((a, b) => String(a.at).localeCompare(String(b.at)))
   },
 
   /**
@@ -340,6 +617,93 @@ export const orderService = Object.freeze({
     })
 
     return order
+  },
+
+  /**
+   * **Completes an order and pays the creator** — the end of the happy path
+   * (contract §7 operation 6).
+   *
+   * Three things finish together: the escrow is released, the order closes at
+   * `completed`, and the brief behind it is marked completed too. The money
+   * moves *first*, deliberately: an order marked complete while BetterBlue still
+   * holds the payment is the one inconsistency this workflow must never leave
+   * behind, and the reverse — money released against an order that failed to
+   * close — is at least visible to the creator and reconcilable by support.
+   *
+   * Reached from two places, which is why it is here rather than inside
+   * `deliveryService`: the buyer accepting a delivery (Prompt 20) and Trust &
+   * Safety resolving a dispute in the creator's favour (Prompt 30). The dispute
+   * path settles the money itself through `resolveDispute`, so it passes
+   * `release: false` rather than releasing twice.
+   *
+   * @param {string} orderId `ord_…`
+   * @param {object} [options]
+   * @param {boolean} [options.release=true] release the escrow on the way —
+   *   `false` when the caller has already settled it
+   * @param {string} [options.reason='buyer_accepted'] recorded on an admin release
+   * @param {{id: string, role: string}} [options.actor] who completed it
+   * @returns {Promise<{order: object, payment: object|null, commission: object|null,
+   *   creatorEarnings: number|null}>}
+   * @throws {ApiError} `conflict` when the order cannot be completed from where
+   *   it is, or when there is no escrow left to release
+   *
+   * **Future endpoint:** part of `POST /deliveries/:id/accept` — the release and
+   * the completion are the same transaction, so there is no window in which a
+   * delivery is accepted but the creator has not been paid.
+   */
+  async completeOrder(orderId, { release = true, reason = 'buyer_accepted', actor } = {}) {
+    const order = await orders.getById(orderId)
+
+    // Checked before the money moves: a release against an order that cannot
+    // reach `completed` would have to be unwound by hand.
+    const completedStatus = transitionTo(
+      ORDER_STATUS_MACHINE,
+      order.status,
+      ORDER_STATUS.COMPLETED,
+      'This order can no longer be completed.'
+    )
+
+    const settlement = release ? await paymentService.releasePayment(orderId, { reason, actor }) : null
+
+    const completedAt = nowIso()
+    const completed = await orders.update(orderId, { status: completedStatus, completedAt })
+
+    // The brief the order came from ends with it (contract §6.7). Best effort:
+    // a brief that is already `completed` — or that an admin closed underneath
+    // the order — must not fail a settlement that has happened.
+    if (order.requestId) {
+      try {
+        const request = await requestService.getById(order.requestId)
+        if (request.status === REQUEST_STATUS.AWARDED) {
+          await requestService.update(request.id, { status: REQUEST_STATUS.COMPLETED })
+        }
+      } catch {
+        // See above.
+      }
+    }
+
+    await recountCompletedOrders(order.creatorId)
+
+    await notifyQuietly({
+      userId: order.creatorId,
+      type: NOTIFICATION_TYPE.ORDER_COMPLETED,
+      title: 'Order completed',
+      body:
+        `“${order.title}” is complete. ` +
+        (settlement
+          ? `${formatCurrency(settlement.creatorEarnings, order.currency)} has been added to your ` +
+            'BetterBlue balance, after commission.'
+          : 'Nothing further is needed from you.'),
+      entityType: 'order',
+      entityId: orderId,
+    })
+
+    return {
+      order: completed,
+      payment: settlement?.payment ?? null,
+      commission: settlement?.commission ?? null,
+      creatorEarnings: settlement?.creatorEarnings ?? null,
+    }
   },
 
   /**

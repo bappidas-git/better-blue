@@ -16,6 +16,7 @@ import ChartCard from '@/features/dashboard/components/ChartCard'
 import OnboardingChecklist from '@/features/dashboard/components/OnboardingChecklist'
 import QuickActions from '@/features/dashboard/components/QuickActions'
 import StatCardGrid from '@/features/dashboard/components/StatCardGrid'
+import { ORDER_TAB, ordersTabQuery } from '@/features/orders/utils/buyerOrderFilters'
 import {
   REQUEST_TAB,
   requestsTabQuery,
@@ -43,7 +44,8 @@ import { EMPTY_PLACEHOLDER, formatCurrency, formatNumber } from '@/utils/formatt
 // unbuilt path would land on the dashboard 404, so it stays inert until then
 // (Prompt 14's rule for `navConfig`, applied to page-level links). Prompt 18
 // lit the two request tiles up and pointed each at the tab that answers it;
-// Prompt 19 pointed "Total spent" at Payments. Orders (20) follows.
+// Prompt 19 pointed "Total spent" at Payments; Prompt 20 pointed "Active
+// orders" at the orders list. All four are live.
 
 /** Chart height by breakpoint (§11). */
 const CHART_HEIGHT = { xs: 240, md: 300 }
@@ -137,7 +139,10 @@ export default function BuyerOverviewPage() {
       label: 'Active orders',
       value: overview?.activeOrders ?? EMPTY_PLACEHOLDER,
       icon: 'solar:box-linear',
-      // TODO(Prompt 20): to: paths.BUYER_ORDERS
+      // Prompt 20: "active" on the dashboard and "Active" on the orders list
+      // mean the same four statuses, so the tile lands on that tab rather than
+      // on a list the number does not describe.
+      to: `${paths.BUYER_ORDERS}${ordersTabQuery(ORDER_TAB.ACTIVE)}`,
     },
     {
       key: 'spent',

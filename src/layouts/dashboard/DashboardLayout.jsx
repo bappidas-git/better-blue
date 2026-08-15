@@ -21,6 +21,7 @@ import {
   splitBottomNav,
 } from '@/routes/navConfig'
 import { notificationService } from '@/services/notificationService'
+import { orderService } from '@/services/orderService'
 import { requestService } from '@/services/requestService'
 import { durations, easing } from '@/theme/motionTokens'
 import { storage } from '@/utils/storage'
@@ -147,9 +148,18 @@ export default function DashboardLayout() {
     { enabled: Boolean(user?.id) && isBuyer }
   )
 
+  const { data: ordersAwaitingReview } = useApiQuery(
+    () => orderService.countAwaitingReview(user?.id),
+    [user?.id, pathname],
+    { enabled: Boolean(user?.id) && isBuyer }
+  )
+
   const badges = useMemo(
-    () => ({ [BADGE_KEY.BUYER_PROPOSALS_AWAITING]: proposalsAwaiting ?? 0 }),
-    [proposalsAwaiting]
+    () => ({
+      [BADGE_KEY.BUYER_PROPOSALS_AWAITING]: proposalsAwaiting ?? 0,
+      [BADGE_KEY.BUYER_ORDERS_AWAITING_REVIEW]: ordersAwaitingReview ?? 0,
+    }),
+    [ordersAwaitingReview, proposalsAwaiting]
   )
 
   return (
