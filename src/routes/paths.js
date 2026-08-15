@@ -41,9 +41,10 @@ export const paths = Object.freeze({
   /** Affiliate landing link — Prompt 32 stores the code and redirects home. */
   REFERRAL_PATTERN: '/r/:code',
 
-  /* Auth — rendered inside AuthLayout (Prompt 09) -------------------------- */
+  /* Auth — rendered inside AuthLayout, behind GuestRoute (Prompt 09) ------- */
   LOGIN: '/login',
   REGISTER: '/register',
+  FORGOT_PASSWORD: '/forgot-password',
 
   /* Buyer dashboard (Prompts 14–23, 30, 32) ------------------------------- */
   BUYER: '/buyer',
@@ -60,6 +61,14 @@ export const paths = Object.freeze({
   BUYER_NOTIFICATIONS: '/buyer/notifications',
   BUYER_PROFILE: '/buyer/profile',
   BUYER_SETTINGS: '/buyer/settings',
+  /**
+   * Splat that keeps the **whole** `/buyer` subtree behind the guards (00 §11),
+   * including URLs no prompt has built yet: a signed-out visitor deep-linking
+   * one is sent to sign in and returned to it, rather than shown a public 404
+   * that loses where they were going. React Router ranks static paths above a
+   * splat, so every real route above wins over this one.
+   */
+  BUYER_CATCH_ALL: '/buyer/*',
 
   /* Creator dashboard (Prompts 14–23, 30) --------------------------------- */
   CREATOR: '/creator',
@@ -74,6 +83,8 @@ export const paths = Object.freeze({
   CREATOR_NOTIFICATIONS: '/creator/notifications',
   CREATOR_PROFILE: '/creator/profile',
   CREATOR_SETTINGS: '/creator/settings',
+  /** Guarded splat for the creator subtree — see `BUYER_CATCH_ALL`. */
+  CREATOR_CATCH_ALL: '/creator/*',
 
   /* Admin console (Prompts 24–31, 33–35) ---------------------------------- */
   ADMIN: '/admin',
@@ -99,6 +110,8 @@ export const paths = Object.freeze({
   ADMIN_CATEGORIES: '/admin/categories',
   ADMIN_AUDIT: '/admin/audit',
   ADMIN_NOTIFICATIONS: '/admin/notifications',
+  /** Guarded splat for the admin subtree — see `BUYER_CATCH_ALL`. */
+  ADMIN_CATCH_ALL: '/admin/*',
 
   /* Dev-only (Prompt 08) — mounted behind env.enableDevPages + DEV build --- */
   DEV_DESIGN: '/dev/design',

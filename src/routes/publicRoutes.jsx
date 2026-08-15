@@ -10,7 +10,9 @@ import { paths } from './paths'
 // exclusively (00 §2.6); `*_PATTERN` constants are the parameterised ones.
 
 const HomePage = lazy(() => import('@/features/landing/pages/HomePage'))
-const AuthPlaceholderPage = lazy(() => import('@/features/auth/pages/AuthPlaceholderPage'))
+const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
+const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage'))
+const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage'))
 
 // `import.meta.env.DEV` is statically replaced at build time, so this whole
 // branch — the dynamic import included — is eliminated from production bundles
@@ -33,12 +35,14 @@ const DevDesignPage = import.meta.env.DEV
 export const publicRoutes = [{ index: true, element: <HomePage /> }]
 
 /**
- * Rendered inside AuthLayout. Prompt 09 replaces both placeholders with the
- * real LoginPage / RegisterPage and wraps this branch in `GuestRoute`.
+ * Rendered inside AuthLayout, behind `GuestRoute` — a signed-in member who
+ * lands here is redirected onward rather than shown a form they cannot use
+ * (Prompt 09).
  */
 export const authRoutes = [
-  { path: paths.LOGIN, element: <AuthPlaceholderPage mode="login" /> },
-  { path: paths.REGISTER, element: <AuthPlaceholderPage mode="register" /> },
+  { path: paths.LOGIN, element: <LoginPage /> },
+  { path: paths.REGISTER, element: <RegisterPage /> },
+  { path: paths.FORGOT_PASSWORD, element: <ForgotPasswordPage /> },
 ]
 
 /**
