@@ -85,9 +85,9 @@ export const BADGE_KEY = Object.freeze({
 /* -------------------------------------------------------------------------- */
 
 /**
- * Prompts append: orders (20), payments (19), disputes (26), affiliate (34),
- * notifications (27). Requests and Orders belong between Overview and Profile
- * when they land — the account entries stay last.
+ * Prompts append: orders (20), disputes (26), affiliate (34), notifications
+ * (27). Requests, Orders, and Payments belong between Overview and Profile —
+ * the account entries stay last.
  */
 export const buyerNav = Object.freeze([
   Object.freeze({
@@ -107,6 +107,14 @@ export const buyerNav = Object.freeze([
     icon: 'solar:clipboard-list-linear',
     path: paths.BUYER_REQUESTS,
     badgeKey: BADGE_KEY.BUYER_PROPOSALS_AWAITING,
+  }),
+  Object.freeze({
+    // Prompt 19. Sits after Requests and before the account entries; Orders
+    // slots in above it when Prompt 20 lands.
+    key: 'payments',
+    label: 'Payments',
+    icon: 'solar:wallet-money-linear',
+    path: paths.BUYER_PAYMENTS,
   }),
   Object.freeze({
     key: NAV_KEY.PROFILE,

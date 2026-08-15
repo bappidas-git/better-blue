@@ -367,6 +367,23 @@ export const paymentService = Object.freeze({
   list: (params = {}) => payments.list({ sort: 'createdAt', order: SORT_ORDER.DESC, ...params }),
 
   /**
+   * A buyer's own payment history — the read behind `/buyer/payments`
+   * (Prompt 19). A thin lens on {@link list}, spelled out so a screen never has
+   * to know that scoping to a member means adding a `buyerId` filter; the
+   * Laravel endpoint derives it from the token instead and takes no such
+   * parameter at all.
+   *
+   * @param {string} buyerId `usr_…`
+   * @param {import('./api/listAdapter').ListParams} [params] any filter of {@link list}
+   * @returns {Promise<import('./api/listAdapter').ListResult>}
+   *
+   * **Future endpoint:** `GET /buyer/payments`.
+   */
+  listByBuyer(buyerId, params = {}) {
+    return paymentService.list({ ...params, filters: { ...params.filters, buyerId } })
+  },
+
+  /**
    * @param {string} id `pay_…`
    * @returns {Promise<object>} the payment
    * @throws {ApiError} `not_found`

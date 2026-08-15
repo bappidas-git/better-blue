@@ -15,6 +15,7 @@ import ListSkeleton from '@/components/feedback/skeletons/ListSkeleton'
 import SearchInput from '@/components/inputs/SearchInput'
 import SortSelect from '@/components/inputs/SortSelect'
 import { useAuth } from '@/context/AuthContext'
+import UnpaidOrderBanner from '@/features/checkout/components/UnpaidOrderBanner'
 import { useDiscoveryParams } from '@/features/discovery/hooks/useDiscoveryParams'
 import BuyerRequestCard from '@/features/requests/components/BuyerRequestCard'
 import useRequestActions from '@/features/requests/hooks/useRequestActions'
@@ -172,6 +173,13 @@ export default function BuyerRequestsPage() {
         </Button>
       }
     >
+      {/* Prompt 19: an awarded brief whose order was never funded is invisible
+          on a paginated, tab-filtered list — and a creator is waiting on it.
+          The banner runs its own small query so it surfaces regardless of which
+          tab or page is on screen, and renders nothing when there is nothing
+          outstanding. */}
+      <UnpaidOrderBanner buyerId={buyerId} sx={{ mb: { xs: 2, md: 2.5 } }} />
+
       <Tabs
         value={tab}
         onChange={(event, next) => setValue('tab', next)}

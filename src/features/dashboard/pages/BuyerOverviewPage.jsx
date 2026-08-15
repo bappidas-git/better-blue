@@ -10,6 +10,7 @@ import Typography from '@mui/material/Typography'
 
 import ErrorState from '@/components/feedback/ErrorState'
 import { useAuth } from '@/context/AuthContext'
+import UnpaidOrderBanner from '@/features/checkout/components/UnpaidOrderBanner'
 import ActivityFeed from '@/features/dashboard/components/ActivityFeed'
 import ChartCard from '@/features/dashboard/components/ChartCard'
 import OnboardingChecklist from '@/features/dashboard/components/OnboardingChecklist'
@@ -42,7 +43,7 @@ import { EMPTY_PLACEHOLDER, formatCurrency, formatNumber } from '@/utils/formatt
 // unbuilt path would land on the dashboard 404, so it stays inert until then
 // (Prompt 14's rule for `navConfig`, applied to page-level links). Prompt 18
 // lit the two request tiles up and pointed each at the tab that answers it;
-// Orders (20) and Payments (19) follow.
+// Prompt 19 pointed "Total spent" at Payments. Orders (20) follows.
 
 /** Chart height by breakpoint (§11). */
 const CHART_HEIGHT = { xs: 240, md: 300 }
@@ -145,7 +146,7 @@ export default function BuyerOverviewPage() {
       format: (amount) => formatCurrency(amount, currency, { hideDecimals: true }),
       icon: 'solar:wallet-money-linear',
       iconTone: 'success',
-      // TODO(Prompt 19): to: paths.BUYER_PAYMENTS
+      to: paths.BUYER_PAYMENTS,
     },
   ]
 
@@ -236,6 +237,12 @@ export default function BuyerOverviewPage() {
                 })
           }
         />
+
+        {/* Prompt 19: the one thing on this screen that is genuinely waiting on
+            the buyer — an awarded order nobody has paid for. It sits above the
+            figures because a creator is idle until it is dealt with, and it
+            renders nothing at all when there is nothing outstanding. */}
+        <UnpaidOrderBanner buyerId={user?.id} />
 
         {/* Section 1 — the numbers, or the checklist that replaces them. */}
         {errors.summary && !isLoading ? (
