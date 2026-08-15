@@ -25,7 +25,6 @@ import useRequestWizard, { STEP_INDEX } from '@/features/requests/hooks/useReque
 import useApiQuery from '@/hooks/useApiQuery'
 import DashboardPage from '@/layouts/dashboard/DashboardPage'
 import { BOTTOM_NAV_HEIGHT } from '@/layouts/dashboard/MobileBottomNav'
-import { buyerRoutes } from '@/routes/buyerRoutes'
 import { paths } from '@/routes/paths'
 import { categoryService } from '@/services/categoryService'
 import { creatorProfileService } from '@/services/creatorProfileService'
@@ -71,18 +70,14 @@ const stepVariants = {
 }
 
 /**
- * Is a buyer path actually rendered by a page yet?
+ * Where leaving the wizard takes you.
  *
- * TODO(Prompt 18): once `BUYER_REQUESTS` renders the request list, this check
- * always passes and can be replaced with a plain `navigate(paths.BUYER_REQUESTS)`.
- * Until then a published brief would land on the dashboard 404, so it goes to
- * the overview instead — the same rule `navConfig` follows for nav entries.
+ * Prompt 18 built the request list, so the "is that route built yet?" check
+ * Prompt 16 needed here is gone: back and cancel both land on the list, and a
+ * *published* brief goes one better — straight to its own detail page, where
+ * the proposals will arrive (Prompt 18 §4.6).
  */
-const isRouteBuilt = (path) => buyerRoutes.some((route) => route.path === path)
-
-/** Where a published brief takes you, given what has been built so far. */
-const publishedDestination = () =>
-  isRouteBuilt(paths.BUYER_REQUESTS) ? paths.BUYER_REQUESTS : paths.BUYER
+const LIST_DESTINATION = paths.BUYER_REQUESTS
 
 /** Small "Saved" / "Saving…" line under the actions, per §4.6. */
 function DraftIndicator({ state }) {
@@ -199,13 +194,19 @@ function RequestWizard({ buyerId, draft, invitedCreatorId }) {
     [setSearchParams]
   )
 
-  const handlePublished = useCallback(() => {
-    toast.success('Request published', {
-      description: 'Creators can see it now. Proposals usually start arriving within 48 hours.',
-    })
-    // Long enough for the check to register, short enough not to be a wait.
-    window.setTimeout(() => navigate(publishedDestination()), durations.slow)
-  }, [navigate, toast])
+  const handlePublished = useCallback(
+    (published) => {
+      toast.success('Request published', {
+        description: 'Creators can see it now. Proposals usually start arriving within 48 hours.',
+      })
+      // Long enough for the check to register, short enough not to be a wait.
+      window.setTimeout(
+        () => navigate(published?.id ? paths.buyerRequestDetail(published.id) : LIST_DESTINATION),
+        durations.slow
+      )
+    },
+    [navigate, toast]
+  )
 
   const wizard = useRequestWizard({
     buyerId,
@@ -311,7 +312,7 @@ function RequestWizard({ buyerId, draft, invitedCreatorId }) {
     <DashboardPage
       title="New request"
       subtitle="Brief the content you need. Creators respond with priced proposals."
-      backTo={publishedDestination()}
+      backTo={LIST_DESTINATION}
       maxWidth={false}
       sx={{ maxWidth: FORM_MAX_WIDTH, mx: 'auto' }}
     >

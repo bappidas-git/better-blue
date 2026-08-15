@@ -526,13 +526,41 @@ const ENUM_FIELDS = [
   ['auditLogs', 'actorRole', ROLE_VALUES],
 ]
 
+/**
+ * Enum fields a **draft** content request is allowed not to have answered yet.
+ * A half-written brief leaves them absent (`compact` drops `undefined`), which
+ * is what the request list reads to tell the buyer what is still missing before
+ * it can be published. Every other status must carry all of them — see
+ * `validateDraftCompleteness` below, which is what keeps this from becoming a
+ * hole in the check.
+ */
+const DRAFT_OPTIONAL_FIELDS = ['contentType', 'usageRights', 'orientation', 'budgetType']
+
 function validateEnums() {
   ENUM_FIELDS.forEach(([name, field, allowed]) => {
     db[name].forEach((row) => {
+      const isUnansweredDraftField =
+        name === 'contentRequests' &&
+        row.status === REQUEST_STATUS.DRAFT &&
+        DRAFT_OPTIONAL_FIELDS.includes(field) &&
+        row[field] === undefined
+
+      if (isUnansweredDraftField) return
+
       if (!allowed.includes(row[field])) {
         fail(
           `${name}.${field} on ${row.id} is "${row[field]}" — expected one of ${allowed.join(' | ')}`
         )
+      }
+    })
+  })
+
+  // The other half of the rule above: only a draft may be incomplete.
+  db.contentRequests.forEach((request) => {
+    if (request.status === REQUEST_STATUS.DRAFT) return
+    DRAFT_OPTIONAL_FIELDS.forEach((field) => {
+      if (request[field] === undefined) {
+        fail(`contentRequests.${field} is missing on ${request.id}, which is not a draft`)
       }
     })
   })

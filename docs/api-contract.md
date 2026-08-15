@@ -1414,6 +1414,28 @@ Status follows `REQUEST_STATUS_MACHINE` (§8). Publishing is
 `PATCH { status: "open", publishedAt }`; awarding happens inside
 `acceptProposal` (§7), not by a direct `PATCH`.
 
+**Ending a brief (Prompt 18).** Three owner actions live behind
+`requestService` and are each a `PATCH` in the mock:
+
+| Function | Mock | Future endpoint |
+|---|---|---|
+| `publishDraft(id)` | `PATCH { status: "open", publishedAt }` | `POST /contentRequests/:id/publish` |
+| `closeRequest(id, { reason })` | `PATCH { status: "closed", closedAt, closureReason }` + decline every live offer | `POST /contentRequests/:id/close` |
+| `cancelRequest(id, { reason })` | `PATCH { status: "cancelled", cancelledAt, closureReason }` + decline every live offer | `POST /contentRequests/:id/cancel` |
+
+`closedAt`, `cancelledAt`, and `closureReason` are **written only by these two
+operations** and are absent on every other brief (`docs/data-model.md` §5).
+`publishDraft` refuses an incomplete draft with `422` and
+`details.missing: string[]` — the field labels still blank — so the client can
+name them rather than say "invalid". `cancelRequest` refuses an `awarded`
+brief with `409`: unpicking an award is `orderService.cancelOrder` (§7).
+
+Both close and cancel fold over the brief's `submitted`/`shortlisted` offers,
+declining each and notifying its creator. **Mock reality:** that is one `PATCH`
+plus one notification per offer, sequentially and without a transaction; a
+Laravel implementation does the whole fold in the same transaction as the
+status change.
+
 Errors: `403` (not the owner) · `404` (a `draft` requested by anyone but its
 owner) · `409` (illegal transition; editing an `awarded` brief) · `422`.
 
@@ -1434,6 +1456,21 @@ Creator offers on a brief. **A creator may propose once per request.**
 
 Proposals are **never public**: only the buyer who posted the brief and the
 creator who sent the offer may read one.
+
+**Shortlisting is a toggle (Prompt 18).** The buyer's proposal board stars and
+un-stars an offer, so `PROPOSAL_STATUS_MACHINE` carries both
+`submitted → shortlisted` and `shortlisted → submitted`; un-starring also
+clears `respondedAt`, because an un-starred offer is undecided again. Only
+starring notifies the creator. Declining is one-way and terminal.
+
+> **Composite read** — `proposalService.listForRequestReview(requestId)` returns
+> the brief's offers each joined to its `creator` (account + storefront: rating,
+> completed orders, response time) and its `samples` (the `portfolioItems`
+> behind `sampleItemIds`). **Mock reality:** three requests — the offers, then
+> the accounts/storefronts and the sample items by id, in parallel — because
+> `_embed`/`_expand` are banned and the board sorts by creator rating, a column
+> that is not on the offer. **Laravel:** one request,
+> `GET /proposals?requestId=…&include=creator,samples`, sorted server-side.
 
 **Filters** — `requestId` · `creatorId` (→ `users.id`) · `status` (repeatable) ·
 `price_gte` / `price_lte` · `sort`: `createdAt` (default `desc`), `price`,

@@ -69,6 +69,17 @@ export const NAV_KEY = Object.freeze({
   NOTIFICATIONS: 'notifications',
 })
 
+/**
+ * Keys into the `badges` map `DashboardLayout` passes down, so an entry and the
+ * query that feeds it agree on the spelling. Each prompt that adds a badge adds
+ * its key here and fills it in the layout; an unknown key renders no badge, so
+ * the two halves can land in either order.
+ */
+export const BADGE_KEY = Object.freeze({
+  /** Proposals waiting on the buyer's decision (Prompt 18). */
+  BUYER_PROPOSALS_AWAITING: 'buyer.proposalsAwaiting',
+})
+
 /* -------------------------------------------------------------------------- */
 /* Buyer                                                                      */
 /* -------------------------------------------------------------------------- */
@@ -87,15 +98,15 @@ export const buyerNav = Object.freeze([
     exact: true,
   }),
   Object.freeze({
-    // Prompt 16 built the wizard but not the list, and a nav entry pointing at
-    // an unbuilt path lands on the dashboard 404 — so the destination is the
-    // one screen that exists.
-    // TODO(Prompt 18): re-point `path` at `paths.BUYER_REQUESTS` and relabel to
-    // "Requests"; the key stays `requests` so nothing else has to move.
+    // Prompt 18 re-pointed this from the wizard to the list it belongs to, as
+    // Prompt 16's note here asked. The key is unchanged, so nothing that
+    // references it had to move. `/buyer/requests/new` is a child of this path,
+    // so writing a brief keeps "Requests" highlighted.
     key: 'requests',
-    label: 'New request',
+    label: 'Requests',
     icon: 'solar:clipboard-list-linear',
-    path: paths.BUYER_REQUEST_NEW,
+    path: paths.BUYER_REQUESTS,
+    badgeKey: BADGE_KEY.BUYER_PROPOSALS_AWAITING,
   }),
   Object.freeze({
     key: NAV_KEY.PROFILE,
