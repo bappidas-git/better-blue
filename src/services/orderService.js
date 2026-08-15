@@ -51,6 +51,19 @@ const FOLD_LIMIT = 100
 /** Offers a buyer may still accept (contract §6.8). */
 const ACCEPTABLE_PROPOSAL_STATUSES = [PROPOSAL_STATUS.SUBMITTED, PROPOSAL_STATUS.SHORTLISTED]
 
+/**
+ * Orders still in flight — everything that is neither finished nor abandoned.
+ * The definition both dashboards mean by "active", kept here so the two
+ * overviews and `countActiveByCreator` cannot drift apart.
+ */
+const ACTIVE_ORDER_STATUSES = [
+  ORDER_STATUS.PENDING_PAYMENT,
+  ORDER_STATUS.IN_PROGRESS,
+  ORDER_STATUS.DELIVERED,
+  ORDER_STATUS.REVISION_REQUESTED,
+  ORDER_STATUS.DISPUTED,
+]
+
 /** Order states an admin may cancel out of, refunding the escrow on the way. */
 const ADMIN_CANCELLABLE_STATUSES = [
   ORDER_STATUS.IN_PROGRESS,
@@ -296,6 +309,30 @@ export const orderService = Object.freeze({
       page: 1,
       limit: 1,
       filters: { status: ORDER_STATUS.DELIVERED },
+    })
+    return total
+  },
+
+  /**
+   * How many of a creator's orders are still in flight — the number behind the
+   * availability confirmation and the deactivation guard on the creator's own
+   * screens (Prompt 21 §4.6).
+   *
+   * "In flight" is the same five statuses both dashboards call *active*, so a
+   * creator, their buyer, and the guard that stops an account walking away from
+   * live work all count the same engagements.
+   *
+   * @param {string} creatorId `usr_…`
+   * @returns {Promise<number>} `0` when nothing is outstanding
+   *
+   * **Future endpoint:** `GET /creator/orders/counts` — one `SELECT COUNT(*)`.
+   */
+  async countActiveByCreator(creatorId) {
+    if (!creatorId) return 0
+    const { total } = await orderService.listByCreator(creatorId, {
+      page: 1,
+      limit: 1,
+      filters: { status: [...ACTIVE_ORDER_STATUSES] },
     })
     return total
   },

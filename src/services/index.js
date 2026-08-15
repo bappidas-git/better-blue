@@ -28,7 +28,13 @@ export {
   BUYER_PROFILE_FIELDS,
   getBuyerProfileCompleteness,
 } from './buyerProfileService'
-export { creatorProfileService, CREATOR_ORDERING } from './creatorProfileService'
+export {
+  creatorProfileService,
+  CREATOR_ORDERING,
+  CREATOR_PROFILE_FIELDS,
+  getCreatorProfileCompleteness,
+  maskAccountNumber,
+} from './creatorProfileService'
 export { portfolioService } from './portfolioService'
 
 /* Marketplace ------------------------------------------------------------- */
@@ -60,6 +66,11 @@ export {
   ACTIVITY_LIMIT,
   SPEND_MONTHS,
 } from './buyerDashboardService'
+// `ACTIVITY_LIMIT` is deliberately *not* re-exported here: both dashboard
+// services declare one, and the barrel can only carry a single spelling. Import
+// it from `@/services/creatorDashboardService` on the rare occasion a screen
+// needs the creator's own value.
+export { creatorDashboardService, EARNINGS_MONTHS } from './creatorDashboardService'
 
 /* Platform ---------------------------------------------------------------- */
 export { landingService } from './landingService'

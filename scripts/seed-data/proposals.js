@@ -571,6 +571,94 @@ HISTORY_ENGAGEMENTS.forEach((engagement, index) => {
   }
 })
 
+/* Live board, appended by Prompt 21 ------------------------------------------ */
+
+/**
+ * Offers on the two briefs Prompt 21 added to the board, so the demo creator's
+ * "Active proposals" tile has more than one row behind it and the new briefs
+ * are not the only ones on the board with an empty proposal list.
+ *
+ * **Emitted last, not merged into `BOARD_PROPOSALS`**: proposal ids are handed
+ * out in creation order, and adding rows to that object would renumber every
+ * awarded and archived offer after it — including `prp_019`, which
+ * `docs/api-contract.md` quotes. Appending here leaves every existing id
+ * exactly where it was.
+ */
+const LATE_BOARD_PROPOSALS = {
+  open_cocoa_truffle: [
+    {
+      creator: 'ava',
+      price: 700,
+      deliveryDays: 8,
+      revisions: 2,
+      status: SUBMITTED,
+      afterDays: 1,
+      message:
+        'Chocolate is the hardest product I shoot and the one I enjoy most — it needs a cool room, fast work, and a light that shows the temper rather than blowing it out. I would photograph each piece straight on and cut, then build the packaging scenes and the full-collection flat lay from the same setup so the colour matches across all twenty-four frames.',
+    },
+    {
+      creator: 'yuki',
+      price: 640,
+      deliveryDays: 11,
+      revisions: 2,
+      status: SUBMITTED,
+      afterDays: 2,
+      message:
+        'Most of my work is tableware and interiors, so I light for texture and style with restraint — a good fit for the matte, tactile look in your brief. I would shoot on your own linens and boards and deliver both flat and lightly graded versions of every frame.',
+    },
+  ],
+  open_craftware_giftset: [
+    {
+      creator: 'noah',
+      price: 560,
+      deliveryDays: 7,
+      revisions: 2,
+      status: SUBMITTED,
+      afterDays: 1,
+      message:
+        'I shoot to marketplace specs every week, so the white-background frames will pass validation first time. Six sets at thirty frames is two studio days for me, and I would deliver the in-use frames from my own workbench under north light.',
+    },
+    {
+      creator: 'ava',
+      price: 690,
+      deliveryDays: 9,
+      revisions: 2,
+      status: SHORTLISTED,
+      afterDays: 2,
+      message:
+        'I have shot two packaging ranges for Craftware already, so I know the spec sheet and the square crop it wants. I would keep the hero and angle frames strictly to spec, and give the in-use frames enough warmth to work as social content as well as listings.',
+    },
+    {
+      creator: 'ethan',
+      price: 480,
+      deliveryDays: 14,
+      revisions: 1,
+      status: SUBMITTED,
+      afterDays: 3,
+      message:
+        'I am building out my BetterBlue portfolio and would put extra care into this one. Product work on white is straightforward for me, and I can turn revisions around the same day.',
+    },
+  ],
+}
+
+Object.entries(LATE_BOARD_PROPOSALS).forEach(([requestKey, offers]) => {
+  const request = requestByKey(requestKey)
+  offers.forEach((offer) => {
+    const createdAt = addDays(request.publishedAt, offer.afterDays)
+    addProposal({
+      requestKey,
+      creatorKey: offer.creator,
+      price: offer.price,
+      deliveryDays: offer.deliveryDays,
+      revisions: offer.revisions,
+      status: offer.status,
+      coverMessage: offer.message,
+      createdAt,
+      respondedAt: offer.status === SUBMITTED ? null : addDays(createdAt, 0.5),
+    })
+  })
+})
+
 export { proposals }
 
 /** The accepted proposal for a request key — the order factory builds on it. */

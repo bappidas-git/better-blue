@@ -2858,8 +2858,11 @@ are the reason these belong on the server:
 | 15 | `cancelOrder` | `orderService` | 3 + refund | `POST /orders/:id/cancel` |
 | 16 | `submitReview` | `reviewService` | 5 | `POST /reviews` |
 | 17 | `getOrderTimeline` | `orderService` | 5 | `GET /orders/:id/timeline` |
+| 18 | `getOverview` | `creatorDashboardService` | 11 | `GET /creator/overview` |
 
-Operations 16 and 17 were added by Prompt 20 (the buyer's order workspace).
+Operations 16 and 17 were added by Prompt 20 (the buyer's order workspace), and
+operation 18 by Prompt 21 (the creator's) — the mirror of operation 14, section
+for section.
 Operation 7 lives in `revisionService` rather than `deliveryService`: it *creates
 a revision* and moves the delivery and the order as side effects, so it belongs
 with the record it writes. Operation 6a was split out of operation 6 for the same
@@ -3467,6 +3470,80 @@ cost the reader the delivery history — while a missing order still `404`s.
 
 **Laravel — `GET /orders/:id/timeline`** composed server-side from the same rows,
 or from a real `order_events` table written by the workflow handlers.
+
+---
+
+#### 18. `getOverview(creatorUserId)`
+
+The creator counterpart to operation 14: everything the creator dashboard's
+overview screen prints — four figures, six months of earnings, the profile and
+portfolio progress behind the onboarding checklist, and the latest activity. A
+**read**, and like operation 14 it never throws. Added by Prompt 21.
+
+**Mock — four independent sections, run in parallel:**
+
+*Storefront* (the availability switch, the matching-brief tile, the completeness meter)
+
+1. `GET /creatorProfiles?userId=…&_page=1&_limit=1` → the storefront
+2. `GET /contentRequests?status=open&categoryId=…&categoryId=…&_page=1&_limit=1`
+   → `X-Total-Count` (live briefs in this creator's categories; skipped entirely
+   when the storefront has no categories yet)
+
+*Pipeline* (the stat band, the portfolio step, the onboarding inputs) — chained
+on step 1, because the portfolio counts are keyed by `cpr_…`
+
+3. `GET /proposals?creatorId=…&status=submitted&status=shortlisted&_page=1&_limit=1`
+   → `X-Total-Count`
+4. `GET /proposals?creatorId=…&_page=1&_limit=1` → `X-Total-Count` (has this
+   creator ever offered on anything?)
+5. `GET /orders?creatorId=…&status=pending_payment&status=in_progress&status=delivered&status=revision_requested&status=disputed&_page=1&_limit=1`
+   → `X-Total-Count`
+6. `GET /orders?creatorId=…&_page=1&_limit=1` → `X-Total-Count`
+7. `GET /portfolioItems?creatorId=cpr_…&status=published&_page=1&_limit=1` → `X-Total-Count`
+8. `GET /portfolioItems?creatorId=cpr_…&status=submitted&status=under_review&_page=1&_limit=1`
+   → `X-Total-Count`
+
+*Earnings*
+
+9. the whole of `getEarningsSummary` (§7.1 operation 11's read half) — held,
+   available, paid out, lifetime, and the ledger balance
+10. `GET /transactions?userId=…&_page=1&_limit=100` → folded client-side: rows of
+    type `release` and `commission` are bucketed by `createdAt` month, and net to
+    `orders.creatorEarnings` within each bucket because the commission rows are
+    negative. `payout` and `affiliate_commission` are excluded: they move the
+    balance without being earnings from marketplace work
+
+*Activity*
+
+11. `GET /notifications?userId=…&_page=1&_limit=8&_sort=createdAt&_order=desc`
+
+Each section is caught on its own: a failure nulls that section's fields and is
+reported in `errors`, so one slow collection costs a single card its contents
+rather than blanking the dashboard. `profileCompleteness` is derived — no
+request — from the storefront plus the signed-in account (the browser already
+holds it, and `avatarUrl` is the one weighted field that lives on `users`); the
+weights are documented on `CREATOR_PROFILE_FIELDS` in
+`src/services/creatorProfileService.js`.
+
+**Laravel — `GET /creator/overview` → the same object for the authenticated creator**
+
+```json
+{
+  "openMatchingRequests": 3, "activeProposals": 3, "activeOrders": 3,
+  "proposalsTotal": 15, "ordersTotal": 11, "currency": "USD",
+  "earningsSummary": { "held": 1710, "available": 2464, "paidOut": 1200, "lifetime": 3664 },
+  "earningsByMonth": [{ "key": "2026-03", "label": "Mar", "amount": 0 }],
+  "portfolioCounts": { "published": 9, "inReview": 0 },
+  "profileCompleteness": { "percent": 100, "completed": 18, "total": 18, "missing": [] },
+  "recentActivity": [], "profile": { "id": "cpr_ava" }
+}
+```
+
+Six `SELECT COUNT(*)`s, one `GROUP BY` over the month, the earnings summary's own
+aggregates, and one indexed read of the newest notifications — one round trip,
+cached briefly per creator. The creator id is a **parameter in the mock only**,
+because the browser has no session to resolve it from; the endpoint takes it from
+the bearer token and must ignore any id the client sends (§9.2).
 
 ---
 
