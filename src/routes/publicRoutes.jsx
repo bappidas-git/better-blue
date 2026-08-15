@@ -10,10 +10,25 @@ import { paths } from './paths'
 // exclusively (00 §2.6); `*_PATTERN` constants are the parameterised ones.
 
 const HomePage = lazy(() => import('@/features/landing/pages/HomePage'))
-// STUB (Prompt 10): registered early because the landing page links to it and a
-// marketing page must not hand a visitor a 404. Prompt 12 replaces the page
-// component; this entry stays as it is.
+
+// Public information pages (Prompt 11).
 const HowItWorksPage = lazy(() => import('@/features/staticPages/pages/HowItWorksPage'))
+const ContentPolicyPage = lazy(() => import('@/features/staticPages/pages/ContentPolicyPage'))
+const PricingPage = lazy(() => import('@/features/staticPages/pages/PricingPage'))
+const FaqPage = lazy(() => import('@/features/staticPages/pages/FaqPage'))
+const AboutPage = lazy(() => import('@/features/staticPages/pages/AboutPage'))
+const ContactPage = lazy(() => import('@/features/staticPages/pages/ContactPage'))
+const TermsPage = lazy(() => import('@/features/staticPages/pages/TermsPage'))
+const PrivacyPage = lazy(() => import('@/features/staticPages/pages/PrivacyPage'))
+
+// STUBS (Prompt 11): both are linked from the public top nav and the footer, and
+// Prompt 11 requires every nav and footer link to resolve — so they are mounted
+// now with placeholder pages rather than left to hit the 404. Prompt 12
+// (discovery) and Prompt 23 (request board) replace the page components; these
+// entries stay as they are.
+const CreatorsPage = lazy(() => import('@/features/discovery/pages/CreatorsPage'))
+const RequestBoardPage = lazy(() => import('@/features/requests/pages/RequestBoardPage'))
+
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
 const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage'))
 const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage'))
@@ -31,14 +46,26 @@ const DevDesignPage = import.meta.env.DEV
  * route of `paths.HOME`; everything else registers an absolute path.
  *
  * Waiting to be appended here:
- * - Prompt 11 — CREATORS, CREATOR_PROFILE_PATTERN, REQUESTS, REQUEST_DETAIL_PATTERN
- * - Prompt 12 — PRICING, FAQ, ABOUT, CONTACT, CONTENT_POLICY, TERMS, PRIVACY
- *   (HOW_IT_WORKS is already mounted below, as a stub)
+ * - Prompt 12 — CREATOR_PROFILE_PATTERN (CREATORS is mounted below, as a stub)
+ * - Prompt 23 — REQUEST_DETAIL_PATTERN (REQUESTS is mounted below, as a stub)
  * - Prompt 32 — REFERRAL_PATTERN
  */
 export const publicRoutes = [
   { index: true, element: <HomePage /> },
+
+  /* Information pages (Prompt 11) — every footer and nav link resolves here. */
   { path: paths.HOW_IT_WORKS, element: <HowItWorksPage /> },
+  { path: paths.PRICING, element: <PricingPage /> },
+  { path: paths.FAQ, element: <FaqPage /> },
+  { path: paths.ABOUT, element: <AboutPage /> },
+  { path: paths.CONTACT, element: <ContactPage /> },
+  { path: paths.CONTENT_POLICY, element: <ContentPolicyPage /> },
+  { path: paths.TERMS, element: <TermsPage /> },
+  { path: paths.PRIVACY, element: <PrivacyPage /> },
+
+  /* Marketplace discovery — stubs until Prompts 12 and 23. */
+  { path: paths.CREATORS, element: <CreatorsPage /> },
+  { path: paths.REQUESTS, element: <RequestBoardPage /> },
 ]
 
 /**
