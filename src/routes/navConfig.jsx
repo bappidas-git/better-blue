@@ -78,6 +78,8 @@ export const NAV_KEY = Object.freeze({
 export const BADGE_KEY = Object.freeze({
   /** Proposals waiting on the buyer's decision (Prompt 18). */
   BUYER_PROPOSALS_AWAITING: 'buyer.proposalsAwaiting',
+  /** Deliveries waiting on the buyer's review (Prompt 20). */
+  BUYER_ORDERS_AWAITING_REVIEW: 'buyer.ordersAwaitingReview',
 })
 
 /* -------------------------------------------------------------------------- */
@@ -85,9 +87,9 @@ export const BADGE_KEY = Object.freeze({
 /* -------------------------------------------------------------------------- */
 
 /**
- * Prompts append: orders (20), disputes (26), affiliate (34), notifications
- * (27). Requests, Orders, and Payments belong between Overview and Profile —
- * the account entries stay last.
+ * Prompts append: disputes (26), affiliate (34), notifications (27). Requests,
+ * Orders, and Payments belong between Overview and Profile — the account
+ * entries stay last.
  */
 export const buyerNav = Object.freeze([
   Object.freeze({
@@ -109,8 +111,18 @@ export const buyerNav = Object.freeze([
     badgeKey: BADGE_KEY.BUYER_PROPOSALS_AWAITING,
   }),
   Object.freeze({
-    // Prompt 19. Sits after Requests and before the account entries; Orders
-    // slots in above it when Prompt 20 lands.
+    // Prompt 20. Between Requests and Payments, which is the order the work
+    // actually happens in: brief → engagement → money. The badge counts
+    // deliveries waiting on a review — the one state where the marketplace is
+    // waiting on the buyer and escrow is standing still.
+    key: 'orders',
+    label: 'Orders',
+    icon: 'solar:box-linear',
+    path: paths.BUYER_ORDERS,
+    badgeKey: BADGE_KEY.BUYER_ORDERS_AWAITING_REVIEW,
+  }),
+  Object.freeze({
+    // Prompt 19. Sits after Requests and Orders, before the account entries.
     key: 'payments',
     label: 'Payments',
     icon: 'solar:wallet-money-linear',
@@ -208,9 +220,10 @@ export const NAV_BY_ROLE = Object.freeze({
  * settings, affiliate, audit — as their entries arrive.
  */
 export const MORE_NAV_KEYS = Object.freeze({
-  // Profile stays on the bar — a buyer visits it while getting set up — and
-  // Settings goes into the sheet, which leaves room for Requests and Orders
-  // when Prompts 16 and 20 land.
+  // Settings is the only key explicitly deferred; with Orders added in
+  // Prompt 20 the buyer's four thumb-reachable destinations are Overview,
+  // Requests, Orders, and Payments, and `splitBottomNav` pushes Profile into
+  // the sheet alongside Settings by overflow rather than by name.
   [ROLES.BUYER]: Object.freeze([NAV_KEY.SETTINGS]),
   [ROLES.CREATOR]: Object.freeze([]),
   [ROLES.ADMIN]: Object.freeze([]),

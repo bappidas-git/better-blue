@@ -1,14 +1,31 @@
 // Buyer ratings — `docs/api-contract.md` §6.18. One review per order, only on
 // completed orders, and never editable.
 
+import { ORDER_STATUS } from '@/constants/statuses'
 import { ID_PREFIX } from '@/utils/id'
 
+import { API_ERROR_CODE, createApiError } from './api/apiError'
 import { createCrudService } from './api/crudFactory'
 import { SORT_ORDER } from './api/listAdapter'
 import { buyerProfileService } from './buyerProfileService'
+import { creatorProfileService } from './creatorProfileService'
 import { userService } from './userService'
 
 const reviews = createCrudService('reviews', { idPrefix: ID_PREFIX.REVIEW })
+
+// A review is left *on an order*, and `orderService` is a much larger module
+// that would import back into this one for the buyer's order screens. As
+// `paymentService` does for the same reason (Prompt 17), this file keeps its
+// own read handle on the collection rather than making the services graph
+// cyclic. Nothing here ever writes an order.
+const orders = createCrudService('orders', { idPrefix: ID_PREFIX.ORDER })
+
+/** Lowest and highest star a review may carry (contract §6.18). */
+export const RATING_MIN = 1
+export const RATING_MAX = 5
+
+/** Ratings folded when recomputing a creator's average (adapter cap, §4.1). */
+const AGGREGATE_LIMIT = 100
 
 /** The rating scale, high to low — the order a breakdown's bars read in. */
 export const RATING_SCALE = Object.freeze([5, 4, 3, 2, 1])
@@ -188,10 +205,131 @@ export const reviewService = Object.freeze({
    */
   create: (payload) => reviews.create(payload),
 
-  // —— workflow operations (added by later prompts) ——
-  // submitReview — Prompt 21 (reviews): guards "completed order, not yet
-  // reviewed", then recomputes the creator's `ratingAvg`/`ratingCount`, which
-  // nothing recalculates server-side in the mock era (contract §6.18).
+  /* —— workflow operations —————————————————————————————————————————————— */
+
+  /**
+   * **Leaves a review on a completed order** (contract §6.18).
+   *
+   * Three rules, all of them enforced here because JSON Server enforces none of
+   * them: one review per order, only on a `completed` order, and only by the
+   * buyer who paid for it. Reviews are never editable — a public rating that
+   * could be revised after the fact is not a rating — so the guard against a
+   * second one is the only thing standing between a creator's profile and a
+   * buyer changing their mind.
+   *
+   * `buyerId`, `creatorId`, and `requestId` are **derived from the order**, not
+   * taken from the caller (§9.2).
+   *
+   * MOCK-AGGREGATE: nothing recalculates `creatorProfiles.ratingAvg` /
+   * `ratingCount`, so this reads the creator's ratings back, recomputes the
+   * average to one decimal, and `PATCH`es the storefront. It is **not atomic
+   * with the review**: a failure there leaves a real review and a stale average,
+   * which is why it never throws — the rating is the record, the aggregate is a
+   * cache of it, and the next review repairs it.
+   *
+   * @param {string} orderId `ord_…`
+   * @param {object} options
+   * @param {number} options.rating 1–5, whole stars
+   * @param {string} options.comment what the buyer wants other businesses to know
+   * @param {string} [options.actorId] the acting buyer — rejected unless they
+   *   own the order
+   * @returns {Promise<object>} the created review
+   * @throws {ApiError} `conflict` when the order is not completed or already
+   *   carries a review · `forbidden` · `validation_failed` on the rating ·
+   *   `not_found`
+   *
+   * **Future endpoint:** `POST /reviews` → `{ review }`, with
+   * `reviews.order_id UNIQUE` making a second review structurally impossible
+   * and the aggregate recomputed in the same transaction.
+   */
+  async submitReview(orderId, { rating, comment, actorId } = {}) {
+    const order = await orders.getById(orderId)
+
+    if (actorId && order.buyerId !== actorId) {
+      throw createApiError(API_ERROR_CODE.FORBIDDEN, 'This order belongs to another account.')
+    }
+    if (order.status !== ORDER_STATUS.COMPLETED) {
+      throw createApiError(
+        API_ERROR_CODE.CONFLICT,
+        'You can review an engagement once it is complete.',
+        { from: order.status, expected: ORDER_STATUS.COMPLETED },
+        409
+      )
+    }
+
+    const stars = Math.round(Number(rating))
+    if (!Number.isFinite(stars) || stars < RATING_MIN || stars > RATING_MAX) {
+      throw createApiError(
+        API_ERROR_CODE.VALIDATION_FAILED,
+        'Choose a rating between one and five stars.',
+        { rating: `Choose between ${RATING_MIN} and ${RATING_MAX} stars.` },
+        422
+      )
+    }
+
+    const existing = await reviewService.getByOrderId(orderId)
+    if (existing) {
+      throw createApiError(
+        API_ERROR_CODE.CONFLICT,
+        'You have already reviewed this order, and reviews cannot be changed.',
+        { reviewId: existing.id },
+        409
+      )
+    }
+
+    const review = await reviews.create({
+      orderId,
+      requestId: order.requestId ?? null,
+      buyerId: order.buyerId,
+      creatorId: order.creatorId,
+      rating: stars,
+      comment,
+    })
+
+    await reviewService.recomputeCreatorAggregates(order.creatorId)
+
+    return review
+  },
+
+  /**
+   * Recomputes and stores a creator's `ratingAvg` / `ratingCount`.
+   *
+   * MOCK-AGGREGATE (contract §6.18): derived columns with nothing deriving them.
+   * Folded from one capped page of the creator's ratings and `PATCH`ed onto the
+   * storefront, which is what makes a new review show up on the public profile.
+   * Never throws — see {@link submitReview}.
+   *
+   * @param {string} creatorId `usr_…`
+   * @returns {Promise<{ratingAvg: number, ratingCount: number}|null>} `null` when
+   *   the recompute could not be completed
+   */
+  async recomputeCreatorAggregates(creatorId) {
+    if (!creatorId) return null
+
+    try {
+      const [{ items, total }, profile] = await Promise.all([
+        reviews.list({ page: 1, limit: AGGREGATE_LIMIT, filters: { creatorId } }),
+        creatorProfileService.getByUserId(creatorId),
+      ])
+
+      const scores = items
+        .map((entry) => Number(entry.rating))
+        .filter((value) => Number.isFinite(value))
+
+      const ratingAvg =
+        scores.length > 0
+          ? Math.round((scores.reduce((sum, value) => sum + value, 0) / scores.length) * 10) / 10
+          : 0
+
+      // `total` rather than `scores.length`: the count is exact even when the
+      // average is folded from the newest page only.
+      const aggregates = { ratingAvg, ratingCount: total }
+      await creatorProfileService.update(profile.id, aggregates)
+      return aggregates
+    } catch {
+      return null
+    }
+  },
 })
 
 export default reviewService

@@ -278,6 +278,26 @@ const AWARD_PROPOSALS = {
       'One prep-led, one plating-led, one dining room — cut to kitchen sound rather than a licensed track, exactly as your brief asks. I will caption each dish name on screen and keep every reel under 25 seconds.',
     alsoDeclined: ['mateo'],
   },
+  awarded_verde_supper: {
+    creator: 'amara',
+    price: 1180,
+    deliveryDays: 12,
+    revisions: 2,
+    awardDaysAgo: 11,
+    message:
+      'Supper clubs live or die on whether the room still feels like the room once a camera is in it, so I work handheld on fast glass and never bring a light to the floor. You would get the film and a matched stills set from the same evening, graded together.',
+    alsoDeclined: ['isla'],
+  },
+  awarded_verde_market: {
+    creator: 'ava',
+    price: 560,
+    deliveryDays: 7,
+    revisions: 1,
+    awardDaysAgo: 1,
+    message:
+      'I shoot market mornings for two other kitchens, so I know how to work a busy stall without holding anyone up. Produce, hands, and crates in early light, plus grower portraits taken with permission on the day.',
+    alsoDeclined: ['chloe'],
+  },
   awarded_urbannest_shelf: {
     creator: 'yuki',
     price: 760,

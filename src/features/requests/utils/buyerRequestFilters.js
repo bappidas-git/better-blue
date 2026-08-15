@@ -67,13 +67,20 @@ export function tabByKey(key) {
   return REQUEST_TABS.find((tab) => tab.key === key) ?? REQUEST_TABS[0]
 }
 
-/** The `status` filter a tab sends, or `undefined` for "All". */
+/**
+ * The `status` filter a tab sends, or `undefined` for "All".
+ *
+ * Prompt 20 fix: the frozen array is returned **as-is** rather than copied. The
+ * result goes straight into a `useApiQuery` dependency array, so the copy gave
+ * the multi-status "Closed" tab a fresh reference on every render and refetched
+ * in a loop. Frozen at module scope, so sharing the reference is safe.
+ */
 export function statusFilterForTab(key) {
   const statuses = tabByKey(key).statuses
   if (!statuses) return undefined
   // A single-status tab sends a scalar so the query string stays readable;
   // several are OR'd by the adapter (contract §4.1).
-  return statuses.length === 1 ? statuses[0] : [...statuses]
+  return statuses.length === 1 ? statuses[0] : statuses
 }
 
 /**

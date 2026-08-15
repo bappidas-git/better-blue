@@ -408,6 +408,60 @@ const SCENARIO_SOURCE = [
     createdDaysAgo: 24,
   },
   {
+    // Prompt 20: the demo buyer's **delivered** order — the one screen the
+    // buyer order workspace exists for. A bundle brief so the delivery carries
+    // both a film and a still, which is what exercises the video tile and the
+    // lightbox's two modes side by side (§9).
+    key: 'awarded_verde_supper',
+    buyer: 'verde',
+    status: REQUEST_STATUS.AWARDED,
+    category: CATEGORY_ID.FOOD_BEVERAGE,
+    contentType: BUNDLE,
+    title: 'Harvest supper club: a short film and a stills set',
+    description:
+      'One evening of our harvest supper club, covered as a bundle: a short film for the events page and a small stills set for the newsletter. The room is candlelit and we would rather keep it that way than light it for camera.',
+    quantity: 8,
+    videoDurationSec: 60,
+    orientation: ORIENTATION.ANY,
+    usageRights: USAGE_RIGHTS.FULL_COMMERCIAL,
+    brandGuidelines:
+      'Warm, low-light, unhurried. The room as guests actually experience it — no additional lighting rigs on the floor.',
+    dos: 'Shoot the pass, the room, and two or three guest moments. Deliver the film and the stills matched in colour.',
+    donts: 'No flash on the floor, no guest faces without a signed release, no staged plating.',
+    referenceUrls: ['https://verdekitchen.test/press/harvest-supper-club'],
+    budgetType: BUDGET_TYPE.FIXED,
+    budgetMin: 1180,
+    budgetMax: 1180,
+    deadlineInDays: 2,
+    createdDaysAgo: 14,
+  },
+  {
+    // Prompt 20: the demo buyer's **unpaid** order, so the "Complete payment"
+    // path off the orders list has something to point at on the account people
+    // actually sign in as (§9).
+    key: 'awarded_verde_market',
+    buyer: 'verde',
+    status: REQUEST_STATUS.AWARDED,
+    category: CATEGORY_ID.FOOD_BEVERAGE,
+    contentType: PHOTO,
+    title: 'Supplier market photography for the new sourcing page',
+    description:
+      'A morning at the growers market with our head chef, photographed for the sourcing page we are adding to the site. Produce, hands, crates, and two or three portraits of the growers we buy from.',
+    quantity: 14,
+    orientation: ORIENTATION.ANY,
+    usageRights: USAGE_RIGHTS.WEBSITE,
+    brandGuidelines:
+      'Early light, muted greens, visible texture. Documentary rather than styled.',
+    dos: 'Shoot at the stalls rather than setting up a table. Include wide context frames as well as detail.',
+    donts: 'No other traders’ branding in the foreground, no portraits without permission.',
+    referenceUrls: [],
+    budgetType: BUDGET_TYPE.FIXED,
+    budgetMin: 560,
+    budgetMax: 560,
+    deadlineInDays: 14,
+    createdDaysAgo: 6,
+  },
+  {
     key: 'awarded_urbannest_shelf',
     buyer: 'urbannest',
     status: REQUEST_STATUS.AWARDED,

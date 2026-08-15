@@ -37,7 +37,7 @@ export { requestService } from './requestService'
 export { proposalService } from './proposalService'
 
 /* Orders and delivery ----------------------------------------------------- */
-export { orderService } from './orderService'
+export { orderService, ORDER_EVENT_TYPE } from './orderService'
 export { deliveryService } from './deliveryService'
 export { revisionService } from './revisionService'
 
@@ -52,7 +52,7 @@ export { payoutService } from './payoutService'
 export { disputeService } from './disputeService'
 export { moderationService, OPEN_QUEUE_STATUSES } from './moderationService'
 export { reportService } from './reportService'
-export { reviewService, RATING_SCALE } from './reviewService'
+export { reviewService, RATING_SCALE, RATING_MIN, RATING_MAX } from './reviewService'
 
 /* Dashboards -------------------------------------------------------------- */
 export {

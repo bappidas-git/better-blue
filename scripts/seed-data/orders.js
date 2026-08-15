@@ -101,6 +101,34 @@ const SCENARIO_ORDERS = [
     ],
   },
   {
+    // Prompt 20: the delivered order the demo buyer reviews. A bundle brief, so
+    // `buildFiles` mixes a film with a still — the two tile treatments the
+    // deliverables grid has to get right.
+    requestKey: 'awarded_verde_supper',
+    buyer: 'verde',
+    creator: 'amara',
+    status: ORDER_STATUS.DELIVERED,
+    fundedAfterHours: 4,
+    deliveries: [
+      {
+        submittedDaysAgo: 1,
+        status: DELIVERY_STATUS.SUBMITTED,
+        fileCount: 2,
+        message:
+          'The supper club film and the first still from the same evening. Shot entirely on available candlelight as agreed — nothing was added to the floor. Releases are signed for both guests who appear in the film.',
+      },
+    ],
+  },
+  {
+    // Prompt 20: the demo buyer's unpaid order (§9).
+    requestKey: 'awarded_verde_market',
+    buyer: 'verde',
+    creator: 'ava',
+    status: ORDER_STATUS.PENDING_PAYMENT,
+    fundedAfterHours: null,
+    deliveries: [],
+  },
+  {
     requestKey: 'awarded_verde_reel',
     buyer: 'verde',
     creator: 'ava',
@@ -306,19 +334,32 @@ function slugify(value) {
     .join('-')
 }
 
+/**
+ * The media type of the `index`-th file on a delivery.
+ *
+ * A `bundle` brief buys photo **and** video under one order, so its delivery
+ * leads with the film and follows with the stills — which is also what gives the
+ * buyer's deliverables grid one of each tile treatment to render (Prompt 20 §9).
+ * Single-type briefs deliver only their own type.
+ */
+function mediaTypeFor(order, index) {
+  if (order.contentType === CONTENT_TYPE.VIDEO) return MEDIA_TYPE.VIDEO
+  if (order.contentType === CONTENT_TYPE.BUNDLE && index === 0) return MEDIA_TYPE.VIDEO
+  return MEDIA_TYPE.IMAGE
+}
+
 /** Deterministic deliverable file metadata (mock uploads, 00 §15). */
 function buildFiles({ order, count, version }) {
-  const isVideo = order.contentType === CONTENT_TYPE.VIDEO
   const slug = slugify(order.title)
-  const extension = isVideo ? 'mp4' : 'jpg'
-  const mediaType = isVideo ? MEDIA_TYPE.VIDEO : MEDIA_TYPE.IMAGE
 
   return Array.from({ length: count }, (_, index) => {
     fileSequence += 1
     const id = seqId('dfl', fileSequence)
+    const mediaType = mediaTypeFor(order, index)
+    const isVideo = mediaType === MEDIA_TYPE.VIDEO
     return {
       id,
-      name: `${slug}-v${version}-${String(index + 1).padStart(2, '0')}.${extension}`,
+      name: `${slug}-v${version}-${String(index + 1).padStart(2, '0')}.${isVideo ? 'mp4' : 'jpg'}`,
       url: imageUrl(id, IMAGE_SIZES.hero.width, IMAGE_SIZES.hero.height),
       thumbnailUrl: imageUrl(
         id,

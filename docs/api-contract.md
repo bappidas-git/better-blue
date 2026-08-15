@@ -2845,8 +2845,9 @@ are the reason these belong on the server:
 | 3 | `releasePayment` | `paymentService` | 9+ | `POST /orders/:id/release` |
 | 4 | `refundPayment` | `paymentService` | 7 | `POST /payments/:id/refund` |
 | 5 | `submitDelivery` | `deliveryService` | 6+ | `POST /orders/:id/deliveries` |
-| 6 | `acceptDelivery` | `deliveryService` | 3 + release | `POST /deliveries/:id/accept` |
-| 7 | `requestRevision` | `deliveryService` | 6 | `POST /deliveries/:id/revisions` |
+| 6 | `acceptDelivery` | `deliveryService` | 3 + complete | `POST /deliveries/:id/accept` |
+| 6a | `completeOrder` | `orderService` | 3 + release | *(inside operation 6)* |
+| 7 | `requestRevision` | `revisionService` | 6 | `POST /deliveries/:id/revisions` |
 | 8 | `resolveDispute` | `disputeService` | 8+ | `POST /disputes/:id/resolve` |
 | 9 | `enrollAffiliate` | `affiliateService` | 3 | `POST /affiliate/enroll` |
 | 10 | `processConversion` | `affiliateService` | 9 | internal (order-completed handler) |
@@ -2855,6 +2856,16 @@ are the reason these belong on the server:
 | 13 | `getStats` | `landingService` | 4 | `GET /stats/landing` |
 | 14 | `getOverview` | `buyerDashboardService` | 8 | `GET /buyer/overview` |
 | 15 | `cancelOrder` | `orderService` | 3 + refund | `POST /orders/:id/cancel` |
+| 16 | `submitReview` | `reviewService` | 5 | `POST /reviews` |
+| 17 | `getOrderTimeline` | `orderService` | 5 | `GET /orders/:id/timeline` |
+
+Operations 16 and 17 were added by Prompt 20 (the buyer's order workspace).
+Operation 7 lives in `revisionService` rather than `deliveryService`: it *creates
+a revision* and moves the delivery and the order as side effects, so it belongs
+with the record it writes. Operation 6a was split out of operation 6 for the same
+reason in reverse — completing an order is reached from two places (a buyer
+accepting, and Trust & Safety resolving a dispute in the creator's favour), and
+only the first of those goes through a delivery.
 
 ### 7.2 The sequences
 
@@ -3046,10 +3057,15 @@ The buyer accepts. This is what completes an order and pays a creator.
 
 **Mock:**
 
-1. `GET /deliveries/:id`
+1. `GET /deliveries/:id` and `GET /orders/:orderId` — guard the version is
+   `submitted` and the order is `delivered`
 2. `PATCH /deliveries/:id` → `{ status: 'accepted', respondedAt }`
-3. `releasePayment(orderId)` — the entire operation 3 sequence
+3. `completeOrder(orderId)` — operation 6a below
 4. `POST /notifications` — `delivery_accepted` to the creator
+
+Step 2 runs before step 3 deliberately: a version marked accepted with the money
+still held is recoverable by hand, whereas money released against a version
+nobody accepted is not.
 
 **Laravel — `POST /deliveries/:id/accept` → `{ delivery, order, payment }`**
 
@@ -3057,8 +3073,44 @@ Accepting and releasing are the same transaction. There is no window in which a
 delivery is accepted but the creator has not been paid.
 
 Auto-acceptance after `platformSettings.general.autoAcceptDays` (5) is a
-**scheduled job** server-side. The mock era can only approximate it on read,
-which is why the prototype does not implement it.
+**scheduled job** server-side. Prompt 20's UI therefore *displays* the date the
+job would fire (computed from `orders.deliveredAt`) and says so in words; nothing
+in the mock stack runs on a timer.
+
+Errors: `403` (not the order's buyer) · `404` · `409` (version already responded
+to; order not `delivered`).
+
+---
+
+#### 6a. `completeOrder(orderId, { release = true })`
+
+Closes an order and pays the creator. Reached from operation 6 (a buyer
+accepting) and from operation 8 (a dispute resolved in the creator's favour,
+which settles the money itself and so passes `release: false`).
+
+**Mock:**
+
+1. `GET /orders/:id` — validate the transition to `completed` **before** any
+   money moves
+2. `releasePayment(orderId)` — the entire operation 3 sequence, unless
+   `release: false`
+3. `PATCH /orders/:id` → `{ status: 'completed', completedAt }`
+4. `PATCH /contentRequests/:requestId` → `{ status: 'completed' }` when the brief
+   is still `awarded` (best effort)
+5. `GET /orders?creatorId=…&status=completed` +
+   `PATCH /creatorProfiles/:id` → `{ completedOrders }` (best effort)
+6. `POST /notifications` — `order_completed` to the creator
+
+Steps 4 and 5 are **best effort**: a settled payment must not be undone by a
+stale brief or a derived counter. `completedOrders` is a MOCK-AGGREGATE in the
+sense of §6.4 — nothing derives it server-side, so it is recomputed here exactly
+as `seed-db.js` recomputes it.
+
+**Laravel — folded into `POST /deliveries/:id/accept` and
+`POST /disputes/:id/resolve`.** All six steps are one transaction, and
+`completedOrders` becomes `withCount('completedOrders')` rather than a column.
+
+Errors: `409` (order cannot reach `completed`; no escrow held).
 
 ---
 
@@ -3069,12 +3121,17 @@ The buyer asks for changes.
 **Mock:**
 
 1. `GET /deliveries/:id` and `GET /orders/:orderId`
-2. Guard `revisionsUsed < revisionsIncluded` **client-side**
+2. Guard the order is `delivered` and `revisionsUsed < revisionsIncluded`
+   **client-side**
 3. `POST /revisions` — `orderId`, `deliveryId`, `requestedById`, `notes`
 4. `PATCH /deliveries/:id` → `{ status: 'revision_requested', respondedAt }`
 5. `PATCH /orders/:orderId` →
    `{ status: 'revision_requested', revisionsUsed: n + 1 }`
 6. `POST /notifications` — `revision_requested` to the creator
+
+Returns `{ revision, delivery, order }`. The guard failure carries
+`details: { revisionsUsed, revisionsIncluded }` so the UI can explain the limit
+and point at a dispute instead of merely refusing.
 
 **Laravel — `POST /deliveries/:id/revisions` → `{ revision, delivery, order }`**
 
@@ -3341,6 +3398,75 @@ while BetterBlue still holds the money.
 The refund and the cancellation are one transaction, and the role check is
 server-side: a party cancelling a funded order is `403`, not a UI affordance
 that happens to be hidden.
+
+---
+
+#### 16. `submitReview(orderId, { rating, comment })`
+
+The buyer rates a finished engagement. Added by Prompt 20.
+
+**Mock:**
+
+1. `GET /orders/:id` — guard `status === 'completed'` and the caller owns it
+2. `GET /reviews?orderId=:id&_limit=1` — guard "not already reviewed"
+3. `POST /reviews` — `buyerId`, `creatorId`, and `requestId` derived from the
+   order, never from the caller (§9.2)
+4. `GET /reviews?creatorId=…&_limit=100` — fold the ratings
+5. `PATCH /creatorProfiles/:id` → `{ ratingAvg, ratingCount }`
+
+Steps 4–5 are the MOCK-AGGREGATE of §6.18 and are **best effort**: the rating is
+the record and the aggregate is a cache of it, so a failure there leaves a real
+review and a stale average that the next review repairs. `ratingCount` uses the
+list's `total` (exact) while `ratingAvg` is folded from the newest capped page.
+
+**Laravel — `POST /reviews` → `{ review }`.** `reviews.order_id UNIQUE` makes a
+second review structurally impossible, and the aggregate is recomputed in the
+same transaction (or by a queued listener).
+
+Errors: `403` (not the order's buyer) · `404` · `409` (order not `completed`;
+already reviewed) · `422` (rating outside 1–5).
+
+---
+
+#### 17. `getOrderTimeline(orderId)`
+
+The history of one order, oldest first — the **single source** behind the
+buyer's, the creator's, and the admin's timeline. Added by Prompt 20.
+
+**Mock:**
+
+1. `GET /orders/:id`
+2. `GET /payments?orderId=…`, `GET /deliveries?orderId=…`,
+   `GET /revisions?orderId=…`, `GET /disputes?orderId=…` — in parallel
+
+There is no `events` collection and there does not need to be: every moment
+worth showing already carries a timestamp on the record it belongs to, and
+anything that has not happened yet has a `null` timestamp and produces no entry.
+Each related read falls back to empty on failure — a missing dispute row must not
+cost the reader the delivery history — while a missing order still `404`s.
+
+**Response** — an array sorted ascending by `at`:
+
+```json
+[
+  {
+    "id": "payment_held:2026-08-03T19:20:00.000Z",
+    "type": "payment_held",
+    "title": "Payment held in escrow",
+    "description": "$1,180.00 was taken and held by BetterBlue. Work could start.",
+    "at": "2026-08-03T19:20:00.000Z",
+    "tone": "success",
+    "icon": "solar:lock-keyhole-linear"
+  }
+]
+```
+
+`type` values come from `ORDER_EVENT_TYPE` in `src/services/orderService.js`;
+`tone` is a `STATUS_TONES` value, so the entries drop straight into
+`TimelineList`.
+
+**Laravel — `GET /orders/:id/timeline`** composed server-side from the same rows,
+or from a real `order_events` table written by the workflow handlers.
 
 ---
 

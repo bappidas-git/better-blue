@@ -10,14 +10,15 @@ import { paths } from './paths'
 // the request wizard; Prompt 18 added the request list, the request detail
 // screen, and the checkout stub. Prompt 19 replaced that stub with the real
 // checkout, added Payments, and put a temporary page behind the order-detail
-// pattern that checkout now sends people to. Prompts append `{ path, element }`
-// entries here using `React.lazy` pages and the absolute constants from
-// ./paths.js — for example:
+// pattern that checkout now sends people to. Prompt 20 replaced *that* stub
+// with the order workspace and added the orders list beside it. Prompts append
+// `{ path, element }` entries here using `React.lazy` pages and the absolute
+// constants from ./paths.js — for example:
 //
-//   const BuyerOrdersPage = lazy(() => import('@/features/orders/pages/BuyerOrdersPage'))
-//   export const buyerRoutes = [{ path: paths.BUYER_ORDERS, element: <BuyerOrdersPage /> }]
+//   const BuyerDisputesPage = lazy(() => import('@/features/disputes/pages/BuyerDisputesPage'))
+//   export const buyerRoutes = [{ path: paths.BUYER_DISPUTES, element: <BuyerDisputesPage /> }]
 //
-// Paths still reserved in ./paths.js: BUYER_ORDERS, BUYER_DISPUTES,
+// Paths still reserved in ./paths.js: BUYER_DISPUTES,
 // BUYER_DISPUTE_DETAIL_PATTERN, BUYER_AFFILIATE, BUYER_NOTIFICATIONS.
 
 const BuyerOverviewPage = lazy(() => import('@/features/dashboard/pages/BuyerOverviewPage'))
@@ -30,11 +31,8 @@ const BuyerRequestDetailPage = lazy(
 const RequestWizardPage = lazy(() => import('@/features/requests/pages/RequestWizardPage'))
 const CheckoutPage = lazy(() => import('@/features/checkout/pages/CheckoutPage'))
 const BuyerPaymentsPage = lazy(() => import('@/features/payments/pages/BuyerPaymentsPage'))
-// TEMP (Prompt 19): paying an order lands on `/buyer/orders/:orderId`, and both
-// the receipt and the "already paid" guard link there — so the route has to
-// render something honest before Prompt 20 builds the real workspace. Prompt 20
-// replaces the page behind this entry; the entry stays.
-const OrderDetailStubPage = lazy(() => import('@/features/orders/pages/OrderDetailStubPage'))
+const BuyerOrdersPage = lazy(() => import('@/features/orders/pages/BuyerOrdersPage'))
+const BuyerOrderDetailPage = lazy(() => import('@/features/orders/pages/BuyerOrderDetailPage'))
 const NotFoundPage = lazy(() => import('@/features/staticPages/pages/NotFoundPage'))
 
 export const buyerRoutes = [
@@ -45,7 +43,8 @@ export const buyerRoutes = [
   { path: paths.BUYER_REQUEST_NEW, element: <RequestWizardPage /> },
   { path: paths.BUYER_REQUEST_DETAIL_PATTERN, element: <BuyerRequestDetailPage /> },
   { path: paths.BUYER_CHECKOUT_PATTERN, element: <CheckoutPage /> },
-  { path: paths.BUYER_ORDER_DETAIL_PATTERN, element: <OrderDetailStubPage /> },
+  { path: paths.BUYER_ORDERS, element: <BuyerOrdersPage /> },
+  { path: paths.BUYER_ORDER_DETAIL_PATTERN, element: <BuyerOrderDetailPage /> },
   { path: paths.BUYER_PAYMENTS, element: <BuyerPaymentsPage /> },
   { path: paths.BUYER_PROFILE, element: <BuyerProfilePage /> },
   { path: paths.BUYER_SETTINGS, element: <BuyerSettingsPage /> },
