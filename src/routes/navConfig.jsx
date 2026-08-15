@@ -74,9 +74,9 @@ export const NAV_KEY = Object.freeze({
 /* -------------------------------------------------------------------------- */
 
 /**
- * Prompts append: requests (16), orders (20), payments (19), disputes (26),
- * affiliate (34), notifications (27). Requests and Orders belong between
- * Overview and Profile when they land — the account entries stay last.
+ * Prompts append: orders (20), payments (19), disputes (26), affiliate (34),
+ * notifications (27). Requests and Orders belong between Overview and Profile
+ * when they land — the account entries stay last.
  */
 export const buyerNav = Object.freeze([
   Object.freeze({
@@ -85,6 +85,17 @@ export const buyerNav = Object.freeze([
     icon: 'solar:widget-5-linear',
     path: paths.BUYER,
     exact: true,
+  }),
+  Object.freeze({
+    // Prompt 16 built the wizard but not the list, and a nav entry pointing at
+    // an unbuilt path lands on the dashboard 404 — so the destination is the
+    // one screen that exists.
+    // TODO(Prompt 18): re-point `path` at `paths.BUYER_REQUESTS` and relabel to
+    // "Requests"; the key stays `requests` so nothing else has to move.
+    key: 'requests',
+    label: 'New request',
+    icon: 'solar:clipboard-list-linear',
+    path: paths.BUYER_REQUEST_NEW,
   }),
   Object.freeze({
     key: NAV_KEY.PROFILE,

@@ -24,6 +24,8 @@ export const UPLOAD_PURPOSE = Object.freeze({
   DISPUTE_EVIDENCE: 'dispute_evidence',
   /** A company logo or an account avatar — small, square-ish, images only. */
   PROFILE_IMAGE: 'profile_image',
+  /** Reference imagery a buyer attaches to a content request (Prompt 16). */
+  REQUEST_REFERENCE: 'request_reference',
 })
 
 /** `mediaType` values the contract defines for a file object. */
@@ -59,6 +61,14 @@ export const UPLOAD_RULES = Object.freeze({
     // A logo renders in a square tile, so the stand-in image is square too —
     // a 16:9 placeholder would letterbox in every avatar on the platform.
     renderSize: Object.freeze({ width: 400, height: 400 }),
+  }),
+  // A mood board, not a deliverable: buyers attach a handful of examples to
+  // show the look they are after. Images only — a brief that needs a video
+  // reference links it in the description instead.
+  [UPLOAD_PURPOSE.REQUEST_REFERENCE]: Object.freeze({
+    idPrefix: ID_PREFIX.REQUEST_REFERENCE,
+    maxSizeMb: 10,
+    accept: Object.freeze(['image/jpeg', 'image/png', 'image/webp']),
   }),
 })
 

@@ -96,6 +96,9 @@ account and a profile:
 
 - **`portfolioItems.creatorId` → `creatorProfiles.id`.** Portfolio work belongs
   to the marketplace profile that displays it.
+- **`contentRequests.invitedCreatorId` → `creatorProfiles.id`** (Prompt 16).
+  It is copied from the storefront the buyer clicked "Start a request" on, so
+  it names the profile, not the account. See §5 `contentRequests`.
 - **Every other `creatorId` and every `buyerId` → `users.id`** (proposals,
   orders, reviews, payouts, disputes, moderation reviews, affiliate records).
   Those flows involve accounts: authentication, notifications, money, and
@@ -140,16 +143,17 @@ and `orders.deliveryDueAt` may be in the future.
 
 ### Enum-likes not yet in `src/constants`
 
-Prompt 05 may not modify `src/constants` (§17), so five small string sets are
+Prompt 05 may not modify `src/constants` (§17), so a few small string sets are
 owned by `scripts/seed-utils.js` and documented here. A later prompt that needs
-them in the app should promote them into `src/constants` and re-point the seed:
+them in the app should promote them into `src/constants` and re-point the seed —
+which is what Prompt 16 did with `ORIENTATION` and `BUDGET_TYPE`: both now live
+in `src/constants/statuses.js` (with `STATUS_META` entries) and `seed-utils.js`
+re-exports them, so the seed's imports did not change. What is left:
 
 | Constant | Values | Used by |
 |---|---|---|
 | `MEDIA_TYPE` | `image`, `video` | `portfolioItems.mediaType`, delivery files, dispute evidence |
 | `VISIBILITY` | `public`, `unlisted` | `portfolioItems.visibility` |
-| `ORIENTATION` | `portrait`, `landscape`, `square`, `any` | `contentRequests.orientation` |
-| `BUDGET_TYPE` | `fixed`, `range` | `contentRequests.budgetType` |
 | `REPORT_REASON` | `prohibited_content`, `intellectual_property`, `misleading_claims`, `spam`, `other` | `reports.reason` |
 
 `MODERATION_SUBJECT`, `REPORT_SUBJECT`, and `ENTITY_TYPE` (the polymorphic
@@ -346,17 +350,27 @@ history (see §6).
 | `budgetType` | enum | `BUDGET_TYPE`; `fixed` sets `budgetMin === budgetMax` |
 | `budgetMin`, `budgetMax` | decimal | + `currency` |
 | `deadline` | datetime | **may be in the future** |
+| `invitedCreatorId` | FK? → `creatorProfiles.id` | optional; see below |
 | `status` | enum | `REQUEST_STATUS` |
 | `proposalsCount` | int | **derived** |
 | `awardedProposalId` | FK? → `proposals.id` | **derived**; `null` until awarded |
 | `createdAt` | datetime | |
 | `publishedAt` | datetime | `null` while a draft |
 
+`invitedCreatorId` was **added in Prompt 16** (request wizard). It records the
+creator a buyer arrived from — the "Start a request" CTA on a public profile
+carries `?creator=cpr_…` into the form — and is absent on every seeded brief.
+Note it points at `creatorProfiles.id`, not `users.id`, because it comes from
+the storefront being viewed; that makes it the second exception to the rule
+above, alongside `portfolioItems.creatorId`. It is a **hint, not an award**: the
+brief still goes to the whole marketplace, and Prompt 23 uses it only to badge
+that creator's proposal as "Invited".
+
 **MySQL** `content_requests` — `reference_urls` becomes
 `content_request_references`; index `(status, published_at DESC)` for the board
-and `(buyer_id, status)` for "my requests". `awarded_proposal_id` is a nullable
-FK; add it after `proposals` exists to avoid a circular constraint at migration
-time.
+and `(buyer_id, status)` for "my requests". `awarded_proposal_id` and
+`invited_creator_id` are nullable FKs; add `awarded_proposal_id` after
+`proposals` exists to avoid a circular constraint at migration time.
 
 ### `proposals` — 91
 
