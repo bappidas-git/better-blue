@@ -1,73 +1,61 @@
 import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import Container from '@mui/material/Container'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import { Link as RouterLink } from 'react-router-dom'
 
 import useDocumentTitle from '@/hooks/useDocumentTitle'
-import { paths } from '@/routes/paths'
+import useApiQuery from '@/hooks/useApiQuery'
+import { categoryService } from '@/services'
 
-// TEMP: replaced in Prompt 10 by the real landing page (GSAP hero, scroll
-// scenes, category rails, social proof). This placeholder exists so the router
-// has a home route to mount and the shell can be verified end to end.
+import AudiencePanels from '../components/AudiencePanels'
+import CategoryGrid from '../components/CategoryGrid'
+import FeaturedCreators from '../components/FeaturedCreators'
+import FinalCta from '../components/FinalCta'
+import Hero from '../components/Hero'
+import HowItWorksSection from '../components/HowItWorksSection'
+import StatsBand from '../components/StatsBand'
+import Testimonials from '../components/Testimonials'
+import TrustBand from '../components/TrustBand'
+import useLandingAnimations from '../hooks/useLandingAnimations'
+
+// The landing page: nine bands, composed here and implemented one file each.
+//
+// Two things this file owns, and nothing else does:
+//
+// - **The GSAP root.** `useLandingAnimations` binds every marketing scene on
+//   the page to this element and reverts them on unmount. The whole layer is
+//   inside the lazily-loaded landing chunk, so GSAP never reaches the app
+//   bundle (00 §7).
+// - **The categories request.** The category grid renders the taxonomy and the
+//   featured shelf labels its chips from it, so it is fetched once here and
+//   passed to both rather than requested by each of them.
+//
+// Everything else fetches its own data and fails on its own: a section that
+// cannot load renders a quiet fallback, and the page around it is unaffected.
 
 export default function HomePage() {
-  useDocumentTitle('Commercial content marketplace')
+  useDocumentTitle('Commercial content, made by creators')
+
+  const rootRef = useLandingAnimations()
+
+  const {
+    data: categories,
+    isLoading: categoriesLoading,
+    error: categoriesError,
+  } = useApiQuery(() => categoryService.listActive(), [])
 
   return (
-    <Container maxWidth="md" sx={{ px: { xs: 2, md: 4 }, py: { xs: 8, md: 14 } }}>
-      <Stack spacing={3} alignItems={{ xs: 'flex-start', md: 'center' }}>
-        <Typography
-          variant="overline"
-          component="p"
-          sx={{ color: 'primary.main', fontWeight: 700 }}
-        >
-          Professional UGC, on demand
-        </Typography>
-
-        <Typography
-          variant="h1"
-          component="h1"
-          sx={{ maxWidth: '18ch', textAlign: { xs: 'left', md: 'center' } }}
-        >
-          Commercial content, made by creators your brand can trust
-        </Typography>
-
-        <Typography
-          variant="body1"
-          color="text.secondary"
-          sx={{ maxWidth: '60ch', textAlign: { xs: 'left', md: 'center' } }}
-        >
-          Post a brief, compare proposals from vetted creators, and pay only when the
-          photos and videos you commissioned are delivered and approved.
-        </Typography>
-
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1.5}
-          sx={{ pt: 1, width: { xs: '100%', sm: 'auto' } }}
-        >
-          <Button
-            component={RouterLink}
-            to={paths.CREATORS}
-            variant="gradient"
-            size="large"
-            sx={{ borderRadius: 999 }}
-          >
-            Find creators
-          </Button>
-          <Button component={RouterLink} to={paths.REQUESTS} variant="outlined" size="large">
-            Browse open requests
-          </Button>
-        </Stack>
-
-        <Box sx={{ pt: 2 }}>
-          <Typography variant="caption" color="text.secondary">
-            Placeholder landing page — the full experience arrives in Prompt 10.
-          </Typography>
-        </Box>
-      </Stack>
-    </Container>
+    <Box ref={rootRef}>
+      <Hero />
+      <TrustBand />
+      <HowItWorksSection />
+      <CategoryGrid
+        categories={categories}
+        isLoading={categoriesLoading}
+        error={categoriesError}
+      />
+      <FeaturedCreators categories={categories} />
+      <AudiencePanels />
+      <StatsBand />
+      <Testimonials />
+      <FinalCta />
+    </Box>
   )
 }

@@ -1,0 +1,28 @@
+/*
+ * Card imagery for the landing bands.
+ *
+ * These are plain `<img>` elements rather than `<Box component="img">` on
+ * purpose: MUI treats `width` and `height` as *style* props, so passing them to
+ * a Box sets CSS and never emits the HTML attributes. The attributes are what
+ * lets the browser reserve the right box before the file arrives, so the class
+ * lives here and the element stays plain (prompt 10 §7 — no CLS).
+ */
+
+.media {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  /* Tinted placeholder while the photograph loads. */
+  background-color: var(--bb-primary-surface);
+}
+
+/* Category tiles. */
+.ratioTile {
+  aspect-ratio: 16 / 10;
+}
+
+/* Creator cover images. */
+.ratioWide {
+  aspect-ratio: 16 / 9;
+}

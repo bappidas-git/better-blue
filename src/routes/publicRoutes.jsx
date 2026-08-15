@@ -10,6 +10,10 @@ import { paths } from './paths'
 // exclusively (00 §2.6); `*_PATTERN` constants are the parameterised ones.
 
 const HomePage = lazy(() => import('@/features/landing/pages/HomePage'))
+// STUB (Prompt 10): registered early because the landing page links to it and a
+// marketing page must not hand a visitor a 404. Prompt 12 replaces the page
+// component; this entry stays as it is.
+const HowItWorksPage = lazy(() => import('@/features/staticPages/pages/HowItWorksPage'))
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
 const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage'))
 const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage'))
@@ -28,11 +32,14 @@ const DevDesignPage = import.meta.env.DEV
  *
  * Waiting to be appended here:
  * - Prompt 11 — CREATORS, CREATOR_PROFILE_PATTERN, REQUESTS, REQUEST_DETAIL_PATTERN
- * - Prompt 12 — HOW_IT_WORKS, PRICING, FAQ, ABOUT, CONTACT, CONTENT_POLICY,
- *   TERMS, PRIVACY
+ * - Prompt 12 — PRICING, FAQ, ABOUT, CONTACT, CONTENT_POLICY, TERMS, PRIVACY
+ *   (HOW_IT_WORKS is already mounted below, as a stub)
  * - Prompt 32 — REFERRAL_PATTERN
  */
-export const publicRoutes = [{ index: true, element: <HomePage /> }]
+export const publicRoutes = [
+  { index: true, element: <HomePage /> },
+  { path: paths.HOW_IT_WORKS, element: <HowItWorksPage /> },
+]
 
 /**
  * Rendered inside AuthLayout, behind `GuestRoute` — a signed-in member who
