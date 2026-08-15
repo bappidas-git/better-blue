@@ -3,9 +3,10 @@ import { lazy } from 'react'
 import { paths } from './paths'
 
 // Admin console route table — mounted under `ProtectedRoute` + `RoleRoute`
-// (admin **and** super_admin) by ./index.jsx.
+// (admin **and** super_admin) + `DashboardLayout` by ./index.jsx, so every entry
+// here renders inside the dashboard shell and should render a `DashboardPage`.
 //
-// Prompt 24 builds the real admin overview; until then the only entry is the
+// Prompt 28 builds the real admin overview; until then the only entry is the
 // role home the guards redirect to. Prompts append `{ path, element }` entries
 // here using `React.lazy` pages and the absolute constants from ./paths.js —
 // for example:
@@ -23,7 +24,7 @@ import { paths } from './paths'
 // ADMIN_ANNOUNCEMENTS, ADMIN_AFFILIATES, ADMIN_ADMINS, ADMIN_ROLES, ADMIN_SETTINGS,
 // ADMIN_CATEGORIES, ADMIN_AUDIT, ADMIN_NOTIFICATIONS.
 
-// TEMP: replaced in Prompt 24.
+// TEMP: replaced in Prompt 28.
 const AdminHomePlaceholder = lazy(() => import('@/features/dashboard/pages/AdminHomePlaceholder'))
 const NotFoundPage = lazy(() => import('@/features/staticPages/pages/NotFoundPage'))
 

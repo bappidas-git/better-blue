@@ -2,11 +2,12 @@ import { lazy } from 'react'
 
 import { paths } from './paths'
 
-// Buyer dashboard route table — mounted under `ProtectedRoute` + `RoleRoute`
-// by ./index.jsx.
+// Buyer dashboard route table — mounted under `ProtectedRoute` + `RoleRoute` +
+// `DashboardLayout` by ./index.jsx, so every entry here renders inside the
+// dashboard shell and should render a `DashboardPage`.
 //
-// Prompt 14 builds DashboardLayout and the real buyer overview; until then the
-// only entry is the role home the guards redirect to. Prompts append
+// Prompt 15 builds the real buyer overview; until then the only entry is the
+// role home the guards redirect to. Prompts append
 // `{ path, element }` entries here using `React.lazy` pages and the absolute
 // constants from ./paths.js — for example:
 //
@@ -19,7 +20,7 @@ import { paths } from './paths'
 // BUYER_DISPUTE_DETAIL_PATTERN, BUYER_AFFILIATE, BUYER_NOTIFICATIONS,
 // BUYER_PROFILE, BUYER_SETTINGS.
 
-// TEMP: replaced in Prompt 14.
+// TEMP: replaced in Prompt 15.
 const BuyerHomePlaceholder = lazy(() => import('@/features/dashboard/pages/BuyerHomePlaceholder'))
 const NotFoundPage = lazy(() => import('@/features/staticPages/pages/NotFoundPage'))
 
