@@ -171,6 +171,18 @@ const REVIEW_SOURCE = [
       'The final frames are clean and the cutouts are exactly to spec. Scheduling took longer than we expected and two rounds of emails went unanswered over a weekend, which is the only reason this is not higher.',
   },
   {
+    requestKey: 'h29',
+    rating: 5,
+    comment:
+      'Amara covered a full supper club service without a single guest noticing a camera. We had the first edit of the gallery two days later and it is already running across the harvest series pages.',
+  },
+  {
+    requestKey: 'h30',
+    rating: 4,
+    comment:
+      'Lovely produce frames and the supplier board reads beautifully with them. Two of the herb shots came back softer than the rest, which Ava reshot inside the revision round.',
+  },
+  {
     requestKey: 'completed_bloom_campaign',
     rating: 5,
     comment:

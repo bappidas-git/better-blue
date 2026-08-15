@@ -6,26 +6,27 @@ import { paths } from './paths'
 // `DashboardLayout` by ./index.jsx, so every entry here renders inside the
 // dashboard shell and should render a `DashboardPage`.
 //
-// Prompt 15 builds the real buyer overview; until then the only entry is the
-// role home the guards redirect to. Prompts append
+// Prompt 15 built the overview, profile, and settings screens. Prompts append
 // `{ path, element }` entries here using `React.lazy` pages and the absolute
 // constants from ./paths.js — for example:
 //
 //   const BuyerOrdersPage = lazy(() => import('@/features/orders/pages/BuyerOrdersPage'))
 //   export const buyerRoutes = [{ path: paths.BUYER_ORDERS, element: <BuyerOrdersPage /> }]
 //
-// Paths already reserved in ./paths.js: BUYER, BUYER_REQUESTS, BUYER_REQUEST_NEW,
+// Paths still reserved in ./paths.js: BUYER_REQUESTS, BUYER_REQUEST_NEW,
 // BUYER_REQUEST_DETAIL_PATTERN, BUYER_CHECKOUT_PATTERN, BUYER_ORDERS,
 // BUYER_ORDER_DETAIL_PATTERN, BUYER_PAYMENTS, BUYER_DISPUTES,
-// BUYER_DISPUTE_DETAIL_PATTERN, BUYER_AFFILIATE, BUYER_NOTIFICATIONS,
-// BUYER_PROFILE, BUYER_SETTINGS.
+// BUYER_DISPUTE_DETAIL_PATTERN, BUYER_AFFILIATE, BUYER_NOTIFICATIONS.
 
-// TEMP: replaced in Prompt 15.
-const BuyerHomePlaceholder = lazy(() => import('@/features/dashboard/pages/BuyerHomePlaceholder'))
+const BuyerOverviewPage = lazy(() => import('@/features/dashboard/pages/BuyerOverviewPage'))
+const BuyerProfilePage = lazy(() => import('@/features/buyerAccount/pages/BuyerProfilePage'))
+const BuyerSettingsPage = lazy(() => import('@/features/buyerAccount/pages/BuyerSettingsPage'))
 const NotFoundPage = lazy(() => import('@/features/staticPages/pages/NotFoundPage'))
 
 export const buyerRoutes = [
-  { path: paths.BUYER, element: <BuyerHomePlaceholder /> },
+  { path: paths.BUYER, element: <BuyerOverviewPage /> },
+  { path: paths.BUYER_PROFILE, element: <BuyerProfilePage /> },
+  { path: paths.BUYER_SETTINGS, element: <BuyerSettingsPage /> },
   // Keeps every `/buyer/...` URL inside the guarded branch, built or not, so a
   // deep link survives the trip through sign-in. Must stay last by convention;
   // React Router ranks it below the real routes regardless of array position.

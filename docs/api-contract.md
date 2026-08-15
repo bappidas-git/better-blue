@@ -251,7 +251,7 @@ not charge twice, and a retried release must not pay a creator twice.
 
 ### 2.1 Target contract
 
-Four endpoints. These signatures are what `authService` exposes and what
+Five endpoints. These signatures are what `authService` exposes and what
 Laravel must implement — they do not change at migration.
 
 #### `POST /auth/login`
@@ -325,6 +325,23 @@ takes effect without waiting for the next sign-in.
 
 `200 OK` → `{ "user": { … } }`
 
+#### `POST /auth/password`
+
+Authenticated. The signed-in member changes their own password (the account
+settings screen).
+
+```json
+{ "currentPassword": "Password123!", "newPassword": "…" }
+```
+
+`200 OK` → `{ "user": { … } }`. A wrong current password is `422`
+`validation_failed` with `details.currentPassword`; a replacement that fails the
+strength rule is `422` with `details.newPassword`.
+
+> **Laravel** — verify against the hash, hash the replacement, and revoke the
+> member's **other** tokens in the same transaction, leaving the token that made
+> the request alive so the member stays signed in where they are.
+
 #### `POST /auth/logout`
 
 Authenticated. Revokes the current token. `204 No Content`.
@@ -377,7 +394,7 @@ copy stays identical on both sides.
 
 ### 2.4 Mock reality — `MOCK-AUTH`
 
-JSON Server has no auth. `authService` simulates all four operations over
+JSON Server has no auth. `authService` simulates all five operations over
 `/users`, **preserving the exact function signatures above** (00 §14):
 
 | Function | What it actually does |
@@ -385,6 +402,7 @@ JSON Server has no auth. `authService` simulates all four operations over
 | `login({ email, password })` | `GET /users?email=<email>` → compare `password` in plain text → check `accountStatus` → mint a fake token → strip `password` → return `{ token, user }` |
 | `register({ … })` | `GET /users?email=…` (uniqueness) → `POST /users` with a client-generated `usr_…` id → `POST /buyerProfiles` or `POST /creatorProfiles` → return `{ token, user }` |
 | `me()` | `GET /users/:id` for the stored id → re-check `accountStatus` → strip `password` → return `{ user }` |
+| `changePassword({ currentPassword, newPassword })` | `GET /users?email=…` → compare `password` in plain text → `PATCH /users/:id` with the new one → strip `password` → return `{ user }`. No other session can be revoked, because none exists |
 | `logout()` | Clear local storage. Resolves. No request. |
 
 Rules that keep this contained:
@@ -2643,9 +2661,14 @@ category.update · content.restrict · creator.feature · dispute.assign
 dispute.close · dispute.resolve · moderation.approve · moderation.reject
 moderation.request_changes · order.cancel · payment.refund · payout.mark_paid
 payout.process · payout.reject · report.action · report.dismiss · report.review
-request.close · settings.update · ticket.close · ticket.reply · user.suspend
-user.verify
+request.close · settings.update · ticket.close · ticket.reply · user.deactivate
+user.suspend · user.verify
 ```
+
+`user.deactivate` is the one entry a **member** writes about themselves: closing
+your own account from Settings is recorded so support can see who left, when,
+and why (`meta.selfService = true`). Ordinary buyer and creator activity is
+still not audited here.
 
 `actorRole` is denormalised so the entry survives a role change. `meta` carries
 the detail behind the action (`{ fromStatus, toStatus, reason }`, `{ amount }`,
@@ -2768,6 +2791,7 @@ are the reason these belong on the server:
 | 11 | `requestPayout` | `payoutService` | 4 | `POST /payouts` |
 | 12 | `broadcastAnnouncement` | `notificationService` | 1 + N | `POST /announcements` |
 | 13 | `getStats` | `landingService` | 4 | `GET /stats/landing` |
+| 14 | `getOverview` | `buyerDashboardService` | 8 | `GET /buyer/overview` |
 
 ### 7.2 The sequences
 
@@ -3128,6 +3152,64 @@ Four `COUNT(*)` queries in one request, cached server-side (the numbers move
 slowly and this is the most-requested route in the product). Public and
 unauthenticated: it exposes nothing a visitor cannot already count by paging the
 public collections.
+
+#### 14. `getOverview(buyerId)`
+
+Everything the buyer dashboard's overview screen prints: four figures, six
+months of spend, and the latest activity. A **read**, and like `getStats` it
+never throws.
+
+**Mock — three independent sections, run in parallel:**
+
+*Summary* (the stat band and the onboarding checklist's inputs)
+
+1. `GET /contentRequests?buyerId=…&status=open&_page=1&_limit=100` → the open
+   briefs, kept for their ids
+2. `GET /contentRequests?buyerId=…&status=open&status=awarded&_page=1&_limit=1`
+   → `X-Total-Count` (active requests)
+3. `GET /contentRequests?buyerId=…&_page=1&_limit=1` → `X-Total-Count` (has this
+   buyer ever posted?)
+4. `GET /orders?buyerId=…&status=pending_payment&status=in_progress&status=delivered&status=revision_requested&status=disputed&_page=1&_limit=1`
+   → `X-Total-Count` (active orders)
+5. `GET /orders?buyerId=…&_page=1&_limit=1` → `X-Total-Count`
+6. `GET /buyerProfiles?userId=…&_page=1&_limit=1` → the business profile, for the
+   profile-completeness step
+7. `GET /proposals?requestId=…&…&status=submitted&status=shortlisted&_page=1&_limit=1`
+   → `X-Total-Count` (proposals awaiting a decision, scoped to the ids from 1;
+   skipped entirely when the buyer has nothing open)
+
+*Spend*
+
+8. `GET /payments?buyerId=…&_page=1&_limit=100` → folded client-side: rows in
+   `held`, `released`, or `partially_refunded` are summed net of
+   `refundedAmount` for the lifetime total, and bucketed by `createdAt` month
+   for the chart — the same rule that derives `buyerProfiles.totalSpent`
+
+*Activity*
+
+9. `GET /notifications?userId=…&_page=1&_limit=8&_sort=createdAt&_order=desc`
+
+Each section is caught on its own: a failure nulls that section's fields and is
+reported in `errors`, so one slow collection costs a single card its contents
+rather than blanking the dashboard. The 100-row ceiling on steps 1 and 8 is a
+provider limit (§4.1), not a product rule — on the server neither fold exists.
+
+**Laravel — `GET /buyer/overview` → the same object for the authenticated buyer**
+
+```json
+{
+  "activeRequests": 2, "proposalsAwaiting": 4, "activeOrders": 1,
+  "requestsTotal": 8, "ordersTotal": 7, "totalSpent": 4200, "currency": "USD",
+  "spendByMonth": [{ "key": "2026-03", "label": "Mar", "amount": 0 }],
+  "recentActivity": [], "profile": { "id": "bpr_verde" }
+}
+```
+
+Four `SELECT COUNT(*)`s, one `GROUP BY` over the month, and one indexed read of
+the newest notifications — one round trip, cached briefly per buyer. The buyer
+id is a **parameter in the mock only**, because the browser has no session to
+resolve it from; the endpoint takes it from the bearer token and must ignore any
+id the client sends (§9.2).
 
 ---
 

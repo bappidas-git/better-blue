@@ -25,6 +25,9 @@ const DEMO_PASSWORD = 'Password123!'
 
 const DEMO_ACCOUNTS = [
   { role: ROLES.BUYER, email: 'buyer@betterblue.test', name: 'Nora Whitfield' },
+  // A buyer with no briefs, no orders, and a half-finished profile, so the
+  // dashboard's first-run onboarding state can be reached in one click.
+  { role: ROLES.BUYER, email: 'newbuyer@betterblue.test', name: 'Ruth Alvarez — fresh account' },
   { role: ROLES.CREATOR, email: 'creator@betterblue.test', name: 'Ava Martinez' },
   { role: ROLES.ADMIN, email: 'admin@betterblue.test', name: 'Maya Chen' },
   { role: ROLES.SUPER_ADMIN, email: 'super@betterblue.test', name: 'Elena Marsh' },

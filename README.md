@@ -25,13 +25,17 @@ Every seeded account uses the same password: **`Password123!`**
 | Role | Email | Signed in as |
 |---|---|---|
 | Buyer | `buyer@betterblue.test` | Nora Whitfield — Verde Kitchen |
+| Buyer (fresh account) | `newbuyer@betterblue.test` | Ruth Alvarez — Harbor Lane Bakery |
 | Creator | `creator@betterblue.test` | Ava Martinez |
 | Admin | `admin@betterblue.test` | Maya Chen — marketplace operations |
 | Super admin | `super@betterblue.test` | Elena Marsh — full platform access |
 
 Each account has meaningful data waiting on first sign-in: live briefs with
 proposals, orders in every state, disputes, a moderation queue, payouts, and
-notifications. The other 20 seeded accounts share the same password — see
+notifications. The exception is the **fresh buyer**, which is deliberately
+empty — no briefs, no orders, and a half-finished profile — so the dashboard's
+first-run onboarding state can be seen as a new customer sees it. The other 20
+seeded accounts share the same password — see
 [`docs/data-model.md`](docs/data-model.md) for the full roster.
 
 > These are mock credentials for a prototype. JSON Server cannot authenticate,
