@@ -62,7 +62,8 @@ Password for **every** seeded account: `Password123!`
 
 | Role | Email | Person | What they can demonstrate |
 |---|---|---|---|
-| Buyer | `buyer@betterblue.test` | Nora Whitfield, Verde Kitchen | An open brief with 4 proposals, an order awaiting revision, completed orders, reviews |
+| Buyer | `buyer@betterblue.test` | Nora Whitfield, Verde Kitchen | An open brief with 4 proposals, an order awaiting revision, completed orders, reviews, and five months of payments behind the spend chart |
+| Buyer (fresh account) | `newbuyer@betterblue.test` | Ruth Alvarez, Harbor Lane Bakery | The first-run state: no briefs, no orders, no notifications, and a profile with only a company name — the dashboard shows its onboarding checklist instead of stats |
 | Creator | `creator@betterblue.test` | Ava Martinez | A shortlisted proposal, an in-progress order, a revision request, released payments, a paid payout, an affiliate profile with earnings |
 | Admin | `admin@betterblue.test` | Maya Chen | Moderation queue, two live disputes, support tickets, user management, audit log |
 | Super admin | `super@betterblue.test` | Elena Marsh | Everything above plus the admin team, permissions, and platform settings |

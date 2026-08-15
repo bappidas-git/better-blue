@@ -105,21 +105,33 @@ const BUYER_SOURCE = [
     location: 'Melbourne, Australia',
     createdDaysAgo: 107,
   },
+  {
+    // The fresh-buyer demo account (Prompt 15). Only the company name exists —
+    // industry, website, bio, and location are the fields the onboarding
+    // checklist asks this account to fill in, so they are deliberately absent
+    // and `compact()` keeps them out of the record entirely.
+    key: 'harborlane',
+    id: 'bpr_harborlane',
+    companyName: 'Harbor Lane Bakery',
+    createdDaysAgo: 2,
+  },
 ]
 
-export const buyerProfiles = BUYER_SOURCE.map((source) => ({
-  id: source.id,
-  userId: buyerId(source.key),
-  companyName: source.companyName,
-  industry: source.industry,
-  website: source.website,
-  bio: source.bio,
-  location: source.location,
-  logoUrl: avatarDataUri(source.companyName),
-  // Recomputed by seed-db.js from the payments ledger.
-  totalSpent: 0,
-  createdAt: daysAgo(source.createdDaysAgo, 10, 40),
-}))
+export const buyerProfiles = BUYER_SOURCE.map((source) =>
+  compact({
+    id: source.id,
+    userId: buyerId(source.key),
+    companyName: source.companyName,
+    industry: source.industry,
+    website: source.website,
+    bio: source.bio,
+    location: source.location,
+    logoUrl: avatarDataUri(source.companyName),
+    // Recomputed by seed-db.js from the payments ledger.
+    totalSpent: 0,
+    createdAt: daysAgo(source.createdDaysAgo, 10, 40),
+  })
+)
 
 /** `buyerProfileId('verde')` → `bpr_verde`. */
 export function buyerProfileId(key) {

@@ -73,7 +73,11 @@ export const NAV_KEY = Object.freeze({
 /* Buyer                                                                      */
 /* -------------------------------------------------------------------------- */
 
-/** Prompts append: requests (16), orders (20), payments (19), disputes (26), affiliate (34), profile + settings (15), notifications (27). */
+/**
+ * Prompts append: requests (16), orders (20), payments (19), disputes (26),
+ * affiliate (34), notifications (27). Requests and Orders belong between
+ * Overview and Profile when they land — the account entries stay last.
+ */
 export const buyerNav = Object.freeze([
   Object.freeze({
     key: NAV_KEY.OVERVIEW,
@@ -81,6 +85,19 @@ export const buyerNav = Object.freeze([
     icon: 'solar:widget-5-linear',
     path: paths.BUYER,
     exact: true,
+  }),
+  Object.freeze({
+    key: NAV_KEY.PROFILE,
+    label: 'Profile',
+    icon: 'solar:buildings-3-linear',
+    path: paths.BUYER_PROFILE,
+  }),
+  Object.freeze({
+    key: NAV_KEY.SETTINGS,
+    label: 'Settings',
+    icon: 'solar:settings-linear',
+    path: paths.BUYER_SETTINGS,
+    // No badge: settings never nags.
   }),
 ])
 
@@ -161,7 +178,10 @@ export const NAV_BY_ROLE = Object.freeze({
  * settings, affiliate, audit — as their entries arrive.
  */
 export const MORE_NAV_KEYS = Object.freeze({
-  [ROLES.BUYER]: Object.freeze([]),
+  // Profile stays on the bar — a buyer visits it while getting set up — and
+  // Settings goes into the sheet, which leaves room for Requests and Orders
+  // when Prompts 16 and 20 land.
+  [ROLES.BUYER]: Object.freeze([NAV_KEY.SETTINGS]),
   [ROLES.CREATOR]: Object.freeze([]),
   [ROLES.ADMIN]: Object.freeze([]),
   [ROLES.SUPER_ADMIN]: Object.freeze([]),

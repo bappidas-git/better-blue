@@ -22,6 +22,8 @@ export const UPLOAD_PURPOSE = Object.freeze({
   PORTFOLIO: 'portfolio',
   DELIVERY: 'delivery',
   DISPUTE_EVIDENCE: 'dispute_evidence',
+  /** A company logo or an account avatar — small, square-ish, images only. */
+  PROFILE_IMAGE: 'profile_image',
 })
 
 /** `mediaType` values the contract defines for a file object. */
@@ -47,6 +49,16 @@ export const UPLOAD_RULES = Object.freeze({
     idPrefix: ID_PREFIX.DISPUTE_EVIDENCE,
     maxSizeMb: 25,
     accept: Object.freeze(['image/jpeg', 'image/png', 'image/webp', 'application/pdf']),
+  }),
+  // A logo is displayed at 96px and never downloaded, so the ceiling is much
+  // lower than the content purposes above — and no video, ever.
+  [UPLOAD_PURPOSE.PROFILE_IMAGE]: Object.freeze({
+    idPrefix: ID_PREFIX.PROFILE_IMAGE,
+    maxSizeMb: 5,
+    accept: Object.freeze(['image/jpeg', 'image/png', 'image/webp']),
+    // A logo renders in a square tile, so the stand-in image is square too —
+    // a 16:9 placeholder would letterbox in every avatar on the platform.
+    renderSize: Object.freeze({ width: 400, height: 400 }),
   }),
 })
 
@@ -136,13 +148,12 @@ function toFileRecord(file, rules) {
   // placeholder image — and so mock files look exactly like seeded ones.
   const seed = id.replace(/_/g, '-')
   const video = isVideo(file.type)
+  const size = rules.renderSize ?? IMAGE_SIZES.wide
 
   return {
     id,
     name: sanitizeFileName(file.name),
-    url: video
-      ? PLACEHOLDER_VIDEO_URL
-      : imageUrl(seed, IMAGE_SIZES.wide.width, IMAGE_SIZES.wide.height),
+    url: video ? PLACEHOLDER_VIDEO_URL : imageUrl(seed, size.width, size.height),
     thumbnailUrl: imageUrl(seed, IMAGE_SIZES.thumbnail.width, IMAGE_SIZES.thumbnail.height),
     mediaType: video ? MEDIA_TYPE.VIDEO : MEDIA_TYPE.IMAGE,
     sizeKb: Math.max(Math.round((Number(file.size) || 0) / 1024), 1),

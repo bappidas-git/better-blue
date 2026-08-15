@@ -38,6 +38,10 @@ export const ID_PREFIX = Object.freeze({
   // and are minted by `uploadService`.
   DELIVERY_FILE: 'dfl',
   DISPUTE_EVIDENCE: 'evd',
+  // Account imagery — a company logo or an avatar. Stored as a plain URL on
+  // `buyerProfiles.logoUrl` / `users.avatarUrl` rather than as a record, so the
+  // id only ever labels the upload itself.
+  PROFILE_IMAGE: 'pim',
 })
 
 /**

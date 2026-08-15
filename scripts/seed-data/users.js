@@ -183,6 +183,20 @@ const BUYER_SOURCE = [
     lastLoginDaysAgo: 4.2,
     referredByCode: AFFILIATE_CODE.ISLA,
   },
+  {
+    // The **fresh buyer** demo account (Prompt 15): registered two days ago,
+    // with a half-finished business profile, no briefs, no orders, and no
+    // notifications. It exists so the buyer dashboard's first-run state —
+    // the onboarding checklist rather than the stats band — can be
+    // demonstrated without emptying the main demo account. Nothing downstream
+    // may give this account requests, proposals, orders, or payments.
+    key: 'harborlane',
+    id: 'usr_buyer_harborlane',
+    name: 'Ruth Alvarez',
+    email: 'newbuyer@betterblue.test',
+    createdDaysAgo: 2,
+    lastLoginDaysAgo: 0.1,
+  },
 ]
 
 /* -------------------------------------------------------------------------- */
@@ -381,6 +395,11 @@ export const USER_CREATED_AT = Object.freeze(
 /** Documented sign-in shortcuts (root README + docs/data-model.md). */
 export const DEMO_ACCOUNTS = Object.freeze([
   { role: ROLES.BUYER, email: 'buyer@betterblue.test', name: 'Nora Whitfield' },
+  {
+    role: ROLES.BUYER,
+    email: 'newbuyer@betterblue.test',
+    name: 'Ruth Alvarez — fresh account',
+  },
   { role: ROLES.CREATOR, email: 'creator@betterblue.test', name: 'Ava Martinez' },
   { role: ROLES.ADMIN, email: 'admin@betterblue.test', name: 'Maya Chen' },
   { role: ROLES.SUPER_ADMIN, email: 'super@betterblue.test', name: 'Elena Marsh' },

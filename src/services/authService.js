@@ -50,6 +50,14 @@ const CREDENTIALS_MESSAGE = 'Incorrect email or password'
 /** Marks the mock token so it is obvious in devtools that it proves nothing. */
 const MOCK_TOKEN_PREFIX = 'MOCK-AUTH'
 
+/**
+ * Shortest password the platform accepts — the floor `changePassword` enforces,
+ * and the number the account screens phrase their rules around. The sign-up
+ * form applies the same minimum plus "one letter and one digit"; the API is the
+ * authority on all of it (contract §9.5).
+ */
+export const PASSWORD_MIN_LENGTH = 8
+
 /** Sign-in identifiers are compared case-insensitively and stored lowercased. */
 const normalizeEmail = (email) => String(email ?? '').trim().toLowerCase()
 
@@ -366,6 +374,61 @@ export const authService = Object.freeze({
     assertAccountActive(user)
 
     // Keep the persisted copy in step with the server on every boot.
+    storeSession({ token: session.token, user })
+    return { user }
+  },
+
+  /**
+   * `POST /auth/password` — the signed-in member changes their own password
+   * (Prompt 15, buyer settings; the creator and admin screens reuse it).
+   *
+   * MOCK-AUTH: re-reads the credential record for the stored session, compares
+   * the current password in plain text, and `PATCH`es the new one. Laravel
+   * validates `current_password` against the hash, hashes the replacement, and
+   * revokes the member's other tokens in the same request — none of which this
+   * can do. The session survives the change here, exactly as it will there for
+   * the token that made the request.
+   *
+   * SECURITY: like every other check in this module, this one runs in the
+   * browser and proves nothing (00 §14). The API must verify the current
+   * password itself and must never accept a new one it did not hash.
+   *
+   * @param {object} payload
+   * @param {string} payload.currentPassword the password on file
+   * @param {string} payload.newPassword its replacement
+   * @returns {Promise<{user: object}>} the account, without credentials
+   * @throws {ApiError} `unauthorized` (no session) · `validation_failed`
+   *   (wrong current password, or a replacement that fails the length rule)
+   */
+  async changePassword({ currentPassword, newPassword } = {}) {
+    const session = readStoredSession()
+    if (!session) {
+      throw createApiError(API_ERROR_CODE.UNAUTHORIZED, undefined, undefined, 401)
+    }
+
+    if (String(newPassword ?? '').length < PASSWORD_MIN_LENGTH) {
+      throw createApiError(
+        API_ERROR_CODE.VALIDATION_FAILED,
+        'That password is too short.',
+        { newPassword: [`Use at least ${PASSWORD_MIN_LENGTH} characters.`] },
+        422
+      )
+    }
+
+    const record = await findCredentialRecord(session.user.email)
+    if (!record || record.password !== currentPassword) {
+      throw createApiError(
+        API_ERROR_CODE.VALIDATION_FAILED,
+        'That is not your current password.',
+        { currentPassword: ['Enter your current password.'] },
+        422
+      )
+    }
+
+    const user = await userService.update(record.id, { password: newPassword })
+
+    // Keep the persisted copy in step — `userService` strips the credential, so
+    // nothing about the new password is written to storage.
     storeSession({ token: session.token, user })
     return { user }
   },

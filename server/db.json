@@ -189,7 +189,7 @@
       "avatarUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23F5F3FF%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%237C3AED%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3ENW%3C%2Ftext%3E%3C%2Fsvg%3E",
       "phone": "+1 503 555 0142",
       "createdAt": "2026-04-22T10:15:00.000Z",
-      "lastLoginAt": "2026-08-15T16:39:41.784Z",
+      "lastLoginAt": "2026-08-14T08:30:00.000Z",
       "notificationPrefs": {
         "marketplace": {
           "inApp": true
@@ -462,6 +462,40 @@
       "referredByCode": "ISLA-NORTH"
     },
     {
+      "id": "usr_buyer_harborlane",
+      "email": "newbuyer@betterblue.test",
+      "password": "Password123!",
+      "role": "buyer",
+      "accountStatus": "active",
+      "name": "Ruth Alvarez",
+      "avatarUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23F5F3FF%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%237C3AED%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3ERA%3C%2Ftext%3E%3C%2Fsvg%3E",
+      "createdAt": "2026-08-12T10:15:00.000Z",
+      "lastLoginAt": "2026-08-14T08:30:00.000Z",
+      "notificationPrefs": {
+        "marketplace": {
+          "inApp": true
+        },
+        "orders": {
+          "inApp": true
+        },
+        "payments": {
+          "inApp": true
+        },
+        "disputes": {
+          "inApp": true
+        },
+        "moderation": {
+          "inApp": true
+        },
+        "affiliate": {
+          "inApp": true
+        },
+        "system": {
+          "inApp": true
+        }
+      }
+    },
+    {
       "id": "usr_creator_ava",
       "email": "creator@betterblue.test",
       "password": "Password123!",
@@ -471,7 +505,7 @@
       "avatarUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23E5E2EC%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%23171223%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3EAM%3C%2Ftext%3E%3C%2Fsvg%3E",
       "phone": "+1 512 555 0110",
       "createdAt": "2026-04-23T10:15:00.000Z",
-      "lastLoginAt": "2026-08-15T16:40:17.161Z",
+      "lastLoginAt": "2026-08-14T08:30:00.000Z",
       "notificationPrefs": {
         "marketplace": {
           "inApp": true
@@ -894,7 +928,7 @@
       "bio": "A plant-forward restaurant group with six locations across the Pacific Northwest. We commission seasonal menu photography and short social videos for each new menu drop.",
       "location": "Portland, OR, United States",
       "logoUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23E5E2EC%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%23171223%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3EVK%3C%2Ftext%3E%3C%2Fsvg%3E",
-      "totalSpent": 3200,
+      "totalSpent": 4200,
       "createdAt": "2026-04-22T10:40:00.000Z"
     },
     {
@@ -980,6 +1014,14 @@
       "logoUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23FDF2F8%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%23BE185D%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3ECC%3C%2Ftext%3E%3C%2Fsvg%3E",
       "totalSpent": 3550,
       "createdAt": "2026-04-29T10:40:00.000Z"
+    },
+    {
+      "id": "bpr_harborlane",
+      "userId": "usr_buyer_harborlane",
+      "companyName": "Harbor Lane Bakery",
+      "logoUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23E5E2EC%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%23171223%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3EHB%3C%2Ftext%3E%3C%2Fsvg%3E",
+      "totalSpent": 0,
+      "createdAt": "2026-08-12T10:40:00.000Z"
     }
   ],
   "creatorProfiles": [
@@ -1009,9 +1051,9 @@
       "availability": true,
       "featured": true,
       "verified": true,
-      "ratingAvg": 4.5,
-      "ratingCount": 6,
-      "completedOrders": 7,
+      "ratingAvg": 4.4,
+      "ratingCount": 7,
+      "completedOrders": 8,
       "payoutMethod": {
         "type": "bank",
         "accountName": "Ava Martinez",
@@ -1253,9 +1295,9 @@
       "availability": true,
       "featured": false,
       "verified": true,
-      "ratingAvg": 4.7,
-      "ratingCount": 3,
-      "completedOrders": 3,
+      "ratingAvg": 4.8,
+      "ratingCount": 4,
+      "completedOrders": 4,
       "payoutMethod": {
         "type": "bank",
         "accountName": "Amara Diallo",
@@ -4297,6 +4339,56 @@
       "awardedProposalId": "prp_091",
       "createdAt": "2026-07-24T13:30:00.000Z",
       "publishedAt": "2026-07-24T19:30:00.000Z"
+    },
+    {
+      "id": "req_051",
+      "buyerId": "usr_buyer_verde",
+      "title": "Supper club coverage for the harvest series",
+      "description": "A completed commission from our archive. The brief covered the full shot list, delivery formats, and usage rights agreed at the time of award.",
+      "categoryId": "cat_events_entertainment",
+      "contentType": "photo",
+      "quantity": 24,
+      "orientation": "any",
+      "usageRights": "website",
+      "brandGuidelines": "Shot to the brand guidelines supplied with the brief: consistent colour, consistent framing, no heavy grading.",
+      "dos": "Work to the agreed shot list. Deliver both graded and flat versions of every frame.",
+      "donts": "No third-party branding in frame, no unlicensed props or backgrounds.",
+      "referenceUrls": [],
+      "budgetType": "fixed",
+      "budgetMin": 520,
+      "budgetMax": 520,
+      "currency": "USD",
+      "deadline": "2026-08-10T17:00:00.000Z",
+      "status": "completed",
+      "proposalsCount": 2,
+      "awardedProposalId": "prp_092",
+      "createdAt": "2026-07-30T13:30:00.000Z",
+      "publishedAt": "2026-07-30T19:30:00.000Z"
+    },
+    {
+      "id": "req_052",
+      "buyerId": "usr_buyer_verde",
+      "title": "Produce stills for the supplier story board",
+      "description": "A completed commission from our archive. The brief covered the full shot list, delivery formats, and usage rights agreed at the time of award.",
+      "categoryId": "cat_food_beverage",
+      "contentType": "photo",
+      "quantity": 14,
+      "orientation": "any",
+      "usageRights": "website",
+      "brandGuidelines": "Shot to the brand guidelines supplied with the brief: consistent colour, consistent framing, no heavy grading.",
+      "dos": "Work to the agreed shot list. Deliver both graded and flat versions of every frame.",
+      "donts": "No third-party branding in frame, no unlicensed props or backgrounds.",
+      "referenceUrls": [],
+      "budgetType": "fixed",
+      "budgetMin": 480,
+      "budgetMax": 480,
+      "currency": "USD",
+      "deadline": "2026-05-06T17:00:00.000Z",
+      "status": "completed",
+      "proposalsCount": 1,
+      "awardedProposalId": "prp_094",
+      "createdAt": "2026-04-23T13:30:00.000Z",
+      "publishedAt": "2026-04-23T19:30:00.000Z"
     }
   ],
   "proposals": [
@@ -5822,6 +5914,57 @@
       "status": "accepted",
       "createdAt": "2026-07-25T19:30:00.000Z",
       "respondedAt": "2026-07-30T15:20:00.000Z"
+    },
+    {
+      "id": "prp_092",
+      "requestId": "req_051",
+      "creatorId": "usr_creator_amara",
+      "coverMessage": "Thanks for the brief. I can cover the full scope in 5 days, working to the shot list and delivering in the formats you listed.",
+      "price": 520,
+      "currency": "USD",
+      "deliveryDays": 5,
+      "revisionsIncluded": 2,
+      "sampleItemIds": [
+        "pfi_046",
+        "pfi_047"
+      ],
+      "status": "accepted",
+      "createdAt": "2026-07-31T19:30:00.000Z",
+      "respondedAt": "2026-08-05T15:20:00.000Z"
+    },
+    {
+      "id": "prp_093",
+      "requestId": "req_051",
+      "creatorId": "usr_creator_isla",
+      "coverMessage": "I have delivered work close to this brief before and can cover the full scope in one production block. Happy to walk through my approach to \"Supper club coverage for the harvest series\" on a call before you decide.",
+      "price": 610,
+      "currency": "USD",
+      "deliveryDays": 8,
+      "revisionsIncluded": 1,
+      "sampleItemIds": [
+        "pfi_030",
+        "pfi_031"
+      ],
+      "status": "declined",
+      "createdAt": "2026-08-01T19:30:00.000Z",
+      "respondedAt": "2026-08-05T15:20:00.000Z"
+    },
+    {
+      "id": "prp_094",
+      "requestId": "req_052",
+      "creatorId": "usr_creator_ava",
+      "coverMessage": "This sits squarely in the work I do most weeks. Quoted price covers production, editing, and the revision rounds set out below, with delivery in 7 days.",
+      "price": 480,
+      "currency": "USD",
+      "deliveryDays": 7,
+      "revisionsIncluded": 2,
+      "sampleItemIds": [
+        "pfi_005",
+        "pfi_006"
+      ],
+      "status": "accepted",
+      "createdAt": "2026-04-24T19:30:00.000Z",
+      "respondedAt": "2026-04-29T15:20:00.000Z"
     }
   ],
   "orders": [
@@ -6832,6 +6975,54 @@
       "completedAt": "2026-08-06T16:10:00.000Z",
       "cancelledAt": null,
       "createdAt": "2026-07-30T15:20:00.000Z"
+    },
+    {
+      "id": "ord_043",
+      "requestId": "req_051",
+      "proposalId": "prp_092",
+      "buyerId": "usr_buyer_verde",
+      "creatorId": "usr_creator_amara",
+      "title": "Supper club coverage for the harvest series",
+      "categoryId": "cat_events_entertainment",
+      "contentType": "photo",
+      "price": 520,
+      "currency": "USD",
+      "commissionRate": 0.2,
+      "commissionAmount": 104,
+      "creatorEarnings": 416,
+      "revisionsIncluded": 2,
+      "revisionsUsed": 0,
+      "deliveryDueAt": "2026-08-10T18:20:00.000Z",
+      "status": "completed",
+      "activatedAt": "2026-08-05T18:20:00.000Z",
+      "deliveredAt": "2026-08-09T14:45:00.000Z",
+      "completedAt": "2026-08-11T16:10:00.000Z",
+      "cancelledAt": null,
+      "createdAt": "2026-08-05T15:20:00.000Z"
+    },
+    {
+      "id": "ord_044",
+      "requestId": "req_052",
+      "proposalId": "prp_094",
+      "buyerId": "usr_buyer_verde",
+      "creatorId": "usr_creator_ava",
+      "title": "Produce stills for the supplier story board",
+      "categoryId": "cat_food_beverage",
+      "contentType": "photo",
+      "price": 480,
+      "currency": "USD",
+      "commissionRate": 0.2,
+      "commissionAmount": 96,
+      "creatorEarnings": 384,
+      "revisionsIncluded": 2,
+      "revisionsUsed": 0,
+      "deliveryDueAt": "2026-05-06T18:20:00.000Z",
+      "status": "completed",
+      "activatedAt": "2026-04-29T18:20:00.000Z",
+      "deliveredAt": "2026-05-05T14:45:00.000Z",
+      "completedAt": "2026-05-07T16:10:00.000Z",
+      "cancelledAt": null,
+      "createdAt": "2026-04-29T15:20:00.000Z"
     }
   ],
   "deliveries": [
@@ -8070,6 +8261,78 @@
       "revisionId": null,
       "submittedAt": "2026-08-04T14:45:00.000Z",
       "respondedAt": "2026-08-06T10:30:00.000Z"
+    },
+    {
+      "id": "dlv_038",
+      "orderId": "ord_043",
+      "version": 1,
+      "message": "Final delivery attached. Everything on the shot list is covered, delivered in the formats agreed in the brief.",
+      "files": [
+        {
+          "id": "dfl_100",
+          "name": "supper-club-coverage-for-v1-01.jpg",
+          "url": "https://picsum.photos/seed/dfl-100/1600/900",
+          "thumbnailUrl": "https://picsum.photos/seed/dfl-100/400/300",
+          "mediaType": "image",
+          "sizeKb": 2400
+        },
+        {
+          "id": "dfl_101",
+          "name": "supper-club-coverage-for-v1-02.jpg",
+          "url": "https://picsum.photos/seed/dfl-101/1600/900",
+          "thumbnailUrl": "https://picsum.photos/seed/dfl-101/400/300",
+          "mediaType": "image",
+          "sizeKb": 2580
+        },
+        {
+          "id": "dfl_102",
+          "name": "supper-club-coverage-for-v1-03.jpg",
+          "url": "https://picsum.photos/seed/dfl-102/1600/900",
+          "thumbnailUrl": "https://picsum.photos/seed/dfl-102/400/300",
+          "mediaType": "image",
+          "sizeKb": 2760
+        }
+      ],
+      "status": "accepted",
+      "revisionId": null,
+      "submittedAt": "2026-08-09T14:45:00.000Z",
+      "respondedAt": "2026-08-11T10:30:00.000Z"
+    },
+    {
+      "id": "dlv_039",
+      "orderId": "ord_044",
+      "version": 1,
+      "message": "Delivering the finished set. Files are named by scene and supplied in both graded and flat versions.",
+      "files": [
+        {
+          "id": "dfl_103",
+          "name": "produce-stills-for-the-v1-01.jpg",
+          "url": "https://picsum.photos/seed/dfl-103/1600/900",
+          "thumbnailUrl": "https://picsum.photos/seed/dfl-103/400/300",
+          "mediaType": "image",
+          "sizeKb": 2400
+        },
+        {
+          "id": "dfl_104",
+          "name": "produce-stills-for-the-v1-02.jpg",
+          "url": "https://picsum.photos/seed/dfl-104/1600/900",
+          "thumbnailUrl": "https://picsum.photos/seed/dfl-104/400/300",
+          "mediaType": "image",
+          "sizeKb": 2580
+        },
+        {
+          "id": "dfl_105",
+          "name": "produce-stills-for-the-v1-03.jpg",
+          "url": "https://picsum.photos/seed/dfl-105/1600/900",
+          "thumbnailUrl": "https://picsum.photos/seed/dfl-105/400/300",
+          "mediaType": "image",
+          "sizeKb": 2760
+        }
+      ],
+      "status": "accepted",
+      "revisionId": null,
+      "submittedAt": "2026-05-05T14:45:00.000Z",
+      "respondedAt": "2026-05-07T10:30:00.000Z"
     }
   ],
   "revisions": [
@@ -8835,11 +9098,57 @@
       "heldAt": "2026-07-30T18:20:00.000Z",
       "releasedAt": "2026-08-06T16:10:00.000Z",
       "refundedAt": null
+    },
+    {
+      "id": "pay_044",
+      "orderId": "ord_043",
+      "buyerId": "usr_buyer_verde",
+      "amount": 520,
+      "currency": "USD",
+      "provider": "dummy",
+      "method": {
+        "brand": "visa",
+        "last4": "4242"
+      },
+      "createdAt": "2026-08-05T15:20:00.000Z",
+      "status": "released",
+      "heldAt": "2026-08-05T18:20:00.000Z",
+      "releasedAt": "2026-08-11T16:10:00.000Z",
+      "refundedAt": null
+    },
+    {
+      "id": "pay_045",
+      "orderId": "ord_044",
+      "buyerId": "usr_buyer_verde",
+      "amount": 480,
+      "currency": "USD",
+      "provider": "dummy",
+      "method": {
+        "brand": "visa",
+        "last4": "4242"
+      },
+      "createdAt": "2026-04-29T15:20:00.000Z",
+      "status": "released",
+      "heldAt": "2026-04-29T18:20:00.000Z",
+      "releasedAt": "2026-05-07T16:10:00.000Z",
+      "refundedAt": null
     }
   ],
   "transactions": [
     {
       "id": "txn_001",
+      "type": "charge",
+      "orderId": "ord_044",
+      "paymentId": "pay_045",
+      "userId": "usr_buyer_verde",
+      "amount": -480,
+      "description": "Escrow charge for “Produce stills for the supplier story board”",
+      "createdAt": "2026-04-29T18:20:00.000Z",
+      "currency": "USD",
+      "balanceAfter": null
+    },
+    {
+      "id": "txn_002",
       "type": "charge",
       "orderId": "ord_015",
       "paymentId": "pay_016",
@@ -8851,7 +9160,31 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_002",
+      "id": "txn_003",
+      "type": "release",
+      "orderId": "ord_044",
+      "paymentId": "pay_045",
+      "userId": "usr_creator_ava",
+      "amount": 480,
+      "description": "Escrow released for “Produce stills for the supplier story board”",
+      "createdAt": "2026-05-07T16:10:00.000Z",
+      "currency": "USD",
+      "balanceAfter": 480
+    },
+    {
+      "id": "txn_004",
+      "type": "commission",
+      "orderId": "ord_044",
+      "paymentId": "pay_045",
+      "userId": "usr_creator_ava",
+      "amount": -96,
+      "description": "BetterBlue commission (20%) on “Produce stills for the supplier story board”",
+      "createdAt": "2026-05-07T16:10:00.000Z",
+      "currency": "USD",
+      "balanceAfter": 384
+    },
+    {
+      "id": "txn_005",
       "type": "charge",
       "orderId": "ord_016",
       "paymentId": "pay_017",
@@ -8863,7 +9196,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_003",
+      "id": "txn_006",
       "type": "charge",
       "orderId": "ord_017",
       "paymentId": "pay_018",
@@ -8875,7 +9208,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_004",
+      "id": "txn_007",
       "type": "release",
       "orderId": "ord_015",
       "paymentId": "pay_016",
@@ -8884,10 +9217,10 @@
       "description": "Escrow released for “Menu photography for the summer small-plates menu”",
       "createdAt": "2026-05-15T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 640
+      "balanceAfter": 1024
     },
     {
-      "id": "txn_005",
+      "id": "txn_008",
       "type": "commission",
       "orderId": "ord_015",
       "paymentId": "pay_016",
@@ -8896,10 +9229,10 @@
       "description": "BetterBlue commission (20%) on “Menu photography for the summer small-plates menu”",
       "createdAt": "2026-05-15T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 512
+      "balanceAfter": 896
     },
     {
-      "id": "txn_006",
+      "id": "txn_009",
       "type": "charge",
       "orderId": "ord_018",
       "paymentId": "pay_019",
@@ -8911,7 +9244,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_007",
+      "id": "txn_010",
       "type": "charge",
       "orderId": "ord_019",
       "paymentId": "pay_020",
@@ -8923,7 +9256,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_008",
+      "id": "txn_011",
       "type": "release",
       "orderId": "ord_016",
       "paymentId": "pay_017",
@@ -8935,7 +9268,7 @@
       "balanceAfter": 980
     },
     {
-      "id": "txn_009",
+      "id": "txn_012",
       "type": "commission",
       "orderId": "ord_016",
       "paymentId": "pay_017",
@@ -8947,7 +9280,7 @@
       "balanceAfter": 784
     },
     {
-      "id": "txn_010",
+      "id": "txn_013",
       "type": "release",
       "orderId": "ord_017",
       "paymentId": "pay_018",
@@ -8959,7 +9292,7 @@
       "balanceAfter": 720
     },
     {
-      "id": "txn_011",
+      "id": "txn_014",
       "type": "commission",
       "orderId": "ord_017",
       "paymentId": "pay_018",
@@ -8971,7 +9304,7 @@
       "balanceAfter": 576
     },
     {
-      "id": "txn_012",
+      "id": "txn_015",
       "type": "charge",
       "orderId": "ord_020",
       "paymentId": "pay_021",
@@ -8983,7 +9316,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_013",
+      "id": "txn_016",
       "type": "charge",
       "orderId": "ord_021",
       "paymentId": "pay_022",
@@ -8995,7 +9328,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_014",
+      "id": "txn_017",
       "type": "release",
       "orderId": "ord_018",
       "paymentId": "pay_019",
@@ -9007,7 +9340,7 @@
       "balanceAfter": 540
     },
     {
-      "id": "txn_015",
+      "id": "txn_018",
       "type": "commission",
       "orderId": "ord_018",
       "paymentId": "pay_019",
@@ -9019,7 +9352,7 @@
       "balanceAfter": 432
     },
     {
-      "id": "txn_016",
+      "id": "txn_019",
       "type": "charge",
       "orderId": "ord_022",
       "paymentId": "pay_023",
@@ -9031,7 +9364,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_017",
+      "id": "txn_020",
       "type": "release",
       "orderId": "ord_020",
       "paymentId": "pay_021",
@@ -9043,7 +9376,7 @@
       "balanceAfter": 480
     },
     {
-      "id": "txn_018",
+      "id": "txn_021",
       "type": "commission",
       "orderId": "ord_020",
       "paymentId": "pay_021",
@@ -9055,7 +9388,7 @@
       "balanceAfter": 384
     },
     {
-      "id": "txn_019",
+      "id": "txn_022",
       "type": "charge",
       "orderId": "ord_023",
       "paymentId": "pay_024",
@@ -9067,7 +9400,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_020",
+      "id": "txn_023",
       "type": "release",
       "orderId": "ord_019",
       "paymentId": "pay_020",
@@ -9079,7 +9412,7 @@
       "balanceAfter": 1150
     },
     {
-      "id": "txn_021",
+      "id": "txn_024",
       "type": "commission",
       "orderId": "ord_019",
       "paymentId": "pay_020",
@@ -9091,7 +9424,7 @@
       "balanceAfter": 920
     },
     {
-      "id": "txn_022",
+      "id": "txn_025",
       "type": "release",
       "orderId": "ord_021",
       "paymentId": "pay_022",
@@ -9103,7 +9436,7 @@
       "balanceAfter": 610
     },
     {
-      "id": "txn_023",
+      "id": "txn_026",
       "type": "commission",
       "orderId": "ord_021",
       "paymentId": "pay_022",
@@ -9115,7 +9448,7 @@
       "balanceAfter": 488
     },
     {
-      "id": "txn_024",
+      "id": "txn_027",
       "type": "charge",
       "orderId": "ord_024",
       "paymentId": "pay_025",
@@ -9127,7 +9460,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_025",
+      "id": "txn_028",
       "type": "release",
       "orderId": "ord_022",
       "paymentId": "pay_023",
@@ -9139,7 +9472,7 @@
       "balanceAfter": 890
     },
     {
-      "id": "txn_026",
+      "id": "txn_029",
       "type": "commission",
       "orderId": "ord_022",
       "paymentId": "pay_023",
@@ -9151,7 +9484,7 @@
       "balanceAfter": 712
     },
     {
-      "id": "txn_027",
+      "id": "txn_030",
       "type": "charge",
       "orderId": "ord_025",
       "paymentId": "pay_026",
@@ -9163,7 +9496,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_028",
+      "id": "txn_031",
       "type": "release",
       "orderId": "ord_023",
       "paymentId": "pay_024",
@@ -9175,7 +9508,7 @@
       "balanceAfter": 520
     },
     {
-      "id": "txn_029",
+      "id": "txn_032",
       "type": "commission",
       "orderId": "ord_023",
       "paymentId": "pay_024",
@@ -9187,7 +9520,7 @@
       "balanceAfter": 416
     },
     {
-      "id": "txn_030",
+      "id": "txn_033",
       "type": "affiliate_commission",
       "orderId": "ord_020",
       "userId": "usr_creator_ava",
@@ -9195,10 +9528,10 @@
       "description": "Affiliate commission for referral code AVA-STUDIO",
       "createdAt": "2026-06-09T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 521.6
+      "balanceAfter": 905.6
     },
     {
-      "id": "txn_031",
+      "id": "txn_034",
       "type": "charge",
       "orderId": "ord_026",
       "paymentId": "pay_027",
@@ -9210,7 +9543,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_032",
+      "id": "txn_035",
       "type": "release",
       "orderId": "ord_024",
       "paymentId": "pay_025",
@@ -9219,10 +9552,10 @@
       "description": "Escrow released for “Vertical reels for the weekend brunch launch”",
       "createdAt": "2026-06-11T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 1221.6
+      "balanceAfter": 1605.6
     },
     {
-      "id": "txn_033",
+      "id": "txn_036",
       "type": "commission",
       "orderId": "ord_024",
       "paymentId": "pay_025",
@@ -9231,10 +9564,10 @@
       "description": "BetterBlue commission (20%) on “Vertical reels for the weekend brunch launch”",
       "createdAt": "2026-06-11T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 1081.6
+      "balanceAfter": 1465.6
     },
     {
-      "id": "txn_034",
+      "id": "txn_037",
       "type": "charge",
       "orderId": "ord_027",
       "paymentId": "pay_028",
@@ -9246,7 +9579,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_035",
+      "id": "txn_038",
       "type": "release",
       "orderId": "ord_025",
       "paymentId": "pay_026",
@@ -9258,7 +9591,7 @@
       "balanceAfter": 660
     },
     {
-      "id": "txn_036",
+      "id": "txn_039",
       "type": "commission",
       "orderId": "ord_025",
       "paymentId": "pay_026",
@@ -9270,7 +9603,7 @@
       "balanceAfter": 528
     },
     {
-      "id": "txn_037",
+      "id": "txn_040",
       "type": "charge",
       "orderId": "ord_028",
       "paymentId": "pay_029",
@@ -9282,7 +9615,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_038",
+      "id": "txn_041",
       "type": "charge",
       "orderId": "ord_029",
       "paymentId": "pay_030",
@@ -9294,7 +9627,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_039",
+      "id": "txn_042",
       "type": "release",
       "orderId": "ord_026",
       "paymentId": "pay_027",
@@ -9306,7 +9639,7 @@
       "balanceAfter": 1900
     },
     {
-      "id": "txn_040",
+      "id": "txn_043",
       "type": "commission",
       "orderId": "ord_026",
       "paymentId": "pay_027",
@@ -9318,7 +9651,7 @@
       "balanceAfter": 1704
     },
     {
-      "id": "txn_041",
+      "id": "txn_044",
       "type": "release",
       "orderId": "ord_027",
       "paymentId": "pay_028",
@@ -9330,7 +9663,7 @@
       "balanceAfter": 1134
     },
     {
-      "id": "txn_042",
+      "id": "txn_045",
       "type": "commission",
       "orderId": "ord_027",
       "paymentId": "pay_028",
@@ -9342,7 +9675,7 @@
       "balanceAfter": 984
     },
     {
-      "id": "txn_043",
+      "id": "txn_046",
       "type": "charge",
       "orderId": "ord_030",
       "paymentId": "pay_031",
@@ -9354,7 +9687,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_044",
+      "id": "txn_047",
       "type": "release",
       "orderId": "ord_028",
       "paymentId": "pay_029",
@@ -9366,7 +9699,7 @@
       "balanceAfter": 1068
     },
     {
-      "id": "txn_045",
+      "id": "txn_048",
       "type": "commission",
       "orderId": "ord_028",
       "paymentId": "pay_029",
@@ -9378,7 +9711,7 @@
       "balanceAfter": 952
     },
     {
-      "id": "txn_046",
+      "id": "txn_049",
       "type": "charge",
       "orderId": "ord_014",
       "paymentId": "pay_015",
@@ -9390,7 +9723,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_047",
+      "id": "txn_050",
       "type": "charge",
       "orderId": "ord_031",
       "paymentId": "pay_032",
@@ -9402,7 +9735,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_048",
+      "id": "txn_051",
       "type": "release",
       "orderId": "ord_029",
       "paymentId": "pay_030",
@@ -9411,10 +9744,10 @@
       "description": "Escrow released for “Gift box photography for the winter hamper range”",
       "createdAt": "2026-06-27T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 1771.6
+      "balanceAfter": 2155.6
     },
     {
-      "id": "txn_049",
+      "id": "txn_052",
       "type": "commission",
       "orderId": "ord_029",
       "paymentId": "pay_030",
@@ -9423,10 +9756,10 @@
       "description": "BetterBlue commission (20%) on “Gift box photography for the winter hamper range”",
       "createdAt": "2026-06-27T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 1633.6
+      "balanceAfter": 2017.6
     },
     {
-      "id": "txn_050",
+      "id": "txn_053",
       "type": "charge",
       "orderId": "ord_032",
       "paymentId": "pay_033",
@@ -9438,7 +9771,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_051",
+      "id": "txn_054",
       "type": "charge",
       "orderId": "ord_033",
       "paymentId": "pay_034",
@@ -9450,7 +9783,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_052",
+      "id": "txn_055",
       "type": "charge",
       "orderId": "ord_010",
       "paymentId": "pay_011",
@@ -9462,7 +9795,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_053",
+      "id": "txn_056",
       "type": "charge",
       "orderId": "ord_034",
       "paymentId": "pay_035",
@@ -9474,7 +9807,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_054",
+      "id": "txn_057",
       "type": "release",
       "orderId": "ord_030",
       "paymentId": "pay_031",
@@ -9486,7 +9819,7 @@
       "balanceAfter": 1884
     },
     {
-      "id": "txn_055",
+      "id": "txn_058",
       "type": "commission",
       "orderId": "ord_030",
       "paymentId": "pay_031",
@@ -9498,7 +9831,7 @@
       "balanceAfter": 1664
     },
     {
-      "id": "txn_056",
+      "id": "txn_059",
       "type": "release",
       "orderId": "ord_031",
       "paymentId": "pay_032",
@@ -9510,7 +9843,7 @@
       "balanceAfter": 1386
     },
     {
-      "id": "txn_057",
+      "id": "txn_060",
       "type": "commission",
       "orderId": "ord_031",
       "paymentId": "pay_032",
@@ -9522,7 +9855,7 @@
       "balanceAfter": 1224
     },
     {
-      "id": "txn_058",
+      "id": "txn_061",
       "type": "release",
       "orderId": "ord_032",
       "paymentId": "pay_033",
@@ -9534,7 +9867,7 @@
       "balanceAfter": 956
     },
     {
-      "id": "txn_059",
+      "id": "txn_062",
       "type": "commission",
       "orderId": "ord_032",
       "paymentId": "pay_033",
@@ -9546,7 +9879,7 @@
       "balanceAfter": 848
     },
     {
-      "id": "txn_060",
+      "id": "txn_063",
       "type": "charge",
       "orderId": "ord_035",
       "paymentId": "pay_036",
@@ -9558,7 +9891,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_061",
+      "id": "txn_064",
       "type": "charge",
       "orderId": "ord_011",
       "paymentId": "pay_012",
@@ -9570,7 +9903,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_062",
+      "id": "txn_065",
       "type": "release",
       "orderId": "ord_033",
       "paymentId": "pay_034",
@@ -9582,7 +9915,7 @@
       "balanceAfter": 1052
     },
     {
-      "id": "txn_063",
+      "id": "txn_066",
       "type": "commission",
       "orderId": "ord_033",
       "paymentId": "pay_034",
@@ -9594,7 +9927,7 @@
       "balanceAfter": 928
     },
     {
-      "id": "txn_064",
+      "id": "txn_067",
       "type": "release",
       "orderId": "ord_034",
       "paymentId": "pay_035",
@@ -9606,7 +9939,7 @@
       "balanceAfter": 1452
     },
     {
-      "id": "txn_065",
+      "id": "txn_068",
       "type": "commission",
       "orderId": "ord_034",
       "paymentId": "pay_035",
@@ -9618,7 +9951,7 @@
       "balanceAfter": 1304
     },
     {
-      "id": "txn_066",
+      "id": "txn_069",
       "type": "charge",
       "orderId": "ord_036",
       "paymentId": "pay_037",
@@ -9630,7 +9963,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_067",
+      "id": "txn_070",
       "type": "charge",
       "orderId": "ord_009",
       "paymentId": "pay_010",
@@ -9642,7 +9975,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_068",
+      "id": "txn_071",
       "type": "refund",
       "orderId": "ord_014",
       "paymentId": "pay_015",
@@ -9654,7 +9987,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_069",
+      "id": "txn_072",
       "type": "release",
       "orderId": "ord_010",
       "paymentId": "pay_011",
@@ -9666,7 +9999,7 @@
       "balanceAfter": 2244
     },
     {
-      "id": "txn_070",
+      "id": "txn_073",
       "type": "commission",
       "orderId": "ord_010",
       "paymentId": "pay_011",
@@ -9678,7 +10011,7 @@
       "balanceAfter": 2040
     },
     {
-      "id": "txn_071",
+      "id": "txn_074",
       "type": "release",
       "orderId": "ord_035",
       "paymentId": "pay_036",
@@ -9690,7 +10023,7 @@
       "balanceAfter": 1484
     },
     {
-      "id": "txn_072",
+      "id": "txn_075",
       "type": "commission",
       "orderId": "ord_035",
       "paymentId": "pay_036",
@@ -9702,7 +10035,7 @@
       "balanceAfter": 1384
     },
     {
-      "id": "txn_073",
+      "id": "txn_076",
       "type": "charge",
       "orderId": "ord_012",
       "paymentId": "pay_013",
@@ -9714,7 +10047,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_074",
+      "id": "txn_077",
       "type": "charge",
       "orderId": "ord_037",
       "paymentId": "pay_038",
@@ -9726,7 +10059,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_075",
+      "id": "txn_078",
       "type": "charge",
       "orderId": "ord_008",
       "paymentId": "pay_009",
@@ -9738,7 +10071,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_076",
+      "id": "txn_079",
       "type": "charge",
       "orderId": "ord_038",
       "paymentId": "pay_039",
@@ -9750,7 +10083,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_077",
+      "id": "txn_080",
       "type": "release",
       "orderId": "ord_036",
       "paymentId": "pay_037",
@@ -9762,7 +10095,7 @@
       "balanceAfter": 1108
     },
     {
-      "id": "txn_078",
+      "id": "txn_081",
       "type": "commission",
       "orderId": "ord_036",
       "paymentId": "pay_037",
@@ -9774,7 +10107,7 @@
       "balanceAfter": 992
     },
     {
-      "id": "txn_079",
+      "id": "txn_082",
       "type": "charge",
       "orderId": "ord_039",
       "paymentId": "pay_040",
@@ -9786,7 +10119,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_080",
+      "id": "txn_083",
       "type": "release",
       "orderId": "ord_037",
       "paymentId": "pay_038",
@@ -9798,7 +10131,7 @@
       "balanceAfter": 2354
     },
     {
-      "id": "txn_081",
+      "id": "txn_084",
       "type": "commission",
       "orderId": "ord_037",
       "paymentId": "pay_038",
@@ -9810,7 +10143,7 @@
       "balanceAfter": 2216
     },
     {
-      "id": "txn_082",
+      "id": "txn_085",
       "type": "payout",
       "payoutId": "pyo_001",
       "userId": "usr_creator_ava",
@@ -9818,10 +10151,10 @@
       "description": "Payout to bank account **** 4821",
       "createdAt": "2026-07-24T11:00:00.000Z",
       "currency": "USD",
-      "balanceAfter": 433.6
+      "balanceAfter": 817.6
     },
     {
-      "id": "txn_083",
+      "id": "txn_086",
       "type": "charge",
       "orderId": "ord_040",
       "paymentId": "pay_041",
@@ -9833,7 +10166,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_084",
+      "id": "txn_087",
       "type": "charge",
       "orderId": "ord_006",
       "paymentId": "pay_007",
@@ -9845,7 +10178,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_085",
+      "id": "txn_088",
       "type": "charge",
       "orderId": "ord_005",
       "paymentId": "pay_006",
@@ -9857,7 +10190,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_086",
+      "id": "txn_089",
       "type": "release",
       "orderId": "ord_038",
       "paymentId": "pay_039",
@@ -9869,7 +10202,7 @@
       "balanceAfter": 1964
     },
     {
-      "id": "txn_087",
+      "id": "txn_090",
       "type": "commission",
       "orderId": "ord_038",
       "paymentId": "pay_039",
@@ -9881,7 +10214,7 @@
       "balanceAfter": 1832
     },
     {
-      "id": "txn_088",
+      "id": "txn_091",
       "type": "partial_refund",
       "orderId": "ord_011",
       "paymentId": "pay_012",
@@ -9893,7 +10226,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_089",
+      "id": "txn_092",
       "type": "release",
       "orderId": "ord_011",
       "paymentId": "pay_012",
@@ -9905,7 +10238,7 @@
       "balanceAfter": 615
     },
     {
-      "id": "txn_090",
+      "id": "txn_093",
       "type": "commission",
       "orderId": "ord_011",
       "paymentId": "pay_012",
@@ -9917,7 +10250,7 @@
       "balanceAfter": 492
     },
     {
-      "id": "txn_091",
+      "id": "txn_094",
       "type": "charge",
       "orderId": "ord_041",
       "paymentId": "pay_042",
@@ -9929,7 +10262,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_092",
+      "id": "txn_095",
       "type": "charge",
       "orderId": "ord_007",
       "paymentId": "pay_008",
@@ -9941,7 +10274,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_093",
+      "id": "txn_096",
       "type": "release",
       "orderId": "ord_039",
       "paymentId": "pay_040",
@@ -9950,10 +10283,10 @@
       "description": "Escrow released for “Tabletop stills for the ceramic serveware launch”",
       "createdAt": "2026-07-29T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 1043.6
+      "balanceAfter": 1427.6
     },
     {
-      "id": "txn_094",
+      "id": "txn_097",
       "type": "commission",
       "orderId": "ord_039",
       "paymentId": "pay_040",
@@ -9962,10 +10295,10 @@
       "description": "BetterBlue commission (20%) on “Tabletop stills for the ceramic serveware launch”",
       "createdAt": "2026-07-29T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 921.6
+      "balanceAfter": 1305.6
     },
     {
-      "id": "txn_095",
+      "id": "txn_098",
       "type": "charge",
       "orderId": "ord_003",
       "paymentId": "pay_004",
@@ -9977,7 +10310,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_096",
+      "id": "txn_099",
       "type": "charge",
       "orderId": "ord_042",
       "paymentId": "pay_043",
@@ -9989,7 +10322,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_097",
+      "id": "txn_100",
       "type": "release",
       "orderId": "ord_012",
       "paymentId": "pay_013",
@@ -10001,7 +10334,7 @@
       "balanceAfter": 1592
     },
     {
-      "id": "txn_098",
+      "id": "txn_101",
       "type": "commission",
       "orderId": "ord_012",
       "paymentId": "pay_013",
@@ -10013,7 +10346,7 @@
       "balanceAfter": 1464
     },
     {
-      "id": "txn_099",
+      "id": "txn_102",
       "type": "release",
       "orderId": "ord_040",
       "paymentId": "pay_041",
@@ -10022,10 +10355,10 @@
       "description": "Escrow released for “Barista process films for the seasonal drinks menu”",
       "createdAt": "2026-08-02T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 1641.6
+      "balanceAfter": 2025.6
     },
     {
-      "id": "txn_100",
+      "id": "txn_103",
       "type": "commission",
       "orderId": "ord_040",
       "paymentId": "pay_041",
@@ -10034,10 +10367,10 @@
       "description": "BetterBlue commission (20%) on “Barista process films for the seasonal drinks menu”",
       "createdAt": "2026-08-02T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 1497.6
+      "balanceAfter": 1881.6
     },
     {
-      "id": "txn_101",
+      "id": "txn_104",
       "type": "charge",
       "orderId": "ord_004",
       "paymentId": "pay_005",
@@ -10049,7 +10382,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_102",
+      "id": "txn_105",
       "type": "release",
       "orderId": "ord_041",
       "paymentId": "pay_042",
@@ -10058,10 +10391,10 @@
       "description": "Escrow released for “Ingredient sourcing stills for the supplier story page”",
       "createdAt": "2026-08-03T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 2057.6
+      "balanceAfter": 2441.6
     },
     {
-      "id": "txn_103",
+      "id": "txn_106",
       "type": "commission",
       "orderId": "ord_041",
       "paymentId": "pay_042",
@@ -10070,10 +10403,22 @@
       "description": "BetterBlue commission (20%) on “Ingredient sourcing stills for the supplier story page”",
       "createdAt": "2026-08-03T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 1945.6
+      "balanceAfter": 2329.6
     },
     {
-      "id": "txn_104",
+      "id": "txn_107",
+      "type": "charge",
+      "orderId": "ord_043",
+      "paymentId": "pay_044",
+      "userId": "usr_buyer_verde",
+      "amount": -520,
+      "description": "Escrow charge for “Supper club coverage for the harvest series”",
+      "createdAt": "2026-08-05T18:20:00.000Z",
+      "currency": "USD",
+      "balanceAfter": null
+    },
+    {
+      "id": "txn_108",
       "type": "release",
       "orderId": "ord_042",
       "paymentId": "pay_043",
@@ -10082,10 +10427,10 @@
       "description": "Escrow released for “Packaging stills for the gift tool range refresh”",
       "createdAt": "2026-08-06T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 2475.6
+      "balanceAfter": 2859.6
     },
     {
-      "id": "txn_105",
+      "id": "txn_109",
       "type": "commission",
       "orderId": "ord_042",
       "paymentId": "pay_043",
@@ -10094,10 +10439,10 @@
       "description": "BetterBlue commission (20%) on “Packaging stills for the gift tool range refresh”",
       "createdAt": "2026-08-06T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 2369.6
+      "balanceAfter": 2753.6
     },
     {
-      "id": "txn_106",
+      "id": "txn_110",
       "type": "charge",
       "orderId": "ord_002",
       "paymentId": "pay_003",
@@ -10107,6 +10452,30 @@
       "createdAt": "2026-08-08T20:20:00.000Z",
       "currency": "USD",
       "balanceAfter": null
+    },
+    {
+      "id": "txn_111",
+      "type": "release",
+      "orderId": "ord_043",
+      "paymentId": "pay_044",
+      "userId": "usr_creator_amara",
+      "amount": 520,
+      "description": "Escrow released for “Supper club coverage for the harvest series”",
+      "createdAt": "2026-08-11T16:10:00.000Z",
+      "currency": "USD",
+      "balanceAfter": 2352
+    },
+    {
+      "id": "txn_112",
+      "type": "commission",
+      "orderId": "ord_043",
+      "paymentId": "pay_044",
+      "userId": "usr_creator_amara",
+      "amount": -104,
+      "description": "BetterBlue commission (20%) on “Supper club coverage for the harvest series”",
+      "createdAt": "2026-08-11T16:10:00.000Z",
+      "currency": "USD",
+      "balanceAfter": 2248
     }
   ],
   "commissions": [
@@ -10388,6 +10757,24 @@
       "amount": 106,
       "currency": "USD",
       "createdAt": "2026-08-06T16:10:00.000Z"
+    },
+    {
+      "id": "com_032",
+      "orderId": "ord_043",
+      "rate": 0.2,
+      "baseAmount": 520,
+      "amount": 104,
+      "currency": "USD",
+      "createdAt": "2026-08-11T16:10:00.000Z"
+    },
+    {
+      "id": "com_033",
+      "orderId": "ord_044",
+      "rate": 0.2,
+      "baseAmount": 480,
+      "amount": 96,
+      "currency": "USD",
+      "createdAt": "2026-05-07T16:10:00.000Z"
     }
   ],
   "payouts": [
@@ -11041,6 +11428,26 @@
     },
     {
       "id": "rvw_027",
+      "orderId": "ord_043",
+      "requestId": "req_051",
+      "buyerId": "usr_buyer_verde",
+      "creatorId": "usr_creator_amara",
+      "rating": 5,
+      "comment": "Amara covered a full supper club service without a single guest noticing a camera. We had the first edit of the gallery two days later and it is already running across the harvest series pages.",
+      "createdAt": "2026-08-13T16:10:00.000Z"
+    },
+    {
+      "id": "rvw_028",
+      "orderId": "ord_044",
+      "requestId": "req_052",
+      "buyerId": "usr_buyer_verde",
+      "creatorId": "usr_creator_ava",
+      "rating": 4,
+      "comment": "Lovely produce frames and the supplier board reads beautifully with them. Two of the herb shots came back softer than the rest, which Ava reshot inside the revision round.",
+      "createdAt": "2026-05-09T16:10:00.000Z"
+    },
+    {
+      "id": "rvw_029",
       "orderId": "ord_010",
       "requestId": "req_018",
       "buyerId": "usr_buyer_bloom",
@@ -11050,7 +11457,7 @@
       "createdAt": "2026-07-16T16:10:00.000Z"
     },
     {
-      "id": "rvw_028",
+      "id": "rvw_030",
       "orderId": "ord_011",
       "requestId": "req_019",
       "buyerId": "usr_buyer_atlas",
@@ -11060,7 +11467,7 @@
       "createdAt": "2026-07-30T16:10:00.000Z"
     },
     {
-      "id": "rvw_029",
+      "id": "rvw_031",
       "orderId": "ord_012",
       "requestId": "req_020",
       "buyerId": "usr_buyer_urbannest",

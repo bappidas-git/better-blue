@@ -614,6 +614,18 @@ export const HISTORY_ENGAGEMENTS = [
   { key: 'h26', buyer: 'cocoa', creator: 'ava', category: CATEGORY_ID.FOOD_BEVERAGE, contentType: VIDEO, title: 'Barista process films for the seasonal drinks menu', quantity: 3, price: 720, deliveryDays: 8, createdDaysAgo: 21 },
   { key: 'h27', buyer: 'verde', creator: 'ava', category: CATEGORY_ID.FOOD_BEVERAGE, contentType: PHOTO, title: 'Ingredient sourcing stills for the supplier story page', quantity: 18, price: 560, deliveryDays: 6, createdDaysAgo: 18 },
   { key: 'h28', buyer: 'craftware', creator: 'ava', category: CATEGORY_ID.ECOMMERCE_PRODUCTS, contentType: PHOTO, title: 'Packaging stills for the gift tool range refresh', quantity: 20, price: 530, deliveryDays: 6, createdDaysAgo: 15 },
+  // h29–h30 (Prompt 15): two more engagements for the buyer demo account, so
+  // its payment history covers five calendar months and the "Spend — last 6
+  // months" chart on the buyer overview has real monthly aggregation to show.
+  //
+  // These two are **appended rather than slotted into date order**: ids are
+  // assigned in array order, and inserting h30 among the older rows would
+  // renumber every request, order, and payment after it. The runner-up
+  // rotation is index-based too, which is why the recent engagement takes the
+  // even slot — the losing offer it generates is dated a fortnight ago, where
+  // every creator account already exists.
+  { key: 'h29', buyer: 'verde', creator: 'amara', category: CATEGORY_ID.EVENTS_ENTERTAINMENT, contentType: PHOTO, title: 'Supper club coverage for the harvest series', quantity: 24, price: 520, deliveryDays: 5, createdDaysAgo: 9 },
+  { key: 'h30', buyer: 'verde', creator: 'ava', category: CATEGORY_ID.FOOD_BEVERAGE, contentType: PHOTO, title: 'Produce stills for the supplier story board', quantity: 14, price: 480, deliveryDays: 7, createdDaysAgo: 107 },
 ]
 
 /** Boilerplate brief copy for history requests, rotated by content type. */

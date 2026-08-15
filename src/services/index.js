@@ -18,11 +18,16 @@ export {
   authService,
   clearStoredSession,
   readStoredSession,
+  PASSWORD_MIN_LENGTH,
   REFERRAL_STORAGE_KEY,
   SELF_REGISTERABLE_ROLES,
 } from './authService'
 export { userService } from './userService'
-export { buyerProfileService } from './buyerProfileService'
+export {
+  buyerProfileService,
+  BUYER_PROFILE_FIELDS,
+  getBuyerProfileCompleteness,
+} from './buyerProfileService'
 export { creatorProfileService, CREATOR_ORDERING } from './creatorProfileService'
 export { portfolioService } from './portfolioService'
 
@@ -45,6 +50,13 @@ export { disputeService } from './disputeService'
 export { moderationService, OPEN_QUEUE_STATUSES } from './moderationService'
 export { reportService } from './reportService'
 export { reviewService, RATING_SCALE } from './reviewService'
+
+/* Dashboards -------------------------------------------------------------- */
+export {
+  buyerDashboardService,
+  ACTIVITY_LIMIT,
+  SPEND_MONTHS,
+} from './buyerDashboardService'
 
 /* Platform ---------------------------------------------------------------- */
 export { landingService } from './landingService'
