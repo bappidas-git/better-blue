@@ -328,10 +328,10 @@ fallback, and `CATEGORY_ID` can never drift.
 
 **MySQL** `categories` — `slug VARCHAR(64) UNIQUE`, index `(active, sort_order)`.
 
-### `contentRequests` — 50
+### `contentRequests` — 54
 
-Buyer briefs. 22 hand-written scenario briefs cover every `REQUEST_STATUS` and
-host the 14 scenario orders; 28 archived briefs back the completed engagement
+Buyer briefs. 24 hand-written scenario briefs cover every `REQUEST_STATUS` and
+host the 14 scenario orders; 30 archived briefs back the completed engagement
 history (see §6).
 
 | Field | Type | Notes |
@@ -356,6 +356,24 @@ history (see §6).
 | `awardedProposalId` | FK? → `proposals.id` | **derived**; `null` until awarded |
 | `createdAt` | datetime | |
 | `publishedAt` | datetime | `null` while a draft |
+| `closedAt` | datetime? | set by `closeRequest`; absent otherwise |
+| `cancelledAt` | datetime? | set by `cancelRequest`; absent otherwise |
+| `closureReason` | string? | the buyer's note, shared with the proposers |
+
+`closedAt`, `cancelledAt`, and `closureReason` were **added in Prompt 18**
+(request management) and are absent on every seeded brief. Only
+`requestService.closeRequest` and `requestService.cancelRequest` write them,
+and the request's Activity timeline is the only thing that reads them — it is
+derived from timestamps rather than from an event log, so a brief that ended
+before these fields existed simply shows the event undated.
+
+**Drafts may be incomplete.** A brief written by the wizard but never finished
+leaves the unanswered fields **absent** — `contentType`, `usageRights`,
+`orientation`, `budgetType`, and the budget and deadline can all be missing on
+a `draft`, and on nothing else (the seed's integrity check enforces exactly
+that). `requestService.missingPublishFields` reads those gaps to tell the buyer
+what is still needed before the draft can go live. `req_008` in the seed is
+deliberately half-written so that path is demonstrable.
 
 `invitedCreatorId` was **added in Prompt 16** (request wizard). It records the
 creator a buyer arrived from — the "Start a request" CTA on a public profile
@@ -372,7 +390,7 @@ and `(buyer_id, status)` for "my requests". `awarded_proposal_id` and
 `invited_creator_id` are nullable FKs; add `awarded_proposal_id` after
 `proposals` exists to avoid a circular constraint at migration time.
 
-### `proposals` — 91
+### `proposals` — 94
 
 Creator offers. Live briefs carry 2–4 each (submitted / shortlisted / declined
 / withdrawn), the closed brief carries expired offers, and every order has the

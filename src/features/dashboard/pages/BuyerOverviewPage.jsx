@@ -15,6 +15,10 @@ import ChartCard from '@/features/dashboard/components/ChartCard'
 import OnboardingChecklist from '@/features/dashboard/components/OnboardingChecklist'
 import QuickActions from '@/features/dashboard/components/QuickActions'
 import StatCardGrid from '@/features/dashboard/components/StatCardGrid'
+import {
+  REQUEST_TAB,
+  requestsTabQuery,
+} from '@/features/requests/utils/buyerRequestFilters'
 import ThemedBarChart from '@/features/dashboard/components/ThemedBarChart'
 import WelcomeBanner from '@/features/dashboard/components/WelcomeBanner'
 import useApiQuery from '@/hooks/useApiQuery'
@@ -33,12 +37,12 @@ import { EMPTY_PLACEHOLDER, formatCurrency, formatNumber } from '@/utils/formatt
 // what to *render* — including which of the three sections failed and needs its
 // own retry — and computes nothing but display strings.
 //
-// TODO(Prompts 18–20): the stat tiles are the entry points to Requests,
-// Orders, and Payments. Each becomes a link the moment its route renders a
-// page — a tile pointing at an unbuilt path would land on the dashboard 404,
-// so they stay inert until then (Prompt 14's rule for `navConfig`, applied to
-// page-level links). The "New request" action and the onboarding step are
-// live: Prompt 16 built the wizard behind them.
+// The stat tiles are the entry points to Requests, Orders, and Payments. Each
+// becomes a link the moment its route renders a page — a tile pointing at an
+// unbuilt path would land on the dashboard 404, so it stays inert until then
+// (Prompt 14's rule for `navConfig`, applied to page-level links). Prompt 18
+// lit the two request tiles up and pointed each at the tab that answers it;
+// Orders (20) and Payments (19) follow.
 
 /** Chart height by breakpoint (§11). */
 const CHART_HEIGHT = { xs: 240, md: 300 }
@@ -115,7 +119,7 @@ export default function BuyerOverviewPage() {
       label: 'Active requests',
       value: overview?.activeRequests ?? EMPTY_PLACEHOLDER,
       icon: 'solar:clipboard-list-linear',
-      // TODO(Prompt 16): to: paths.BUYER_REQUESTS
+      to: paths.BUYER_REQUESTS,
     },
     {
       key: 'proposals',
@@ -123,7 +127,9 @@ export default function BuyerOverviewPage() {
       value: overview?.proposalsAwaiting ?? EMPTY_PLACEHOLDER,
       icon: 'solar:inbox-in-linear',
       iconTone: overview?.proposalsAwaiting > 0 ? 'warning' : 'brand',
-      // TODO(Prompt 18): to: paths.BUYER_REQUESTS (the proposals inbox)
+      // Proposals only ever wait on an *open* brief, so the tile lands on the
+      // tab that holds them rather than on the whole list.
+      to: `${paths.BUYER_REQUESTS}${requestsTabQuery(REQUEST_TAB.OPEN)}`,
     },
     {
       key: 'orders',

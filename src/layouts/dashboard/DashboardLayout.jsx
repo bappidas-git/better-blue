@@ -9,7 +9,9 @@ import { Outlet, ScrollRestoration, useLocation } from 'react-router-dom'
 import AppLoader from '@/app/AppLoader'
 import { useAuth } from '@/context/AuthContext'
 import useApiQuery from '@/hooks/useApiQuery'
+import { ROLES } from '@/constants/roles'
 import {
+  BADGE_KEY,
   NAV_KEY,
   findNavItem,
   flattenNavEntries,
@@ -19,6 +21,7 @@ import {
   splitBottomNav,
 } from '@/routes/navConfig'
 import { notificationService } from '@/services/notificationService'
+import { requestService } from '@/services/requestService'
 import { durations, easing } from '@/theme/motionTokens'
 import { storage } from '@/utils/storage'
 
@@ -134,8 +137,20 @@ export default function DashboardLayout() {
     { enabled: Boolean(user?.id) }
   )
 
-  // Later prompts fill this from their own queries, keyed by `item.badgeKey`.
-  const badges = useMemo(() => ({}), [])
+  // Nav badges, keyed by `item.badgeKey`. Each prompt adds its own query here
+  // and its key to `BADGE_KEY`; like the bell, a failure is swallowed rather
+  // than allowed to block the shell (Prompt 14 §5).
+  const isBuyer = user?.role === ROLES.BUYER
+  const { data: proposalsAwaiting } = useApiQuery(
+    () => requestService.countProposalsAwaitingDecision(user?.id),
+    [user?.id, pathname],
+    { enabled: Boolean(user?.id) && isBuyer }
+  )
+
+  const badges = useMemo(
+    () => ({ [BADGE_KEY.BUYER_PROPOSALS_AWAITING]: proposalsAwaiting ?? 0 }),
+    [proposalsAwaiting]
+  )
 
   return (
     <DashboardPageProvider>

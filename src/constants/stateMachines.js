@@ -52,6 +52,12 @@ export const PROPOSAL_STATUS_MACHINE = defineMachine('PROPOSAL_STATUS', {
     PROPOSAL_STATUS.ACCEPTED,
     PROPOSAL_STATUS.DECLINED,
     PROPOSAL_STATUS.WITHDRAWN,
+    // Prompt 18 addition: shortlisting is a **toggle** on the buyer's proposal
+    // board, so a star switched off has to put the offer back in the undecided
+    // pool. It is the same record in the same state it was in before the star,
+    // which is why the edge is back to `submitted` rather than a new status.
+    // 00 §9 fixes the PROPOSAL_STATUS *values*, not this map.
+    PROPOSAL_STATUS.SUBMITTED,
   ],
   [PROPOSAL_STATUS.ACCEPTED]: [],
   [PROPOSAL_STATUS.DECLINED]: [],

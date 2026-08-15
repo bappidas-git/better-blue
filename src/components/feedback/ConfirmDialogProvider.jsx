@@ -58,6 +58,11 @@ const DEFAULT_OPTIONS = {
   cancelLabel: 'Cancel',
   tone: 'primary',
   requireReason: false,
+  // Prompt 18 addition: some decisions want a reason without demanding one —
+  // closing a content request tells the creators who proposed on it why, and
+  // "no comment" is a legitimate answer. `allowReason` renders the same field,
+  // optional; `requireReason` still implies it.
+  allowReason: false,
   reasonLabel: 'Reason',
   reasonPlaceholder: '',
   reasonHelperText: 'Shared with the people affected by this decision.',
@@ -168,11 +173,13 @@ export default function ConfirmDialogProvider({ children }) {
               </Typography>
             ) : null}
 
-            {options.requireReason ? (
+            {options.requireReason || options.allowReason ? (
               <Box sx={{ mt: options.message ? 2.5 : 0 }}>
                 <FormTextField
                   id="confirm-dialog-reason"
-                  label={options.reasonLabel}
+                  label={
+                    options.requireReason ? options.reasonLabel : `${options.reasonLabel} (optional)`
+                  }
                   value={reason}
                   onChange={(next) => {
                     setReason(next)
@@ -181,7 +188,7 @@ export default function ConfirmDialogProvider({ children }) {
                   placeholder={options.reasonPlaceholder}
                   helperText={options.reasonHelperText}
                   error={reasonError}
-                  required
+                  required={options.requireReason}
                   multiline
                   minRows={3}
                   maxLength={500}

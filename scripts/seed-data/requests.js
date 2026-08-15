@@ -185,6 +185,60 @@ const SCENARIO_SOURCE = [
     deadlineInDays: 40,
     createdDaysAgo: 6,
   },
+  // Two drafts for the demo buyer, added in Prompt 18 so the request list's
+  // Drafts tab, its "resume in the wizard" action, and its publish flow are all
+  // exercisable on the seeded demo account. The first is finished and publishes
+  // cleanly; the second is deliberately half-written, so the "this draft is not
+  // finished yet — here is what is missing" path has something to catch.
+  {
+    key: 'draft_verde_launch',
+    buyer: 'verde',
+    status: REQUEST_STATUS.DRAFT,
+    category: CATEGORY_ID.FOOD_BEVERAGE,
+    contentType: PHOTO,
+    title: 'Launch photography for the new Portland location',
+    description:
+      'We open our seventh site in Portland this autumn and need photography for the announcement: the dining room, the open kitchen, and a handful of signature dishes. Shooting before service on a quiet weekday. Everything is ready except the opening date, which is why this is still a draft.',
+    quantity: 24,
+    orientation: ORIENTATION.ANY,
+    usageRights: USAGE_RIGHTS.FULL_COMMERCIAL,
+    brandGuidelines:
+      'Warm and unhurried, matching the autumn menu set. Natural light wherever possible, no flash in the dining room.',
+    dos: 'Photograph the room empty and in use. Include the open kitchen pass. Leave headroom for the announcement overlay.',
+    donts: 'No staff faces without a signed release, no competitor branding, no heavy colour grading.',
+    referenceUrls: [],
+    budgetType: BUDGET_TYPE.RANGE,
+    budgetMin: 700,
+    budgetMax: 1100,
+    deadlineInDays: 34,
+    createdDaysAgo: 3,
+  },
+  {
+    key: 'draft_verde_supplier',
+    buyer: 'verde',
+    status: REQUEST_STATUS.DRAFT,
+    category: CATEGORY_ID.FOOD_BEVERAGE,
+    // Intentionally incomplete: no content type, no usage rights, no budget,
+    // and no deadline. An unanswered field is **absent** on the record (that is
+    // `compact`'s contract), which is exactly what
+    // `requestService.missingPublishFields` looks for — it names all four.
+    contentType: undefined,
+    title: 'Supplier farm visits — short films, details still to confirm',
+    description:
+      'Rough notes for a series about the farms we buy from. We know we want three or four short films shot on location across the season, but the farms, the travel days, and the budget are all still being agreed internally.',
+    quantity: 4,
+    orientation: ORIENTATION.PORTRAIT,
+    usageRights: undefined,
+    brandGuidelines: '',
+    dos: '',
+    donts: '',
+    referenceUrls: [],
+    budgetType: BUDGET_TYPE.FIXED,
+    budgetMin: undefined,
+    budgetMax: undefined,
+    deadlineInDays: null,
+    createdDaysAgo: 1,
+  },
   {
     key: 'draft_urbannest_sofa',
     buyer: 'urbannest',
@@ -698,7 +752,9 @@ const scenarioRequests = SCENARIO_SOURCE.map((source) => {
     budgetMin: source.budgetMin,
     budgetMax: source.budgetMax,
     currency: CURRENCY,
-    deadline: daysAgo(-source.deadlineInDays, 17, 0),
+    // A draft may not have picked a date yet (Prompt 18's incomplete draft), so
+    // `null` stays `null` rather than becoming "today" via `-null === -0`.
+    deadline: source.deadlineInDays == null ? null : daysAgo(-source.deadlineInDays, 17, 0),
     status: source.status,
     // Derived in seed-db.js from the proposals on this request.
     proposalsCount: 0,

@@ -2,8 +2,14 @@
 // marketplace and the source of the public request board.
 
 import { appConfig } from '@/config/appConfig'
+import { NOTIFICATION_TYPE } from '@/constants/notificationTypes'
 import { REQUEST_STATUS_MACHINE } from '@/constants/stateMachines'
-import { BUDGET_TYPE, CONTENT_TYPE, REQUEST_STATUS } from '@/constants/statuses'
+import {
+  BUDGET_TYPE,
+  CONTENT_TYPE,
+  PROPOSAL_STATUS,
+  REQUEST_STATUS,
+} from '@/constants/statuses'
 import { ID_PREFIX } from '@/utils/id'
 import { toAmount } from '@/utils/money'
 import { assertTransition } from '@/utils/stateMachine'
@@ -11,12 +17,17 @@ import { assertTransition } from '@/utils/stateMachine'
 import { API_ERROR_CODE, createApiError } from './api/apiError'
 import { createCrudService } from './api/crudFactory'
 import { SORT_ORDER } from './api/listAdapter'
+import { notificationService } from './notificationService'
+import { proposalService } from './proposalService'
 import { uploadService, UPLOAD_PURPOSE } from './uploadService'
 
 const contentRequests = createCrudService('contentRequests', { idPrefix: ID_PREFIX.REQUEST })
 
 /** Newest published brief first (contract §6.7). */
 const DEFAULT_SORT = 'publishedAt'
+
+/** Provider page ceiling (contract §4.1) — bounds the client-side folds below. */
+const FOLD_LIMIT = 100
 
 /** Content types that carry a `videoDurationSec` (contract §6.7). */
 const VIDEO_TYPES = [CONTENT_TYPE.VIDEO, CONTENT_TYPE.BUNDLE]
@@ -117,6 +128,138 @@ async function collectReferenceUrls({ referenceFiles, referenceUrls }) {
   // `referenceUrls` is `string[]` in the data model, so only the URL is kept —
   // the rest of the file object (id, size, thumbnail) has nowhere to live.
   return [...kept, ...uploaded.map((file) => file.url)]
+}
+
+/**
+ * Everything a brief must carry before creators may see it, in the order the
+ * wizard asks for it. This is the *record-level* mirror of the wizard's
+ * validators (Prompt 16 `useRequestWizard`): the wizard guards the form, this
+ * guards the row — a draft saved half-finished at step two, then published
+ * months later from the request list, never gets past here incomplete.
+ *
+ * Labels are the copy the buyer reads in the "still missing" list (§13).
+ */
+const PUBLISH_REQUIREMENTS = Object.freeze([
+  Object.freeze({ field: 'title', label: 'Title' }),
+  Object.freeze({ field: 'categoryId', label: 'Category' }),
+  Object.freeze({ field: 'contentType', label: 'Content type' }),
+  Object.freeze({ field: 'description', label: 'Description' }),
+  Object.freeze({ field: 'quantity', label: 'How many deliverables' }),
+  Object.freeze({
+    field: 'videoDurationSec',
+    label: 'Clip length',
+    // Only briefs that involve video carry one (contract §6.7).
+    when: (request) => requiresVideoDuration(request.contentType),
+  }),
+  Object.freeze({ field: 'orientation', label: 'Framing' }),
+  Object.freeze({ field: 'usageRights', label: 'Usage rights' }),
+  Object.freeze({ field: 'budgetMin', label: 'Budget' }),
+  Object.freeze({
+    field: 'budgetMax',
+    label: 'Top of your budget range',
+    when: (request) => request.budgetType === BUDGET_TYPE.RANGE,
+  }),
+  Object.freeze({ field: 'deadline', label: 'Deadline' }),
+])
+
+/** An answered field: `0`, `''`, `null`, and `undefined` all count as unanswered. */
+const isAnswered = (value) => value !== null && value !== undefined && value !== '' && value !== 0
+
+/**
+ * Which parts of a draft are still blank — `[]` when it is ready to publish.
+ *
+ * Exported so the request list can name the gaps *before* opening a confirm
+ * dialog, and so `publishDraft` and that dialog can never disagree about what
+ * "complete" means.
+ *
+ * @param {object} request a brief record
+ * @returns {string[]} human labels of the missing fields, in wizard order
+ */
+export function missingPublishFields(request) {
+  if (!request) return PUBLISH_REQUIREMENTS.map((requirement) => requirement.label)
+
+  return PUBLISH_REQUIREMENTS.filter(
+    (requirement) =>
+      (!requirement.when || requirement.when(request)) &&
+      !isAnswered(request[requirement.field])
+  ).map((requirement) => requirement.label)
+}
+
+/**
+ * Runs a status change through `REQUEST_STATUS_MACHINE` and reports a rejection
+ * the way the contract does: `409 conflict` with `details: { from, to }` (§8.1).
+ */
+function transitionTo(from, to, message) {
+  try {
+    return assertTransition(REQUEST_STATUS_MACHINE, from, to)
+  } catch (failure) {
+    throw createApiError(
+      API_ERROR_CODE.CONFLICT,
+      message,
+      { from, to, transition: failure.message },
+      409
+    )
+  }
+}
+
+/**
+ * Loads a brief and refuses it unless `buyerId` owns it.
+ *
+ * SECURITY: this is UX only (00 §11) — it keeps one buyer from acting on
+ * another's brief by URL, and Laravel must scope every one of these operations
+ * to the signed-in buyer independently.
+ */
+async function loadOwnedRequest(id, buyerId) {
+  const request = await contentRequests.getById(id)
+  if (buyerId && request.buyerId !== buyerId) {
+    throw createApiError(API_ERROR_CODE.FORBIDDEN, 'This request belongs to another account.')
+  }
+  return request
+}
+
+/**
+ * Ends the offers on a brief that is being closed or cancelled, and tells the
+ * creators why.
+ *
+ * MOCK-ATOMICITY: one `PATCH` and one notification per live offer, sequentially
+ * — JSON Server rewrites `db.json` on every write, so parallel writes drop rows
+ * (the same constraint `orderService.acceptProposal` works around). A creator
+ * whose notification fails still has a correctly declined offer.
+ */
+async function endLiveProposals(request, { reason, closing }) {
+  const live = await proposalService.listUndecided(request.id)
+  if (live.length === 0) return 0
+
+  const verb = closing ? 'closed' : 'cancelled'
+  const body =
+    `The buyer has ${verb} “${request.title}” without awarding it, so your proposal ` +
+    'will not be taken forward.' +
+    (reason ? ` They said: “${reason}”` : ' Thanks for taking the time to propose.')
+  const respondedAt = new Date().toISOString()
+
+  for (const offer of live) {
+    // eslint-disable-next-line no-await-in-loop -- see MOCK-ATOMICITY above.
+    await proposalService.update(offer.id, {
+      status: PROPOSAL_STATUS.DECLINED,
+      respondedAt,
+    })
+
+    try {
+      // eslint-disable-next-line no-await-in-loop -- as above.
+      await notificationService.notify({
+        userId: offer.creatorId,
+        type: NOTIFICATION_TYPE.PROPOSAL_DECLINED,
+        title: closing ? 'Request closed' : 'Request cancelled',
+        body,
+        entityType: 'request',
+        entityId: request.id,
+      })
+    } catch {
+      // An unsent bell item must not undo a decline that already happened.
+    }
+  }
+
+  return live.length
 }
 
 export const requestService = Object.freeze({
@@ -306,9 +449,260 @@ export const requestService = Object.freeze({
     return request
   },
 
-  // —— workflow operations (added by later prompts) ——
-  // cancelRequest / closeRequest — Prompt 18 (request management),
-  // enforcing REQUEST_STATUS_MACHINE via `utils/stateMachine#assertTransition`.
+  /* —— workflow operations —————————————————————————————————————————————— */
+
+  /**
+   * "My requests", with the one number the list page cannot read off a brief:
+   * how many offers on it the buyer has not looked at yet (Prompt 18 §4.1).
+   *
+   * MOCK-JOIN: `proposalsCount` is stored on the brief, but "new" means
+   * `submitted` — an offer nobody has starred or declined — which only the
+   * proposals collection knows. That is one extra request for the whole page,
+   * scoped to the ids on it, rather than one per card. Laravel returns
+   * `newProposalsCount` from the same query that lists the briefs.
+   *
+   * A failure of that second request is swallowed: an accent badge is never
+   * worth failing a list for, so the briefs render with `newProposalsCount: 0`.
+   *
+   * @param {string} buyerId `usr_…`
+   * @param {import('./api/listAdapter').ListParams} [params] page, sort, search,
+   *   and any filter `list` accepts — `status` is the tab
+   * @returns {Promise<import('./api/listAdapter').ListResult>} briefs, each with
+   *   `newProposalsCount`
+   */
+  async listForBuyer(buyerId, params = {}) {
+    const result = await requestService.listByBuyer(buyerId, params)
+
+    // Only live briefs can gain offers; a draft or a finished brief never does,
+    // so they are left out of the lookup rather than queried for nothing.
+    const liveIds = result.items
+      .filter((request) => request.status === REQUEST_STATUS.OPEN)
+      .map((request) => request.id)
+
+    let newByRequest = new Map()
+    if (liveIds.length > 0) {
+      try {
+        const { items } = await proposalService.list({
+          page: 1,
+          limit: FOLD_LIMIT,
+          filters: { requestId: liveIds, status: PROPOSAL_STATUS.SUBMITTED },
+        })
+        newByRequest = items.reduce(
+          (counts, proposal) =>
+            counts.set(proposal.requestId, (counts.get(proposal.requestId) ?? 0) + 1),
+          new Map()
+        )
+      } catch {
+        // See above — the badge is an accent, not the payload.
+      }
+    }
+
+    return {
+      ...result,
+      items: result.items.map((request) => ({
+        ...request,
+        newProposalsCount: newByRequest.get(request.id) ?? 0,
+      })),
+    }
+  },
+
+  /**
+   * How many briefs a buyer has in each status — the tab counts (§5).
+   *
+   * MOCK-AGGREGATE: one page of up to {@link FOLD_LIMIT} briefs, folded here,
+   * instead of the six `SELECT COUNT(*) … GROUP BY status` a server would run.
+   * A buyer past that ceiling gets counts for their newest 100 briefs; `total`
+   * stays exact either way, and `capped` says which case you are in. Laravel:
+   * `GET /buyer/requests/counts`.
+   *
+   * @param {string} buyerId `usr_…`
+   * @returns {Promise<{total: number, capped: boolean, byStatus: Object<string, number>}>}
+   *   `byStatus` carries an entry for **every** `REQUEST_STATUS`, zero included
+   */
+  async countsByStatus(buyerId) {
+    const byStatus = Object.fromEntries(
+      Object.values(REQUEST_STATUS).map((status) => [status, 0])
+    )
+
+    if (!buyerId) return { total: 0, capped: false, byStatus }
+
+    const { items, total } = await requestService.listByBuyer(buyerId, {
+      page: 1,
+      limit: FOLD_LIMIT,
+    })
+
+    items.forEach((request) => {
+      if (byStatus[request.status] !== undefined) byStatus[request.status] += 1
+    })
+
+    return { total, capped: total > items.length, byStatus }
+  },
+
+  /**
+   * The nav badge: offers waiting on this buyer's decision (§6).
+   *
+   * APPROXIMATION (documented per §6): the badge is specified as "open requests
+   * with new proposals" and this counts the **proposals** instead — a buyer with
+   * three new offers on one brief sees `3`, not `1`. It is one request rather
+   * than one per brief, it is never zero when something is genuinely waiting,
+   * and it reads the same way the overview's "Proposals to review" tile does,
+   * which is the number a buyer has already seen on the dashboard.
+   *
+   * @param {string} buyerId `usr_…`
+   * @returns {Promise<number>} `0` when nothing is waiting, or on any failure
+   */
+  async countProposalsAwaitingDecision(buyerId) {
+    if (!buyerId) return 0
+
+    const open = await requestService.listByBuyer(buyerId, {
+      page: 1,
+      limit: FOLD_LIMIT,
+      filters: { status: REQUEST_STATUS.OPEN },
+    })
+
+    const openIds = open.items.map((request) => request.id)
+    if (openIds.length === 0) return 0
+
+    const { total } = await proposalService.list({
+      page: 1,
+      limit: 1,
+      filters: { requestId: openIds, status: PROPOSAL_STATUS.SUBMITTED },
+    })
+    return total
+  },
+
+  /**
+   * **Publishes a saved draft** from the request list (§4.1).
+   *
+   * The wizard's own publish path is `createRequest`, which shapes a record out
+   * of form values. This one publishes a record that already exists and was
+   * never finished — so completeness is checked here, against the row, and the
+   * gaps come back named so the buyer is told *what* to go and fill in rather
+   * than just "invalid".
+   *
+   * @param {string} id `req_…`
+   * @param {object} [options]
+   * @param {string} [options.buyerId] the acting buyer — rejected unless they own it
+   * @returns {Promise<object>} the published brief, `status: 'open'`
+   * @throws {ApiError} `validation_failed` with `details.missing` (labels) when
+   *   the draft is incomplete · `conflict` when it is no longer a draft ·
+   *   `forbidden` · `not_found`
+   *
+   * **Future endpoint:** `POST /contentRequests/:id/publish` → `{ request }`.
+   */
+  async publishDraft(id, { buyerId } = {}) {
+    const request = await loadOwnedRequest(id, buyerId)
+
+    const status = transitionTo(
+      request.status,
+      REQUEST_STATUS.OPEN,
+      'This request can no longer be published. Reload the page to see where it got to.'
+    )
+
+    const missing = missingPublishFields(request)
+    if (missing.length > 0) {
+      throw createApiError(
+        API_ERROR_CODE.VALIDATION_FAILED,
+        'This draft is not finished yet, so creators cannot see it.',
+        { missing }
+      )
+    }
+
+    return contentRequests.update(id, { status, publishedAt: new Date().toISOString() })
+  },
+
+  /**
+   * **Closes a live brief** without awarding it (§4.1).
+   *
+   * The buyer no longer needs the work, or none of the offers fit. Every offer
+   * still waiting is declined and its creator told, because a creator holding
+   * capacity for a brief that is over should not have to guess.
+   *
+   * `closedAt` and `closureReason` are written here and are **absent** on every
+   * seeded brief — a Prompt 18 addition, documented in `docs/data-model.md` §5.
+   *
+   * @param {string} id `req_…`
+   * @param {object} [options]
+   * @param {string} [options.buyerId] the acting buyer — rejected unless they own it
+   * @param {string} [options.reason] optional, passed on to the proposers
+   * @returns {Promise<{request: object, declinedProposals: number}>}
+   * @throws {ApiError} `conflict` when the brief is not open · `forbidden` · `not_found`
+   *
+   * **Future endpoint:** `POST /contentRequests/:id/close` → `{ request }`, with
+   * the fold over the offers done in one transaction.
+   */
+  async closeRequest(id, { buyerId, reason } = {}) {
+    const request = await loadOwnedRequest(id, buyerId)
+
+    const status = transitionTo(
+      request.status,
+      REQUEST_STATUS.CLOSED,
+      'This request is no longer open, so it cannot be closed.'
+    )
+
+    const declinedProposals = await endLiveProposals(request, { reason, closing: true })
+
+    const closed = await contentRequests.update(id, {
+      status,
+      closedAt: new Date().toISOString(),
+      closureReason: reason ?? null,
+    })
+
+    return { request: closed, declinedProposals }
+  },
+
+  /**
+   * **Cancels a brief** (§4.1) — a draft the buyer is done with, or a live brief
+   * the business has pulled.
+   *
+   * Deliberately **not** available on an awarded brief: an award has an order
+   * and an escrowed payment behind it, and unpicking those is
+   * `orderService.cancelOrder`'s job (Prompt 17), not a list-page menu item.
+   * `REQUEST_STATUS_MACHINE` allows `awarded → cancelled` because that is the
+   * edge Prompt 17 travels once the order is gone; this entry point refuses it
+   * so the two can never disagree about which came first.
+   *
+   * @param {string} id `req_…`
+   * @param {object} [options]
+   * @param {string} [options.buyerId] the acting buyer — rejected unless they own it
+   * @param {string} [options.reason] required by the UI, passed on to the proposers
+   * @returns {Promise<{request: object, declinedProposals: number}>}
+   * @throws {ApiError} `conflict` when the brief is awarded or already finished ·
+   *   `forbidden` · `not_found`
+   *
+   * **Future endpoint:** `POST /contentRequests/:id/cancel` → `{ request }`.
+   */
+  async cancelRequest(id, { buyerId, reason } = {}) {
+    const request = await loadOwnedRequest(id, buyerId)
+
+    if (request.status === REQUEST_STATUS.AWARDED) {
+      throw createApiError(
+        API_ERROR_CODE.CONFLICT,
+        'This request has been awarded, so it can only be ended by cancelling the order it created.',
+        { from: request.status, to: REQUEST_STATUS.CANCELLED },
+        409
+      )
+    }
+
+    const status = transitionTo(
+      request.status,
+      REQUEST_STATUS.CANCELLED,
+      'This request can no longer be cancelled.'
+    )
+
+    const declinedProposals =
+      request.status === REQUEST_STATUS.OPEN
+        ? await endLiveProposals(request, { reason, closing: false })
+        : 0
+
+    const cancelled = await contentRequests.update(id, {
+      status,
+      cancelledAt: new Date().toISOString(),
+      closureReason: reason ?? null,
+    })
+
+    return { request: cancelled, declinedProposals }
+  },
 })
 
 export default requestService

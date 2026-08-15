@@ -135,6 +135,15 @@ export const paths = Object.freeze({
   referral: (code) => fill(paths.REFERRAL_PATTERN, { code }),
 
   buyerRequestDetail: (requestId) => fill(paths.BUYER_REQUEST_DETAIL_PATTERN, { requestId }),
+  /**
+   * The request wizard, resuming a saved draft — `/buyer/requests/new?draft=req_…`.
+   *
+   * The key is `RequestWizardPage`'s exported `DRAFT_PARAM`, spelled here rather
+   * than imported so that linking to the wizard does not pull the whole wizard
+   * chunk into the page doing the linking. Rename it in both places.
+   */
+  buyerRequestDraft: (draftId) =>
+    `${paths.BUYER_REQUEST_NEW}?draft=${encodeURIComponent(String(draftId))}`,
   buyerCheckout: (orderId) => fill(paths.BUYER_CHECKOUT_PATTERN, { orderId }),
   buyerOrderDetail: (orderId) => fill(paths.BUYER_ORDER_DETAIL_PATTERN, { orderId }),
   buyerDisputeDetail: (disputeId) => fill(paths.BUYER_DISPUTE_DETAIL_PATTERN, { disputeId }),
