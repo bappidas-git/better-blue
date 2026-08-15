@@ -6,6 +6,7 @@ import { ID_PREFIX } from '@/utils/id'
 
 import { createCrudService } from './api/crudFactory'
 import { arrayContains, SORT_ORDER } from './api/listAdapter'
+import { portfolioService } from './portfolioService'
 import { userService } from './userService'
 
 const creatorProfiles = createCrudService('creatorProfiles', {
@@ -14,6 +15,82 @@ const creatorProfiles = createCrudService('creatorProfiles', {
 
 /** Default discovery ordering: best-rated first (contract §6.4). */
 const DEFAULT_SORT = 'ratingAvg'
+
+/* -------------------------------------------------------------------------- */
+/* Orderings                                                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Named discovery orderings (contract §6.4 + `recommended`).
+ *
+ * The discovery UI carries one of these tokens in its `sort` URL parameter and
+ * hands it straight back to `search({ ordering })`; which stored column and
+ * direction each one resolves to is this module's business, not a page's
+ * (00 §10). Tokens are stable, so a shared URL keeps meaning what it meant.
+ */
+export const CREATOR_ORDERING = Object.freeze({
+  RECOMMENDED: 'recommended',
+  TOP_RATED: 'top_rated',
+  PRICE_LOW_HIGH: 'price_asc',
+  PRICE_HIGH_LOW: 'price_desc',
+  MOST_ORDERS: 'most_orders',
+  FASTEST_RESPONSE: 'response_time',
+  NEWEST: 'newest',
+})
+
+const ORDERING_QUERY = Object.freeze({
+  // `recommended` sorts on `featured` so the editorial picks lead globally, and
+  // is then re-ordered by the composite below — see `sortByRecommended`.
+  [CREATOR_ORDERING.RECOMMENDED]: { sort: 'featured', order: SORT_ORDER.DESC },
+  [CREATOR_ORDERING.TOP_RATED]: { sort: 'ratingAvg', order: SORT_ORDER.DESC },
+  [CREATOR_ORDERING.PRICE_LOW_HIGH]: { sort: 'startingPrice', order: SORT_ORDER.ASC },
+  [CREATOR_ORDERING.PRICE_HIGH_LOW]: { sort: 'startingPrice', order: SORT_ORDER.DESC },
+  [CREATOR_ORDERING.MOST_ORDERS]: { sort: 'completedOrders', order: SORT_ORDER.DESC },
+  [CREATOR_ORDERING.FASTEST_RESPONSE]: { sort: 'responseTimeHours', order: SORT_ORDER.ASC },
+  [CREATOR_ORDERING.NEWEST]: { sort: 'createdAt', order: SORT_ORDER.DESC },
+})
+
+/**
+ * Bayesian prior for the `recommended` score: an unrated storefront starts at
+ * the marketplace average and needs `PRIOR_WEIGHT` reviews of its own before
+ * its rating dominates. Without it a single five-star review outranks a 4.7
+ * earned over thirty orders.
+ */
+const PRIOR_RATING = 4.4
+const PRIOR_WEIGHT = 5
+
+function recommendedScore(profile) {
+  const rating = Number(profile?.ratingAvg) || 0
+  const count = Number(profile?.ratingCount) || 0
+  return (rating * count + PRIOR_RATING * PRIOR_WEIGHT) / (count + PRIOR_WEIGHT)
+}
+
+/**
+ * MOCK-SORT: `recommended` is "featured first, then the rating composite" — two
+ * columns in opposite-but-independent directions. JSON Server can express a
+ * multi-column `_sort`, but the contract's list parameters carry a *single*
+ * `order` (§4.1), so the second column's direction is unreachable without
+ * bending the adapter. The page is therefore fetched ordered by `featured` —
+ * which is globally correct, and the only part that decides *which* records
+ * land on the page — and the composite is applied to the returned page here.
+ *
+ * The cost: within one featured group, the composite orders each page
+ * internally rather than across page boundaries. Laravel replaces the whole
+ * thing with `ORDER BY featured DESC, recommendation_score DESC` (or a stored
+ * ranking column refreshed on review write), and this function is deleted.
+ */
+function sortByRecommended(result) {
+  const items = [...result.items].sort((a, b) => {
+    const featured = Number(Boolean(b.featured)) - Number(Boolean(a.featured))
+    if (featured !== 0) return featured
+
+    const score = recommendedScore(b) - recommendedScore(a)
+    if (score !== 0) return score
+
+    return (Number(b.completedOrders) || 0) - (Number(a.completedOrders) || 0)
+  })
+  return { ...result, items }
+}
 
 /**
  * Translates the contract's discovery filters (§6.4) onto the stored fields.
@@ -80,6 +157,34 @@ async function withActiveOwnersOnly(result) {
   return { ...result, items, total: Math.max(result.total - (result.items.length - items.length), items.length) }
 }
 
+/* -------------------------------------------------------------------------- */
+/* Portfolio preview enrichment                                               */
+/* -------------------------------------------------------------------------- */
+
+/** Thumbnails shown on a discovery card. */
+const PREVIEW_LIMIT = 3
+
+/**
+ * How many preview requests are in flight at once. A page of cards would
+ * otherwise open one connection per creator the instant the grid renders, which
+ * on a dozen cards is enough to queue behind the browser's per-host limit and
+ * delay every one of them.
+ */
+const PREVIEW_CONCURRENCY = 4
+
+/** Runs `worker` over `items` with at most `concurrency` promises in flight. */
+async function mapWithConcurrency(items, concurrency, worker) {
+  let cursor = 0
+  const runners = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (cursor < items.length) {
+      const index = cursor
+      cursor += 1
+      await worker(items[index])
+    }
+  })
+  await Promise.all(runners)
+}
+
 export const creatorProfileService = Object.freeze({
   /**
    * Raw listing without the discovery filter mapping — prefer `search`.
@@ -114,6 +219,9 @@ export const creatorProfileService = Object.freeze({
    * @param {object} [params]
    * @param {number} [params.page=1]
    * @param {number} [params.limit=12]
+   * @param {string} [params.ordering] a `CREATOR_ORDERING` token — the spelling
+   *   discovery uses; resolves to the `sort`/`order` pair below and wins over
+   *   them when both are given
    * @param {string} [params.sort='ratingAvg'] `ratingAvg` | `startingPrice` |
    *   `completedOrders` | `responseTimeHours` | `createdAt`
    * @param {'asc'|'desc'} [params.order='desc']
@@ -136,6 +244,7 @@ export const creatorProfileService = Object.freeze({
   async search({
     page,
     limit,
+    ordering,
     sort,
     order,
     search,
@@ -143,18 +252,62 @@ export const creatorProfileService = Object.freeze({
     filters,
     ...rest
   } = {}) {
+    const named = ORDERING_QUERY[ordering]
+
     const result = await creatorProfiles.list({
       page,
       limit,
-      sort: sort ?? DEFAULT_SORT,
-      order: order ?? SORT_ORDER.DESC,
+      sort: named?.sort ?? sort ?? DEFAULT_SORT,
+      order: named?.order ?? order ?? SORT_ORDER.DESC,
       search,
       // Discovery filters are accepted both at the top level (`search({ category })`,
       // which reads naturally at a call site) and under `filters`, which is the
       // standard `ListParams` shape every list hook builds.
       filters: toDiscoveryFilters({ ...rest, ...filters }),
     })
-    return activeOwnersOnly ? withActiveOwnersOnly(result) : result
+
+    const visible = activeOwnersOnly ? await withActiveOwnersOnly(result) : result
+    return ordering === CREATOR_ORDERING.RECOMMENDED ? sortByRecommended(visible) : visible
+  },
+
+  /**
+   * Sample work for a page of discovery cards — the three-thumbnail strip
+   * (contract §6.5, published items only).
+   *
+   * MOCK-JOIN: JSON Server has no `include`, so this is one request per creator,
+   * capped at `PREVIEW_CONCURRENCY` in flight. It lives here rather than in the
+   * cards so no component ends up orchestrating requests (00 §10), and so the
+   * whole thing collapses to a single call on migration day.
+   *
+   * > **Laravel** — one endpoint: `GET /creators?include=preview`, resolving the
+   * > strip with an eager-loaded `hasMany … where status = 'published' limit 3`.
+   * > Delete this function and read `portfolioPreview` off the search response.
+   *
+   * Kept separate from `search` on purpose: the grid paints from `search` alone
+   * and the strips fill in behind their own skeletons, instead of every card
+   * waiting on the slowest thumbnail query.
+   *
+   * @param {string[]} creatorIds `cpr_…` ids from the current page
+   * @param {object} [options]
+   * @param {number} [options.limit=3] thumbnails per creator
+   * @returns {Promise<Object<string, object[]>>} published items keyed by creator
+   *   id — a creator whose lookup failed maps to `[]` rather than rejecting the
+   *   whole batch, because a missing strip must not empty the grid
+   */
+  async listPortfolioPreviews(creatorIds, { limit = PREVIEW_LIMIT } = {}) {
+    const ids = [...new Set((creatorIds ?? []).filter(Boolean))]
+    const previews = {}
+
+    await mapWithConcurrency(ids, PREVIEW_CONCURRENCY, async (creatorId) => {
+      try {
+        const { items } = await portfolioService.listPublished(creatorId, { page: 1, limit })
+        previews[creatorId] = items
+      } catch {
+        previews[creatorId] = []
+      }
+    })
+
+    return previews
   },
 
   /**

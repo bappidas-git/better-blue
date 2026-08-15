@@ -11,6 +11,7 @@ import EmptyState from '@/components/feedback/EmptyState'
 import CardSkeleton from '@/components/feedback/skeletons/CardSkeleton'
 import StaggerList from '@/components/motion/StaggerList'
 import { categoryImageUrl } from '@/constants/images'
+import { CREATOR_PARAM } from '@/features/discovery/utils/creatorFilters'
 import { paths } from '@/routes/paths'
 
 import { cardLiftSx } from '../utils/landingStyles'
@@ -23,15 +24,11 @@ import media from './LandingMedia.module.css'
 // a tile without a code change.
 
 /**
- * Discovery reads its filters from the URL, and `category` is the parameter the
- * service layer already speaks (`creatorProfileService.search({ category })`).
- * TODO(prompt-11): once the discovery page owns its query-param contract, take
- * the key from there instead of restating it.
+ * Discovery owns its query-param contract (Prompt 12), so the key comes from
+ * there rather than being restated here: rename it once and these tiles follow.
  */
-const CATEGORY_QUERY_KEY = 'category'
-
 const toCategoryLink = (categoryId) =>
-  `${paths.CREATORS}?${CATEGORY_QUERY_KEY}=${encodeURIComponent(categoryId)}`
+  `${paths.CREATORS}?${CREATOR_PARAM.CATEGORY}=${encodeURIComponent(categoryId)}`
 
 /** Placeholder count while loading — one screen's worth on any breakpoint. */
 const SKELETON_TILES = 4

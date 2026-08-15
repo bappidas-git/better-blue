@@ -23,7 +23,7 @@ export {
 } from './authService'
 export { userService } from './userService'
 export { buyerProfileService } from './buyerProfileService'
-export { creatorProfileService } from './creatorProfileService'
+export { creatorProfileService, CREATOR_ORDERING } from './creatorProfileService'
 export { portfolioService } from './portfolioService'
 
 /* Marketplace ------------------------------------------------------------- */
