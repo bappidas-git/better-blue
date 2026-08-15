@@ -9,7 +9,6 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 import ErrorState from '@/components/feedback/ErrorState'
-import { useToast } from '@/components/feedback/ToastProvider'
 import { useAuth } from '@/context/AuthContext'
 import ActivityFeed from '@/features/dashboard/components/ActivityFeed'
 import ChartCard from '@/features/dashboard/components/ChartCard'
@@ -34,17 +33,15 @@ import { EMPTY_PLACEHOLDER, formatCurrency, formatNumber } from '@/utils/formatt
 // what to *render* — including which of the three sections failed and needs its
 // own retry — and computes nothing but display strings.
 //
-// TODO(Prompts 16–20): the stat tiles and the "New request" action are the
-// entry points to Requests, Orders, and Payments. Each becomes a link the
-// moment its route renders a page — a tile pointing at an unbuilt path would
-// land on the dashboard 404, so they stay inert until then (Prompt 14's rule
-// for `navConfig`, applied to page-level links).
+// TODO(Prompts 18–20): the stat tiles are the entry points to Requests,
+// Orders, and Payments. Each becomes a link the moment its route renders a
+// page — a tile pointing at an unbuilt path would land on the dashboard 404,
+// so they stay inert until then (Prompt 14's rule for `navConfig`, applied to
+// page-level links). The "New request" action and the onboarding step are
+// live: Prompt 16 built the wizard behind them.
 
 /** Chart height by breakpoint (§11). */
 const CHART_HEIGHT = { xs: 240, md: 300 }
-
-/** Anything a later prompt builds says so, rather than failing silently. */
-const COMING_SOON_DESCRIPTION = 'It arrives with the next release of the buyer workspace.'
 
 /** One sentence describing the spend chart, for screen readers (§12). */
 function spendChartLabel(spendByMonth, currency) {
@@ -93,7 +90,6 @@ function SectionError({ error, onRetry, title, message }) {
 
 export default function BuyerOverviewPage() {
   const { user } = useAuth()
-  const toast = useToast()
 
   const {
     data: overview,
@@ -108,9 +104,6 @@ export default function BuyerOverviewPage() {
     () => getBuyerProfileCompleteness(overview?.profile, user),
     [overview?.profile, user]
   )
-
-  const comingSoon = (feature) => () =>
-    toast.info(`${feature} is on its way`, { description: COMING_SOON_DESCRIPTION })
 
   const errors = overview?.errors ?? {}
   const isFresh = Boolean(overview?.isFreshAccount)
@@ -167,8 +160,7 @@ export default function BuyerOverviewPage() {
       description:
         'Describe the content you need, the budget, and the deadline. Creators propose against it.',
       done: (overview?.requestsTotal ?? 0) > 0,
-      // TODO(Prompt 16): to: paths.BUYER_REQUEST_NEW
-      action: { label: 'Post a request', onClick: comingSoon('Posting a request'), icon: 'tabler:plus' },
+      action: { label: 'Post a request', to: paths.BUYER_REQUEST_NEW, icon: 'tabler:plus' },
     },
     {
       key: 'proposals',
@@ -185,8 +177,7 @@ export default function BuyerOverviewPage() {
       label: 'New request',
       description: 'Brief the content you need',
       icon: 'solar:document-add-linear',
-      // TODO(Prompt 16): to: paths.BUYER_REQUEST_NEW
-      onClick: comingSoon('Posting a request'),
+      to: paths.BUYER_REQUEST_NEW,
     },
     {
       key: 'browse-creators',

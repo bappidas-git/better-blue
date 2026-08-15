@@ -88,6 +88,11 @@ export function pick(list, index) {
 // not change that folder (§17), so the seed owns them. They are documented in
 // docs/data-model.md; a later prompt that needs them in the app should promote
 // them into `src/constants` and re-point these imports.
+//
+// ORIENTATION and BUDGET_TYPE took exactly that path in Prompt 16 (the request
+// wizard needs both in the app). They are re-exported below rather than
+// re-declared, so the seed keeps its single import surface and there is only
+// ever one definition of either set.
 
 /** Stored file kind on portfolio items and delivery files. */
 export const MEDIA_TYPE = Object.freeze({ IMAGE: 'image', VIDEO: 'video' })
@@ -95,16 +100,7 @@ export const MEDIA_TYPE = Object.freeze({ IMAGE: 'image', VIDEO: 'video' })
 /** Who can reach a portfolio item once it is published. */
 export const VISIBILITY = Object.freeze({ PUBLIC: 'public', UNLISTED: 'unlisted' })
 
-/** Framing a buyer asks for on a content request. */
-export const ORIENTATION = Object.freeze({
-  PORTRAIT: 'portrait',
-  LANDSCAPE: 'landscape',
-  SQUARE: 'square',
-  ANY: 'any',
-})
-
-/** Budget shape on a content request. */
-export const BUDGET_TYPE = Object.freeze({ FIXED: 'fixed', RANGE: 'range' })
+export { BUDGET_TYPE, ORIENTATION } from '../src/constants/statuses.js'
 
 /** What a moderation review is about. */
 export const MODERATION_SUBJECT = Object.freeze({

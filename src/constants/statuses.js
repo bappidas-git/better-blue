@@ -159,6 +159,24 @@ export const CONTENT_TYPE = Object.freeze({
   BUNDLE: 'bundle',
 })
 
+/**
+ * Framing a buyer asks for on a content request.
+ *
+ * Promoted here by Prompt 16 (the request wizard needs it in the app), which
+ * is exactly the path `docs/data-model.md` §3 reserved for it — `scripts/
+ * seed-utils.js` now re-exports these two from this module instead of owning
+ * its own copy, so the seed and the app can never drift.
+ */
+export const ORIENTATION = Object.freeze({
+  PORTRAIT: 'portrait',
+  LANDSCAPE: 'landscape',
+  SQUARE: 'square',
+  ANY: 'any',
+})
+
+/** Budget shape on a content request — `fixed` sets `budgetMin === budgetMax`. */
+export const BUDGET_TYPE = Object.freeze({ FIXED: 'fixed', RANGE: 'range' })
+
 export const REPORT_STATUS = Object.freeze({
   OPEN: 'open',
   REVIEWED: 'reviewed',
@@ -203,6 +221,8 @@ export const STATUS_ENUMS = Object.freeze({
   REFERRAL_STATUS,
   AFFILIATE_EARNING_STATUS,
   CONTENT_TYPE,
+  ORIENTATION,
+  BUDGET_TYPE,
   REPORT_STATUS,
   TICKET_STATUS,
   USAGE_RIGHTS,
@@ -578,6 +598,40 @@ export const STATUS_META = Object.freeze({
     label: 'Photo + Video Bundle',
     tone: 'neutral',
     description: 'A combined package of photo and video deliverables.',
+  },
+
+  /* Orientation (ORIENTATION) */
+  portrait: {
+    label: 'Portrait',
+    tone: 'neutral',
+    description: 'Vertical framing, 9:16 — built for stories, reels, and shorts.',
+  },
+  landscape: {
+    label: 'Landscape',
+    tone: 'neutral',
+    description: 'Horizontal framing, 16:9 — built for websites, YouTube, and display ads.',
+  },
+  square: {
+    label: 'Square',
+    tone: 'neutral',
+    description: 'Square framing, 1:1 — built for feed posts and product grids.',
+  },
+  any: {
+    label: 'Any',
+    tone: 'neutral',
+    description: 'No preference — the creator picks the framing that suits the content.',
+  },
+
+  /* Budget shape (BUDGET_TYPE) */
+  fixed: {
+    label: 'Fixed price',
+    tone: 'neutral',
+    description: 'One amount you are prepared to pay for the whole brief.',
+  },
+  range: {
+    label: 'Budget range',
+    tone: 'neutral',
+    description: 'A window creators price into, from your minimum to your maximum.',
   },
 
   /* Reports (REPORT_STATUS) */

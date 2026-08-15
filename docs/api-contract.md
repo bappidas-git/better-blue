@@ -763,7 +763,7 @@ Authenticated. `Content-Type: multipart/form-data`.
 | Part | Type | Notes |
 |---|---|---|
 | `file` | binary | Required |
-| `purpose` | string | `portfolio` \| `delivery` \| `dispute_evidence` — drives storage path and limits |
+| `purpose` | string | `portfolio` \| `delivery` \| `dispute_evidence` \| `profile_image` \| `request_reference` — drives storage path and limits |
 
 `201 Created`
 
@@ -1354,6 +1354,7 @@ Buyer briefs — the demand side of the marketplace.
   "budgetMax": 900,
   "currency": "USD",
   "deadline": "2026-09-01T17:00:00.000Z",
+  "invitedCreatorId": null,
   "status": "draft",
   "proposalsCount": 0,
   "awardedProposalId": null,
@@ -1364,6 +1365,15 @@ Buyer briefs — the demand side of the marketplace.
 
 `videoDurationSec` is required for `video` and `bundle` briefs and omitted for
 `photo`. `budgetType: "fixed"` requires `budgetMin === budgetMax`.
+
+**`invitedCreatorId`** (added in Prompt 16) — nullable FK → `creatorProfiles.id`,
+set when a buyer reaches the request form from a creator's public profile
+(`/buyer/requests/new?creator=cpr_…`). It is a **hint, not an award**: the brief
+is still published to the whole marketplace and every creator may propose on it.
+Prompt 23 reads it only to badge that creator's proposal as "Invited" on the
+buyer's board. Omitted entirely when there is no hint. Reference images are
+uploaded first (§5.1, `purpose: request_reference`) and their URLs submitted in
+`referenceUrls`.
 
 **Response** `200 OK` (`GET /contentRequests/req_001`, published and live)
 
@@ -3240,6 +3250,8 @@ implementing from this document alone — if they ever disagree with the code,
 | `REFERRAL_STATUS` | `statuses.js` | `pending` · `converted` · `expired` |
 | `AFFILIATE_EARNING_STATUS` | `statuses.js` | `pending` · `approved` · `paid` · `void` |
 | `CONTENT_TYPE` | `statuses.js` | `photo` · `video` · `bundle` |
+| `ORIENTATION` | `statuses.js` | `portrait` · `landscape` · `square` · `any` |
+| `BUDGET_TYPE` | `statuses.js` | `fixed` · `range` |
 | `REPORT_STATUS` | `statuses.js` | `open` · `reviewed` · `actioned` · `dismissed` |
 | `TICKET_STATUS` | `statuses.js` | `open` · `pending` · `resolved` · `closed` |
 | `USAGE_RIGHTS` | `statuses.js` | `organic_social` · `paid_ads` · `website` · `full_commercial` |
@@ -3269,14 +3281,14 @@ support.manage · settings.manage · announcements.send · audit.view
 ```
 
 **Enum-likes owned by `scripts/seed-utils.js`** — not yet in `src/constants`
-(`docs/data-model.md` §3); a later prompt should promote them:
+(`docs/data-model.md` §3); a later prompt should promote them. `ORIENTATION`
+and `BUDGET_TYPE` took that path in Prompt 16 and now live in `statuses.js`
+above, with the seed re-exporting them.
 
 | Constant | Values | Used by |
 |---|---|---|
 | `MEDIA_TYPE` | `image` · `video` | `portfolioItems.mediaType`, delivery files, dispute evidence |
 | `VISIBILITY` | `public` · `unlisted` | `portfolioItems.visibility` |
-| `ORIENTATION` | `portrait` · `landscape` · `square` · `any` | `contentRequests.orientation` |
-| `BUDGET_TYPE` | `fixed` · `range` | `contentRequests.budgetType` |
 | `REPORT_REASON` | `prohibited_content` · `intellectual_property` · `misleading_claims` · `spam` · `other` | `reports.reason` |
 | `MODERATION_SUBJECT` | `portfolio_item` · `delivery` | `moderationReviews.subjectType` |
 | `REPORT_SUBJECT` | `portfolio_item` · `creator_profile` · `request` | `reports.subjectType` |

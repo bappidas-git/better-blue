@@ -42,6 +42,10 @@ export const ID_PREFIX = Object.freeze({
   // `buyerProfiles.logoUrl` / `users.avatarUrl` rather than as a record, so the
   // id only ever labels the upload itself.
   PROFILE_IMAGE: 'pim',
+  // Reference imagery a buyer attaches to a content request. Stored as plain
+  // URLs on `contentRequests.referenceUrls` rather than as records, so — like
+  // `pim_` above — the id only ever labels the upload itself.
+  REQUEST_REFERENCE: 'rrf',
 })
 
 /**
