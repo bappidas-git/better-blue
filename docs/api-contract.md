@@ -3104,27 +3104,59 @@ Validate `amount <= payment.amount − already_refunded` server-side; omitting
 
 ---
 
-#### 5. `submitDelivery(orderId, { message, files })`
+#### 5. `submitDelivery(orderId, { message, files, revisionId })`
 
 The creator hands over a version.
 
 **Mock:**
 
-1. `uploadService.upload(file)` per file — simulated, no HTTP (§5)
-2. `GET /deliveries?orderId=:id` — compute `version = max + 1` **in the browser**
-3. `POST /deliveries` — `status: 'submitted'`, `submittedAt`, `revisionId` when
+1. `GET /orders/:id` — guard the order is `in_progress` or `revision_requested`
+   and that the caller is its creator; validate `message` (20–600) and that at
+   least one file is attached, **before** anything is uploaded
+2. `uploadService.upload(file)` per file — simulated, no HTTP (§5). `files` may
+   also arrive as file objects already uploaded by the caller, which is what the
+   composer passes so it can show per-file progress and retry a single failure
+3. `GET /deliveries?orderId=:id` — compute `version = max + 1` **in the browser**
+4. `POST /deliveries` — `status: 'submitted'`, `submittedAt`, `revisionId` when
    answering a revision
-4. `PATCH /orders/:id` → `{ status: 'delivered', deliveredAt }`
-5. If answering a revision: `PATCH /revisions/:revisionId` → `{ resolvedAt }`
-6. If `platformSettings.moderation.autoApproveDeliveries === false`:
-   `POST /moderationReviews` — `subjectType: 'delivery'`
-7. `POST /notifications` — `delivery_submitted` to the buyer
+5. `PATCH /orders/:id` → `{ status: 'delivered', deliveredAt }`
+6. If answering a revision: `PATCH /revisions/:revisionId` → `{ resolvedAt }`
+   (best effort)
+7. `POST /moderationReviews` — `subjectType: 'delivery'`, `subjectId` the new
+   version, `creatorId` the order's creator (best effort). **Every version gets
+   a record**; `platformSettings.moderation.autoApproveDeliveries` decides what
+   state it opens in:
+   - `true` (the seeded default) → `status: 'approved'`, `reviewedAt` stamped,
+     and a system entry in `history` saying it was auto-approved under the
+     platform delivery policy. Trust & Safety spot-checks a decided record
+     rather than working a queue of everything the marketplace produces, and
+     Prompt 30's queue (`moderationService.listQueue`) does not show it
+   - `false` → `status: 'submitted'`, `reviewedAt: null` — the case joins the
+     open queue and is reviewed like a portfolio submission (operation §6.20)
+8. `POST /notifications` — `delivery_submitted` to the buyer
+
+> **Implementation note (Prompt 24).** Steps 4–8 have no transaction around them
+> and run in that order deliberately: an interruption leaves work that is
+> recorded but not yet announced, rather than an order marked `delivered` with
+> nothing behind it. Steps 6, 7 and 8 are best effort — a delivery that reached
+> the buyer must not be undone because a review row or a bell item failed to
+> write. Both settings values are exercised by the same code path; only the
+> `status`/`reviewedAt` pair differs.
+
+**Returns:** `{ delivery, order, revision, moderationReview }` — `revision` and
+`moderationReview` are `null` when there was none / the write failed.
 
 **Laravel — `POST /orders/:id/deliveries` → `{ delivery, order }`**
 
 Version computed server-side inside the transaction, enforced by
 `UNIQUE (order_id, version)`. Files referenced by the ids returned from
-`POST /uploads`.
+`POST /uploads`. The moderation record is written by an `DeliverySubmitted`
+event listener reading the same setting, so the policy lives in one place rather
+than in every caller.
+
+Errors: `422` (empty or short message, no files, more than 10 files, a rejected
+file type or size) · `403` (not the order's creator) · `404` · `409` (the order
+is not `in_progress` or `revision_requested`).
 
 ---
 

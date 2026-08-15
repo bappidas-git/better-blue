@@ -171,14 +171,29 @@ export default function DashboardLayout() {
     { enabled: Boolean(user?.id) && isCreator }
   )
 
+  // Prompt 24: orders whose next move is the creator's — waiting to be
+  // delivered, or sent back for changes.
+  const { data: ordersAwaitingDelivery } = useApiQuery(
+    () => orderService.countAwaitingDelivery(user?.id),
+    [user?.id, pathname],
+    { enabled: Boolean(user?.id) && isCreator }
+  )
+
   const badges = useMemo(
     () => ({
       [BADGE_KEY.BUYER_PROPOSALS_AWAITING]: proposalsAwaiting ?? 0,
       [BADGE_KEY.BUYER_ORDERS_AWAITING_REVIEW]: ordersAwaitingReview ?? 0,
       [BADGE_KEY.CREATOR_PORTFOLIO_ATTENTION]: portfolioAttention ?? 0,
       [BADGE_KEY.CREATOR_PROPOSALS_SHORTLISTED]: proposalsShortlisted ?? 0,
+      [BADGE_KEY.CREATOR_ORDERS_AWAITING_DELIVERY]: ordersAwaitingDelivery ?? 0,
     }),
-    [ordersAwaitingReview, portfolioAttention, proposalsAwaiting, proposalsShortlisted]
+    [
+      ordersAwaitingDelivery,
+      ordersAwaitingReview,
+      portfolioAttention,
+      proposalsAwaiting,
+      proposalsShortlisted,
+    ]
   )
 
   return (

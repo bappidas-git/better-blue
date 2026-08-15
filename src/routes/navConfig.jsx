@@ -84,6 +84,8 @@ export const BADGE_KEY = Object.freeze({
   CREATOR_PORTFOLIO_ATTENTION: 'creator.portfolioAttention',
   /** Proposals a buyer has shortlisted and not yet decided on (Prompt 23). */
   CREATOR_PROPOSALS_SHORTLISTED: 'creator.proposalsShortlisted',
+  /** Orders whose next move is the creator's — deliver, or answer a revision (Prompt 24). */
+  CREATOR_ORDERS_AWAITING_DELIVERY: 'creator.ordersAwaitingDelivery',
 })
 
 /* -------------------------------------------------------------------------- */
@@ -152,9 +154,9 @@ export const buyerNav = Object.freeze([
 /* -------------------------------------------------------------------------- */
 
 /**
- * Prompts append: orders (24), earnings (25), disputes (26),
- * notifications (27). Those all belong **between** Overview and Profile — the
- * account entries stay last, the same order the buyer's nav keeps.
+ * Prompts append: earnings (25), disputes (26), notifications (27). Those all
+ * belong **between** Overview and Profile — the account entries stay last, the
+ * same order the buyer's nav keeps.
  */
 export const creatorNav = Object.freeze([
   Object.freeze({
@@ -182,6 +184,17 @@ export const creatorNav = Object.freeze([
     icon: 'solar:document-add-linear',
     path: paths.CREATOR_PROPOSALS,
     badgeKey: BADGE_KEY.CREATOR_PROPOSALS_SHORTLISTED,
+  }),
+  Object.freeze({
+    // Prompt 24. Straight after Proposals, which is the order the work happens
+    // in: find the brief, win it, deliver it. The badge counts the orders whose
+    // next move is the creator's — in progress or sent back for changes — which
+    // is exactly the Active tab it links to, so the two can never disagree.
+    key: 'orders',
+    label: 'Orders',
+    icon: 'solar:box-linear',
+    path: paths.CREATOR_ORDERS,
+    badgeKey: BADGE_KEY.CREATOR_ORDERS_AWAITING_DELIVERY,
   }),
   Object.freeze({
     // Prompt 22. Above Profile because a storefront without sample work is the
@@ -280,9 +293,11 @@ export const MORE_NAV_KEYS = Object.freeze({
   [ROLES.BUYER]: Object.freeze([NAV_KEY.SETTINGS]),
   // Prompt 23 is the one Prompt 21's note anticipated: Browse and Proposals
   // take the creator to six destinations, so the two account entries move into
-  // the sheet by name. That leaves the bar as Overview · Browse · Proposals ·
-  // Portfolio — find work, track it, keep the storefront current — with More
-  // holding Profile and Settings.
+  // the sheet by name. Prompt 24's Orders entry makes seven, and it earns a
+  // thumb slot ahead of Portfolio — an order has a deadline and a storefront
+  // does not — so `splitBottomNav` overflows Portfolio into the sheet by
+  // position. The bar reads Overview · Browse · Proposals · Orders, with More
+  // holding Portfolio, Profile, and Settings.
   [ROLES.CREATOR]: Object.freeze([NAV_KEY.PROFILE, NAV_KEY.SETTINGS]),
   [ROLES.ADMIN]: Object.freeze([]),
   [ROLES.SUPER_ADMIN]: Object.freeze([]),

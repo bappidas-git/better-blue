@@ -799,6 +799,38 @@ const SCENARIO_SOURCE = [
     deadlineInDays: 11,
     createdDaysAgo: 3,
   },
+  {
+    // Prompt 24: the demo **creator's** delivered order — work already handed
+    // over and sitting with the buyer. Ava has an in-progress order and one
+    // sent back for changes, and this completes the set her workspace needs
+    // (§9). Between the two demo accounts on purpose, so the two-sided loop can
+    // be walked without leaving them.
+    //
+    // Appended to the end of this array rather than filed beside the other
+    // `awarded_verde_*` briefs: request ids are handed out in array order, and
+    // inserting mid-list would renumber every archived brief after it.
+    key: 'awarded_verde_pastry',
+    buyer: 'verde',
+    status: REQUEST_STATUS.AWARDED,
+    category: CATEGORY_ID.FOOD_BEVERAGE,
+    contentType: PHOTO,
+    title: 'Pastry counter stills for the morning service page',
+    description:
+      'The morning pastry counter photographed for the new breakfast page: the full counter as it looks at opening, individual pastries for the online order menu, and two or three frames of the bakers finishing the display.',
+    quantity: 12,
+    orientation: ORIENTATION.ANY,
+    usageRights: USAGE_RIGHTS.WEBSITE,
+    brandGuidelines:
+      'Early daylight, warm crumb tones, minimal styling. The counter as guests see it at opening rather than a built set.',
+    dos: 'Shoot the full counter wide, then each pastry straight on against the marble. Include the bakers at work.',
+    donts: 'No artificial steam, no props from outside the kitchen, no faces without a signed release.',
+    referenceUrls: ['https://verdekitchen.test/press/morning-service-brief'],
+    budgetType: BUDGET_TYPE.FIXED,
+    budgetMin: 620,
+    budgetMax: 620,
+    deadlineInDays: 4,
+    createdDaysAgo: 12,
+  },
 ]
 
 /* -------------------------------------------------------------------------- */

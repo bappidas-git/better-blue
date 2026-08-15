@@ -64,7 +64,7 @@ Password for **every** seeded account: `Password123!`
 |---|---|---|---|
 | Buyer | `buyer@betterblue.test` | Nora Whitfield, Verde Kitchen | An open brief with 4 proposals, an order awaiting revision, completed orders, reviews, and five months of payments behind the spend chart |
 | Buyer (fresh account) | `newbuyer@betterblue.test` | Ruth Alvarez, Harbor Lane Bakery | The first-run state: no briefs, no orders, no notifications, and a profile with only a company name — the dashboard shows its onboarding checklist instead of stats |
-| Creator | `creator@betterblue.test` | Ava Martinez | A shortlisted proposal, an in-progress order, a revision request, released payments, a paid payout, an affiliate profile with earnings |
+| Creator | `creator@betterblue.test` | Ava Martinez | A shortlisted proposal, an in-progress order, a revision request to answer, a delivery awaiting the buyer's review, released payments, a paid payout, an affiliate profile with earnings |
 | Admin | `admin@betterblue.test` | Maya Chen | Moderation queue, two live disputes, support tickets, user management, audit log |
 | Super admin | `super@betterblue.test` | Elena Marsh | Everything above plus the admin team, permissions, and platform settings |
 
@@ -367,7 +367,7 @@ fallback, and `CATEGORY_ID` can never drift.
 
 **MySQL** `categories` — `slug VARCHAR(64) UNIQUE`, index `(active, sort_order)`.
 
-### `contentRequests` — 54
+### `contentRequests` — 61
 
 Buyer briefs. 24 hand-written scenario briefs cover every `REQUEST_STATUS` and
 host the 14 scenario orders; 30 archived briefs back the completed engagement
@@ -429,7 +429,7 @@ and `(buyer_id, status)` for "my requests". `awarded_proposal_id` and
 `invited_creator_id` are nullable FKs; add `awarded_proposal_id` after
 `proposals` exists to avoid a circular constraint at migration time.
 
-### `proposals` — 94
+### `proposals` — 108
 
 Creator offers. Live briefs carry 2–4 each (submitted / shortlisted / declined
 / withdrawn), the closed brief carries expired offers, and every order has the
@@ -452,7 +452,7 @@ accepted offer that created it plus the offers that lost.
 propose twice; `sample_item_ids` becomes `proposal_samples`; index
 `(creator_id, status)`.
 
-### `orders` — 42
+### `orders` — 47
 
 The funded engagement. **One order = one request + one accepted proposal**
 (00 §8) — there is deliberately no `orderItems` table.
@@ -479,7 +479,7 @@ The funded engagement. **One order = one request + one accepted proposal**
 `DECIMAL(10,2)`; index `(buyer_id, status)`, `(creator_id, status)`,
 `(status, delivery_due_at)` for the overdue view.
 
-### `deliveries` — 37
+### `deliveries` — 41
 
 One record per delivered **version**. Asking for changes closes that version at
 `revision_requested`; the next submission is a new record (Prompt 03's
@@ -730,6 +730,20 @@ A case is created by `portfolioService.submitForReview` on a creator's **first**
 submission and re-opened on every one after it (see the portfolio moderation
 notes above), so there is exactly one case per portfolio item and its `history`
 is the whole story of that item's reviews.
+
+Deliveries work differently, because a delivered version is never resubmitted —
+answering a revision produces a *new* version (§9 state machines). So
+`deliveryService.submitDelivery` **creates one case per version** and never
+re-opens one, and `platformSettings.moderation.autoApproveDeliveries` decides
+what state that case opens in: `true` (the seeded default) opens it already
+`approved`, with `reviewedAt` stamped and a system `history` entry saying so, so
+Trust & Safety spot-checks rather than queues everything the marketplace
+produces; `false` opens it at `submitted`, and it is worked like any other case.
+Either way there is a record, so a deliverable is never content nobody can
+account for. Full sequence: `docs/api-contract.md` §7 operation 5.
+
+The seeded delivery cases are the two pulled out of auto-approval by hand, which
+is what the flag's `false` branch looks like in the queue.
 
 **MySQL** `moderation_reviews` — index `(status, submitted_at)` for the queue
 and `(subject_type, subject_id)`; `history` becomes

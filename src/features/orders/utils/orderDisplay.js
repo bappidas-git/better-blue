@@ -93,6 +93,83 @@ export function describeProgress(order) {
 }
 
 /**
+ * The same line from the creator's side: what is happening, and above all
+ * **whether they are the one holding it up** (Prompt 24 §4.3).
+ *
+ * `accent` marks the two states waiting on the creator, and `action` is the
+ * imperative the card puts next to the status chip. Deliberately a separate
+ * function from {@link describeProgress} rather than a flag on it: the two
+ * roles genuinely say different things about the same status, and a shared
+ * sentence would end up saying neither well.
+ *
+ * @param {object} order an order record
+ * @returns {{text: string, accent: boolean, action: string|null}}
+ */
+export function describeCreatorProgress(order) {
+  switch (order?.status) {
+    case ORDER_STATUS.PENDING_PAYMENT:
+      return {
+        text: 'Awarded, but not funded yet. The clock starts when the buyer pays.',
+        accent: false,
+        action: null,
+      }
+    case ORDER_STATUS.IN_PROGRESS:
+      return {
+        text: 'Yours to deliver. The payment is already in escrow.',
+        accent: true,
+        action: 'Submit delivery',
+      }
+    case ORDER_STATUS.REVISION_REQUESTED:
+      return {
+        text: 'Revision requested — respond with a new version.',
+        accent: true,
+        action: 'Respond to changes',
+      }
+    case ORDER_STATUS.DELIVERED:
+      return {
+        text: 'Delivered. Waiting on the buyer’s review — nothing needs you right now.',
+        accent: false,
+        action: null,
+      }
+    case ORDER_STATUS.COMPLETED:
+      return { text: 'Accepted and paid.', accent: false, action: null }
+    case ORDER_STATUS.DISPUTED:
+      return {
+        text: 'With the BetterBlue team while the dispute is resolved.',
+        accent: false,
+        action: null,
+      }
+    case ORDER_STATUS.CANCELLED:
+      return { text: 'This engagement was called off.', accent: false, action: null }
+    case ORDER_STATUS.REFUNDED:
+      return { text: 'The escrow was returned to the buyer.', accent: false, action: null }
+    default:
+      return { text: '', accent: false, action: null }
+  }
+}
+
+/**
+ * Which of the creator's order actions apply, given where the order is.
+ *
+ * The list card, the workspace header, and the composer all read this, so the
+ * composer can never appear on an order the services would refuse a delivery on
+ * (00 §11 — and `submitDelivery` refuses it again regardless).
+ *
+ * @param {object} order an order record
+ * @returns {{canDeliver: boolean, isAnsweringRevision: boolean, isAwaitingReview: boolean}}
+ */
+export function creatorOrderActions(order) {
+  const status = order?.status
+  const isAnsweringRevision = status === ORDER_STATUS.REVISION_REQUESTED
+
+  return {
+    canDeliver: status === ORDER_STATUS.IN_PROGRESS || isAnsweringRevision,
+    isAnsweringRevision,
+    isAwaitingReview: status === ORDER_STATUS.DELIVERED,
+  }
+}
+
+/**
  * The revision allowance, in the two forms the screens need: the numbers, and
  * the sentence a person reads.
  *

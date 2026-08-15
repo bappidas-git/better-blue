@@ -1,20 +1,14 @@
-import { useMemo, useState } from 'react'
-
 import { Icon } from '@iconify/react'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
-import Link from '@mui/material/Link'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
-import MediaLightbox from '@/components/data-display/MediaLightbox'
 import EmptyState from '@/components/feedback/EmptyState'
 import { ORDER_STATUS } from '@/constants/statuses'
-import DeliveryVersion from '@/features/orders/components/DeliveryVersion'
+import DeliveryVersionList from '@/features/deliveries/components/DeliveryVersionList'
 import ReviewActionsCard from '@/features/orders/components/ReviewActionsCard'
-import { formatFileSize } from '@/features/orders/utils/orderDisplay'
-import { MEDIA_TYPE } from '@/services/uploadService'
 import { formatDateTime } from '@/utils/formatters'
 
 // Everything the creator has handed over, and the decision that sits on top of
@@ -26,44 +20,12 @@ import { formatDateTime } from '@/utils/formatters'
 // disappears entirely in every other state, replaced by whatever is true
 // instead: a note of what was asked for, or a record of what was accepted.
 //
-// The section owns its lightbox and nothing else. The two decisions open
-// dialogs the *page* holds, because the mobile action bar has to be able to open
-// the same two from outside this section (§11), and the page is what refetches
+// The versions themselves — cards, file grid, and the lightbox that pages
+// across all of them — are `features/deliveries/DeliveryVersionList`, shared
+// with the creator's workspace (Prompt 24 §4.2). The two decisions open dialogs
+// the *page* holds, because the mobile action bar has to be able to open the
+// same two from outside this section (§11), and the page is what refetches
 // after either of them lands.
-
-/** Flattens every version's files into one lightbox reel, newest version first. */
-function buildMediaItems(deliveries) {
-  return deliveries.flatMap((delivery) =>
-    (delivery.files ?? []).map((file) => ({
-      id: file.id,
-      type: file.mediaType === MEDIA_TYPE.VIDEO ? 'video' : 'image',
-      src: file.url,
-      poster: file.thumbnailUrl,
-      alt: `${file.name} — version ${delivery.version} of this delivery`,
-      caption: (
-        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
-          <Box component="span">
-            {file.name} · {file.mediaType === MEDIA_TYPE.VIDEO ? 'Video' : 'Image'} ·{' '}
-            {formatFileSize(file.sizeKb)}
-          </Box>
-          {/* MOCK-UPLOAD: `files[].url` is a placeholder image URL (00 §15), so a
-              browser opens it rather than saving it. The Laravel backend returns
-              a signed download URL here and the link starts behaving like one. */}
-          <Link
-            href={file.url}
-            download={file.name}
-            target="_blank"
-            rel="noopener noreferrer"
-            underline="hover"
-            sx={{ fontWeight: 600 }}
-          >
-            Download
-          </Link>
-        </Stack>
-      ),
-    }))
-  )
-}
 
 /** The buyer's own words, read back while the creator works on them. */
 function RevisionWaitingCard({ revision }) {
@@ -123,20 +85,6 @@ export default function DeliverySection({
   onRequestRevision,
   isBusy = false,
 }) {
-  const [lightboxIndex, setLightboxIndex] = useState(null)
-
-  const items = useMemo(() => buildMediaItems(deliveries), [deliveries])
-
-  // A version's file index has to become an index into the flattened reel.
-  const offsets = useMemo(() => {
-    let running = 0
-    return deliveries.map((delivery) => {
-      const start = running
-      running += delivery.files?.length ?? 0
-      return start
-    })
-  }, [deliveries])
-
   const isDelivered = order?.status === ORDER_STATUS.DELIVERED
   const isAwaitingRevision = order?.status === ORDER_STATUS.REVISION_REQUESTED
   const isCompleted = order?.status === ORDER_STATUS.COMPLETED
@@ -189,22 +137,9 @@ export default function DeliverySection({
         </Card>
       ) : null}
 
-      <Stack component="ul" spacing={{ xs: 2, md: 2.5 }} sx={{ listStyle: 'none', m: 0, p: 0 }}>
-        {deliveries.map((delivery, index) => (
-          <DeliveryVersion
-            key={delivery.id}
-            delivery={delivery}
-            onOpenFile={(fileIndex) => setLightboxIndex(offsets[index] + fileIndex)}
-          />
-        ))}
-      </Stack>
-
-      <MediaLightbox
-        open={lightboxIndex !== null}
-        items={items}
-        defaultIndex={lightboxIndex ?? 0}
-        onClose={() => setLightboxIndex(null)}
-        title={`Deliverables — ${order?.title ?? 'this order'}`}
+      <DeliveryVersionList
+        deliveries={deliveries}
+        lightboxTitle={`Deliverables — ${order?.title ?? 'this order'}`}
       />
     </Stack>
   )
