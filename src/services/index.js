@@ -44,7 +44,7 @@ export { payoutService } from './payoutService'
 export { disputeService } from './disputeService'
 export { moderationService, OPEN_QUEUE_STATUSES } from './moderationService'
 export { reportService } from './reportService'
-export { reviewService } from './reviewService'
+export { reviewService, RATING_SCALE } from './reviewService'
 
 /* Platform ---------------------------------------------------------------- */
 export { landingService } from './landingService'

@@ -147,6 +147,30 @@ const REVIEW_SOURCE = [
       'Great coverage of the opening night and the queue-outside-the-door shot is now our hero image. A few frames were softer than the rest of the set.',
   },
   {
+    requestKey: 'h25',
+    rating: 5,
+    comment:
+      'Every piece in the range was shot to the same table height and light, so the product grid finally looks like one collection instead of twenty-two separate listings.',
+  },
+  {
+    requestKey: 'h26',
+    rating: 4,
+    comment:
+      'The counter films look and sound great, and the vertical cuts were sized correctly first time. We needed one extra pass on the pricing overlay, handled inside the revision round.',
+  },
+  {
+    requestKey: 'h27',
+    rating: 5,
+    comment:
+      'Ava spent the morning at the market with our chef and came back with a set that tells the sourcing story on its own. The supplier page barely needs copy now.',
+  },
+  {
+    requestKey: 'h28',
+    rating: 3,
+    comment:
+      'The final frames are clean and the cutouts are exactly to spec. Scheduling took longer than we expected and two rounds of emails went unanswered over a weekend, which is the only reason this is not higher.',
+  },
+  {
     requestKey: 'completed_bloom_campaign',
     rating: 5,
     comment:

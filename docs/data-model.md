@@ -282,9 +282,9 @@ DECIMAL(2,1)`, `starting_price DECIMAL(10,2)`. Payout details move to a
 `payout_methods` table under the account, encrypted at rest. Index
 `(featured, rating_avg DESC)` for the discovery grid.
 
-### `portfolioItems` — 60
+### `portfolioItems` — 68
 
-Creator sample work. 44 published, plus submitted / under review / changes
+Creator sample work. 52 published, plus submitted / under review / changes
 requested / rejected items for the moderation queue, one restricted item (acted
 on after a member report), one archived, and two private drafts.
 
@@ -323,10 +323,10 @@ fallback, and `CATEGORY_ID` can never drift.
 
 **MySQL** `categories` — `slug VARCHAR(64) UNIQUE`, index `(active, sort_order)`.
 
-### `contentRequests` — 46
+### `contentRequests` — 50
 
 Buyer briefs. 22 hand-written scenario briefs cover every `REQUEST_STATUS` and
-host the 14 scenario orders; 24 archived briefs back the completed engagement
+host the 14 scenario orders; 28 archived briefs back the completed engagement
 history (see §6).
 
 | Field | Type | Notes |
@@ -357,7 +357,7 @@ and `(buyer_id, status)` for "my requests". `awarded_proposal_id` is a nullable
 FK; add it after `proposals` exists to avoid a circular constraint at migration
 time.
 
-### `proposals` — 85
+### `proposals` — 91
 
 Creator offers. Live briefs carry 2–4 each (submitted / shortlisted / declined
 / withdrawn), the closed brief carries expired offers, and every order has the
@@ -380,7 +380,7 @@ accepted offer that created it plus the offers that lost.
 propose twice; `sample_item_ids` becomes `proposal_samples`; index
 `(creator_id, status)`.
 
-### `orders` — 38
+### `orders` — 42
 
 The funded engagement. **One order = one request + one accepted proposal**
 (00 §8) — there is deliberately no `orderItems` table.
@@ -407,7 +407,7 @@ The funded engagement. **One order = one request + one accepted proposal**
 `DECIMAL(10,2)`; index `(buyer_id, status)`, `(creator_id, status)`,
 `(status, delivery_due_at)` for the overdue view.
 
-### `deliveries` — 33
+### `deliveries` — 37
 
 One record per delivered **version**. Asking for changes closes that version at
 `revision_requested`; the next submission is a new record (Prompt 03's
@@ -445,7 +445,7 @@ A buyer's request for changes against a specific delivery.
 
 **MySQL** `revisions` — index `(order_id, created_at)`.
 
-### `payments` — 39
+### `payments` — 43
 
 Buyer payments into escrow. One per order, plus retries: the `pending_payment`
 order carries a `failed` attempt and a `processing` retry.
@@ -471,7 +471,7 @@ resolution, `refunded` after a full refund.
 `provider_reference` column when the dummy provider is replaced. Never store a
 full card number — `method` keeps a brand and a masked tail only.
 
-### `transactions` — 94
+### `transactions` — 106
 
 The ledger. `amount` is **signed from the perspective of `userId`**: money
 leaving that account is negative, money arriving is positive.
@@ -506,7 +506,7 @@ against their card, which is why `balanceAfter` is `null` on those rows.
 earnings statement and `(order_id)` for the order ledger. `balance_after` is a
 convenience cache; the balance of record is `SUM(amount)` over the account.
 
-### `commissions` — 27
+### `commissions` — 31
 
 BetterBlue's fee, written when escrow is released. Exactly one per released
 order.
@@ -597,7 +597,7 @@ The case thread.
 must be filtered **server-side**; hiding it in the client is not access control
 (00 §11).
 
-### `reviews` — 25
+### `reviews` — 29
 
 The buyer's rating of a completed engagement. One review per order, and only on
 completed orders. Two archived orders were never reviewed, which is why a
@@ -842,7 +842,7 @@ foreign key points where, and the validator enforces it.
 **The dataset has two layers.** The *scenario* layer is hand-written to cover
 every status and edge case — every `ORDER_STATUS`, all three dispute
 resolutions, a failed payment and its retry, a partial refund. The *history*
-layer is 24 completed engagements expanded from a compact table, which is what
+layer is 28 completed engagements expanded from a compact table, which is what
 gives creators believable `ratingAvg` / `completedOrders`, buyers a real
 `totalSpent`, and the finance console enough volume to be worth looking at.
 Both layers use the same factories, so history rows are as valid as scenario

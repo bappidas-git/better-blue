@@ -146,6 +146,11 @@ export default function CreatorCard({
         <CardActionArea
           component={RouterLink}
           to={paths.creatorProfile(profile.id)}
+          // The profile's back control reads this: discovery keeps its filters,
+          // sort, and page in the query string, so the only way back to *this*
+          // result set is the history entry. Nothing else about discovery's URL
+          // behaviour changes (Prompt 13 §17).
+          state={{ fromDiscovery: true }}
           aria-label={accessibleName(profile, { rating })}
           sx={{
             height: '100%',

@@ -202,6 +202,41 @@ export const creatorProfileService = Object.freeze({
   getById: (id) => creatorProfiles.getById(id),
 
   /**
+   * The storefront as the public profile page needs it: the record plus the
+   * owner's account status, so a suspended creator gets the "currently
+   * unavailable" screen instead of a live storefront (contract §6.4).
+   *
+   * MOCK-JOIN: the same gap `withActiveOwnersOnly` closes for the grid, for a
+   * single record — `accountStatus` lives on `users` and JSON Server cannot
+   * join, so this is a second `GET /users/:id`. It fails **open** for the same
+   * reason the grid does: a user endpoint that is down is not evidence that a
+   * creator was suspended, and hiding a working storefront over it is the worse
+   * error. Suspension is enforced server-side either way (00 §11).
+   *
+   * > **Laravel** — `GET /creatorProfiles/:id` serialises `profileStatus` from
+   * > the joined account (or 404s on a suspended one, if product prefers), and
+   * > this second request disappears.
+   *
+   * @param {string} id `cpr_…`
+   * @returns {Promise<object>} the storefront plus `profileStatus`, an
+   *   `ACCOUNT_STATUS` value describing the account behind it
+   * @throws {ApiError} `not_found`
+   */
+  async getPublicProfile(id) {
+    const profile = await creatorProfiles.getById(id)
+
+    let profileStatus = ACCOUNT_STATUS.ACTIVE
+    try {
+      const owner = await userService.getById(profile.userId)
+      profileStatus = owner?.accountStatus ?? ACCOUNT_STATUS.ACTIVE
+    } catch {
+      // See above — the storefront is the payload, the status is a safety check.
+    }
+
+    return { ...profile, profileStatus }
+  },
+
+  /**
    * The profile behind an account.
    *
    * @param {string} userId `usr_…`
