@@ -27,7 +27,13 @@ export const NOTIFICATION_TYPE = Object.freeze({
   REVISION_REQUESTED: 'revision_requested',
   DELIVERY_ACCEPTED: 'delivery_accepted',
   ORDER_COMPLETED: 'order_completed',
+  // Prompt 17 addition: the escrow workflow ends an order three ways, and
+  // cancellation and refund had no type of their own. Reusing `order_completed`
+  // for a cancelled order would have put a green tick on bad news.
+  ORDER_CANCELLED: 'order_cancelled',
   PAYMENT_RELEASED: 'payment_released',
+  PAYMENT_REFUNDED: 'payment_refunded',
+  PAYOUT_REQUESTED: 'payout_requested',
   PAYOUT_PROCESSED: 'payout_processed',
   DISPUTE_OPENED: 'dispute_opened',
   DISPUTE_MESSAGE: 'dispute_message',
@@ -139,10 +145,28 @@ export const NOTIFICATION_META = Object.freeze({
     tone: 'success',
     category: NOTIFICATION_CATEGORY.ORDERS,
   }),
+  [NOTIFICATION_TYPE.ORDER_CANCELLED]: Object.freeze({
+    label: 'Order cancelled',
+    icon: 'solar:close-circle-linear',
+    tone: 'neutral',
+    category: NOTIFICATION_CATEGORY.ORDERS,
+  }),
   [NOTIFICATION_TYPE.PAYMENT_RELEASED]: Object.freeze({
     label: 'Payment released',
     icon: 'solar:wallet-money-linear',
     tone: 'success',
+    category: NOTIFICATION_CATEGORY.PAYMENTS,
+  }),
+  [NOTIFICATION_TYPE.PAYMENT_REFUNDED]: Object.freeze({
+    label: 'Payment refunded',
+    icon: 'solar:card-recive-linear',
+    tone: 'info',
+    category: NOTIFICATION_CATEGORY.PAYMENTS,
+  }),
+  [NOTIFICATION_TYPE.PAYOUT_REQUESTED]: Object.freeze({
+    label: 'Payout requested',
+    icon: 'solar:hand-money-linear',
+    tone: 'info',
     category: NOTIFICATION_CATEGORY.PAYMENTS,
   }),
   [NOTIFICATION_TYPE.PAYOUT_PROCESSED]: Object.freeze({

@@ -70,6 +70,8 @@ specific message if anything fails.
 | `npm run build` | Production build |
 | `npm run preview` | Preview the production build |
 | `npm run lint` | ESLint over `src/` with zero warnings allowed |
+| `npm run smoke:api` | Checks the running mock API the way `src/services/` uses it (non-destructive) |
+| `npm run smoke:workflow` | Drives the escrow lifecycle against the running API — **writes records**, so `npm run seed` afterwards |
 
 ## Documentation
 
@@ -77,3 +79,4 @@ Project documentation lives in [`docs/`](docs/) and grows as the build progresse
 
 - [`docs/api-contract.md`](docs/api-contract.md) — the REST contract the frontend codes against: conventions, auth, errors, pagination, every endpoint, and the composite operations that become single Laravel endpoints later.
 - [`docs/data-model.md`](docs/data-model.md) — every collection, its fields and relations, the seed system, and the MySQL mapping for each table.
+- [`docs/payments.md`](docs/payments.md) — the money layer: the provider interface and its dummy implementation, the escrow lifecycle, commission and partial-refund policy, ledger invariants, payouts, and the guide to swapping in a real payment provider.

@@ -5,6 +5,7 @@ import { appConfig } from '@/config/appConfig'
 import { REQUEST_STATUS_MACHINE } from '@/constants/stateMachines'
 import { BUDGET_TYPE, CONTENT_TYPE, REQUEST_STATUS } from '@/constants/statuses'
 import { ID_PREFIX } from '@/utils/id'
+import { toAmount } from '@/utils/money'
 import { assertTransition } from '@/utils/stateMachine'
 
 import { API_ERROR_CODE, createApiError } from './api/apiError'
@@ -45,11 +46,7 @@ const text = (value) => String(value ?? '').trim()
  * An unanswered budget on a half-finished draft is `null`, never `0` — `$0` is
  * a claim about the brief, and `Number('')` would quietly make it.
  */
-function money(value) {
-  if (value === '' || value === null || value === undefined) return null
-  const amount = Number(value)
-  return Number.isFinite(amount) ? Math.round(amount * 100) / 100 : null
-}
+const money = (value) => toAmount(value)
 
 /**
  * Every field of a brief, in data-model order, built from the wizard's values.

@@ -59,10 +59,13 @@ export const payoutService = Object.freeze({
    */
   update: (id, patch) => payouts.update(id, patch),
 
-  // —— workflow operations (added by later prompts) ——
-  // requestPayout — Prompt 18 (earnings), contract §7 operation 11: validates
-  // the amount against the available balance and `payoutMinAmount`.
-  // processPayout / markPaid / rejectPayout — Prompt 31 (admin finance).
+  // —— workflow operations ——
+  // requestPayout lives on `paymentService` (Prompt 17), not here: it needs the
+  // creator's ledger balance and the platform minimum, which is the same
+  // machinery `getEarningsSummary` already owns. Contract §7 operation 11.
+  //
+  // processPayout / markPaid / rejectPayout — Prompt 31 (admin finance). Only a
+  // `paid` payout writes its `payout` ledger row.
 })
 
 export default payoutService

@@ -14,7 +14,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext .js,.jsx --max-warnings 0",
-    "smoke:api": "node scripts/smoke-api.mjs"
+    "smoke:api": "node scripts/smoke-api.mjs",
+    "smoke:workflow": "node scripts/smoke-workflow.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.13.0",

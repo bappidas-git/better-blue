@@ -42,7 +42,10 @@ export { deliveryService } from './deliveryService'
 export { revisionService } from './revisionService'
 
 /* Money ------------------------------------------------------------------- */
-export { paymentService } from './paymentService'
+// `DUMMY_TEST_CARDS` and `PAYMENT_FAILURE_CODE` come through `paymentService`
+// on purpose: `services/payments/` is the provider boundary and nothing outside
+// that service imports it (Prompt 17 §7).
+export { paymentService, DUMMY_TEST_CARDS, PAYMENT_FAILURE_CODE } from './paymentService'
 export { payoutService } from './payoutService'
 
 /* Trust & safety ---------------------------------------------------------- */
