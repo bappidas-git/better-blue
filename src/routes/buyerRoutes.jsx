@@ -1,8 +1,14 @@
-// Buyer dashboard route table — mounted under `/buyer` by ./index.jsx.
+import { lazy } from 'react'
+
+import { paths } from './paths'
+
+// Buyer dashboard route table — mounted under `ProtectedRoute` + `RoleRoute`
+// by ./index.jsx.
 //
-// Empty until Prompt 14 builds DashboardLayout and the buyer overview. Prompts
-// append `{ path, element }` entries here using `React.lazy` pages and the
-// absolute constants from ./paths.js — for example:
+// Prompt 14 builds DashboardLayout and the real buyer overview; until then the
+// only entry is the role home the guards redirect to. Prompts append
+// `{ path, element }` entries here using `React.lazy` pages and the absolute
+// constants from ./paths.js — for example:
 //
 //   const BuyerOrdersPage = lazy(() => import('@/features/orders/pages/BuyerOrdersPage'))
 //   export const buyerRoutes = [{ path: paths.BUYER_ORDERS, element: <BuyerOrdersPage /> }]
@@ -13,4 +19,14 @@
 // BUYER_DISPUTE_DETAIL_PATTERN, BUYER_AFFILIATE, BUYER_NOTIFICATIONS,
 // BUYER_PROFILE, BUYER_SETTINGS.
 
-export const buyerRoutes = []
+// TEMP: replaced in Prompt 14.
+const BuyerHomePlaceholder = lazy(() => import('@/features/dashboard/pages/BuyerHomePlaceholder'))
+const NotFoundPage = lazy(() => import('@/features/staticPages/pages/NotFoundPage'))
+
+export const buyerRoutes = [
+  { path: paths.BUYER, element: <BuyerHomePlaceholder /> },
+  // Keeps every `/buyer/...` URL inside the guarded branch, built or not, so a
+  // deep link survives the trip through sign-in. Must stay last by convention;
+  // React Router ranks it below the real routes regardless of array position.
+  { path: paths.BUYER_CATCH_ALL, element: <NotFoundPage /> },
+]

@@ -14,6 +14,13 @@
 export { ApiError, API_ERROR_CODE, createApiError, isApiError, toApiError } from './api/apiError'
 
 /* Accounts and profiles --------------------------------------------------- */
+export {
+  authService,
+  clearStoredSession,
+  readStoredSession,
+  REFERRAL_STORAGE_KEY,
+  SELF_REGISTERABLE_ROLES,
+} from './authService'
 export { userService } from './userService'
 export { buyerProfileService } from './buyerProfileService'
 export { creatorProfileService } from './creatorProfileService'

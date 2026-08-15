@@ -4,19 +4,27 @@ import { Icon } from '@iconify/react'
 import AppBar from '@mui/material/AppBar'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
+import Chip from '@mui/material/Chip'
 import Container from '@mui/material/Container'
 import Divider from '@mui/material/Divider'
 import Drawer from '@mui/material/Drawer'
 import IconButton from '@mui/material/IconButton'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
 import Stack from '@mui/material/Stack'
 import Toolbar from '@mui/material/Toolbar'
+import Typography from '@mui/material/Typography'
 import useScrollTrigger from '@mui/material/useScrollTrigger'
 import { motion } from 'framer-motion'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, Link as RouterLink, useLocation } from 'react-router-dom'
 
 import Logo from '@/components/brand/Logo'
+import UserAvatar from '@/components/data-display/UserAvatar'
 import { listItem, staggerContainer } from '@/components/motion/motionPresets'
 import { appConfig } from '@/config/appConfig'
+import { ROLE_META } from '@/constants/roles'
+import { useAuth } from '@/context/AuthContext'
 import { paths } from '@/routes/paths'
 import { cssEasing, durations } from '@/theme/motionTokens'
 
@@ -34,6 +42,109 @@ const NAV_LINKS = [
 ]
 
 const MENU_ID = 'public-nav-menu'
+const ACCOUNT_MENU_ID = 'public-nav-account-menu'
+
+const accountMenuItemSx = { minHeight: 44 }
+
+/** Role chip + name + address — the header of both account surfaces below. */
+function AccountSummary({ user }) {
+  return (
+    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+      <UserAvatar name={user.name} src={user.avatarUrl} size="md" />
+      <Box sx={{ minWidth: 0 }}>
+        <Typography variant="subtitle2" noWrap>
+          {user.name}
+        </Typography>
+        <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mt: 0.25 }}>
+          <Chip
+            size="small"
+            label={ROLE_META[user.role]?.label ?? user.role}
+            sx={{
+              height: 20,
+              fontSize: '0.6875rem',
+              fontWeight: 600,
+              bgcolor: 'primary.surface',
+              color: 'primary.dark',
+            }}
+          />
+          <Typography variant="caption" color="text.secondary" noWrap>
+            {user.email}
+          </Typography>
+        </Stack>
+      </Box>
+    </Stack>
+  )
+}
+
+/**
+ * The signed-in account area on desktop — avatar button, and a menu with the
+ * two things a member wants from the public site: back to their dashboard, or
+ * out. MUI's Menu brings the focus trap, arrow-key navigation, Escape, and
+ * focus return with it.
+ */
+function AccountMenu({ user, onLogout }) {
+  const [anchorEl, setAnchorEl] = useState(null)
+  const open = Boolean(anchorEl)
+
+  return (
+    <>
+      <IconButton
+        onClick={(event) => setAnchorEl(event.currentTarget)}
+        aria-label={`Account menu for ${user.name}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? ACCOUNT_MENU_ID : undefined}
+        sx={{ width: 44, height: 44 }}
+      >
+        <UserAvatar name={user.name} src={user.avatarUrl} size="sm" />
+      </IconButton>
+
+      <Menu
+        id={ACCOUNT_MENU_ID}
+        anchorEl={anchorEl}
+        open={open}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{ paper: { sx: { minWidth: 260, mt: 1 } } }}
+      >
+        <Box sx={{ px: 2, py: 1.5 }}>
+          <AccountSummary user={user} />
+        </Box>
+
+        <Divider />
+
+        {/* MUI's own menu density drops below the 44px touch target this
+            product holds itself to (00 §13), and the avatar is reachable on a
+            phone, so the floor is set explicitly. */}
+        <MenuItem
+          component={RouterLink}
+          to={paths.roleHome(user.role)}
+          onClick={() => setAnchorEl(null)}
+          sx={accountMenuItemSx}
+        >
+          <ListItemIcon>
+            <Icon icon="tabler:layout-dashboard" width={20} />
+          </ListItemIcon>
+          Go to dashboard
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            setAnchorEl(null)
+            onLogout()
+          }}
+          sx={accountMenuItemSx}
+        >
+          <ListItemIcon>
+            <Icon icon="tabler:logout" width={20} />
+          </ListItemIcon>
+          Log out
+        </MenuItem>
+      </Menu>
+    </>
+  )
+}
 
 // `NavLink` sets aria-current="page" and an `active` class on the matching link
 // on its own — the styles below just make that state visible.
@@ -57,6 +168,10 @@ export default function PublicTopNav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { pathname } = useLocation()
   const elevated = useScrollTrigger({ disableHysteresis: true, threshold: 8 })
+  // `AuthContext` reads the stored session synchronously on first render, so
+  // the signed-in nav is correct immediately — a returning member never sees
+  // "Log in" flash before their avatar (Prompt 09).
+  const { user, isAuthenticated, logout } = useAuth()
 
   // Navigating from inside the drawer should leave it behind.
   useEffect(() => {
@@ -99,22 +214,26 @@ export default function PublicTopNav() {
 
           <Box sx={{ flexGrow: 1 }} />
 
-          {/* AUTH SLOT — Prompt 09 swaps these two buttons for the signed-in
-              account area (avatar menu, dashboard link, log out) once
-              AuthContext exists, and keeps them as the signed-out fallback. */}
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            sx={{ display: { xs: 'none', md: 'flex' } }}
-          >
-            <Button component={NavLink} to={paths.LOGIN} sx={{ color: 'text.primary' }}>
-              Log in
-            </Button>
-            <Button component={NavLink} to={paths.REGISTER} variant="gradient">
-              Join BetterBlue
-            </Button>
-          </Stack>
+          {/* AUTH SLOT — the account menu once signed in, the two CTAs before
+              then. The avatar stays visible below `md` too: it is the only way
+              to reach a dashboard from a phone without opening the drawer. */}
+          {isAuthenticated ? (
+            <AccountMenu user={user} onLogout={logout} />
+          ) : (
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              sx={{ display: { xs: 'none', md: 'flex' } }}
+            >
+              <Button component={NavLink} to={paths.LOGIN} sx={{ color: 'text.primary' }}>
+                Log in
+              </Button>
+              <Button component={NavLink} to={paths.REGISTER} variant="gradient">
+                Join BetterBlue
+              </Button>
+            </Stack>
+          )}
 
           <IconButton
             onClick={() => setMenuOpen(true)}
@@ -183,7 +302,8 @@ export default function PublicTopNav() {
 
           <Divider />
 
-          {/* AUTH SLOT (mobile) — same swap as the desktop pair in Prompt 09. */}
+          {/* AUTH SLOT (mobile) — the same two states as the desktop slot,
+              laid out as full-width targets for a thumb. */}
           <Stack
             spacing={1}
             sx={{
@@ -191,12 +311,42 @@ export default function PublicTopNav() {
               pb: 'max(16px, env(safe-area-inset-bottom))',
             }}
           >
-            <Button component={NavLink} to={paths.REGISTER} variant="gradient" size="large">
-              Join BetterBlue
-            </Button>
-            <Button component={NavLink} to={paths.LOGIN} variant="outlined" size="large">
-              Log in
-            </Button>
+            {isAuthenticated ? (
+              <>
+                <Box sx={{ pb: 1 }}>
+                  <AccountSummary user={user} />
+                </Box>
+                <Button
+                  component={NavLink}
+                  to={paths.roleHome(user.role)}
+                  variant="gradient"
+                  size="large"
+                  startIcon={<Icon icon="tabler:layout-dashboard" width={20} />}
+                >
+                  Go to dashboard
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  onClick={() => {
+                    setMenuOpen(false)
+                    logout()
+                  }}
+                  startIcon={<Icon icon="tabler:logout" width={20} />}
+                >
+                  Log out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button component={NavLink} to={paths.REGISTER} variant="gradient" size="large">
+                  Join BetterBlue
+                </Button>
+                <Button component={NavLink} to={paths.LOGIN} variant="outlined" size="large">
+                  Log in
+                </Button>
+              </>
+            )}
           </Stack>
         </Stack>
       </Drawer>
