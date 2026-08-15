@@ -1386,10 +1386,29 @@ Buyer briefs — the demand side of the marketplace.
 set when a buyer reaches the request form from a creator's public profile
 (`/buyer/requests/new?creator=cpr_…`). It is a **hint, not an award**: the brief
 is still published to the whole marketplace and every creator may propose on it.
-Prompt 23 reads it only to badge that creator's proposal as "Invited" on the
-buyer's board. Omitted entirely when there is no hint. Reference images are
-uploaded first (§5.1, `purpose: request_reference`) and their URLs submitted in
-`referenceUrls`.
+Prompt 23 reads it in two places: it badges the brief **"Invited"** for that one
+creator on the request board, and it backs the board's "Invited to you" filter
+(`invitedCreatorId=cpr_…`). Omitted entirely when there is no hint. Reference
+images are uploaded first (§5.1, `purpose: request_reference`) and their URLs
+submitted in `referenceUrls`.
+
+> **Composite read — the request board (Prompt 23).**
+> `requestService.listBoard(params)` returns open briefs each joined to a
+> **public** `buyer` summary: `{ userId, name, companyName, logoUrl, industry,
+> location, bio, website, memberSince }`. Nothing private crosses that boundary —
+> no email, no phone, no `totalSpent`.
+> `requestService.getBoardRequest(id)` returns `{ request, buyer }` for one
+> brief, with `buyer.completedOrders` added.
+> **Mock reality:** two extra requests for a page (accounts by id, profiles by
+> `userId`), plus one more for the detail page's completed-order count, because
+> `_embed`/`_expand` are banned (00 §10). A failed join degrades to `buyer:
+> null` rather than failing the board.
+> **Laravel:** `GET /contentRequests?status=open&include=buyer`, with
+> `completedOrders` served from a counter cache on the buyer profile.
+
+`proposalsCount` is maintained by `proposalService.submitProposal` — see §7,
+operation 20, for why that is a client-side write today and a counter cache
+tomorrow.
 
 **Response** `200 OK` (`GET /contentRequests/req_001`, published and live)
 
@@ -1465,8 +1484,9 @@ Creator offers on a brief. **A creator may propose once per request.**
 |---|---|---|---|
 | `GET` | `/proposals` | Request owner · Proposing creator · Admin | Proposals on a brief / my proposals |
 | `GET` | `/proposals/:id` | Owner · Request owner · Admin | One offer |
-| `POST` | `/proposals` | Creator | Submit an offer |
-| `PATCH` | `/proposals/:id` | Owner (creator) | Withdraw |
+| `POST` | `/proposals` | Creator | Submit an offer — **composite**, §7 op 20 |
+| `PATCH` | `/proposals/:id` | Owner (creator) | Edit (while `submitted`) |
+| `POST` | `/proposals/:id/withdraw` | Owner (creator) | Withdraw |
 | `PATCH` | `/proposals/:id` | Request owner (buyer) | Shortlist, decline |
 | `POST` | `/proposals/:id/accept` | Request owner (buyer) | **Composite** — §7 |
 
@@ -1487,6 +1507,30 @@ starring notifies the creator. Declining is one-way and terminal.
 > `_embed`/`_expand` are banned and the board sorts by creator rating, a column
 > that is not on the offer. **Laravel:** one request,
 > `GET /proposals?requestId=…&include=creator,samples`, sorted server-side.
+
+> **Composite read — "My proposals" (Prompt 23).**
+> `proposalService.listForCreator(creatorId, params)` returns a creator's own
+> offers, each joined to the `request` it answers and a public `buyer` summary
+> (`{ userId, name, companyName, logoUrl }`) — a proposal card is unreadable
+> without the brief's title. **Mock reality:** three extra requests (briefs by
+> id, then accounts and business profiles for whoever posted them, in
+> parallel); a failed join degrades to `request: null` rather than failing the
+> list. **Laravel:** `GET /proposals?creatorId=…&include=request.buyer`.
+>
+> Two aggregates ride alongside it: `countsByStatus(creatorId)` (the tab counts
+> — one folded page today, `GROUP BY status` tomorrow) and
+> `countShortlisted(creatorId)` (the nav badge, one `COUNT(*)` either way).
+
+**Field rules** — the numbers the proposal dialog, the service, and the future
+Laravel validator all quote (exported from `proposalService`):
+
+| Field | Rule |
+|---|---|
+| `coverMessage` | 60–1200 characters |
+| `price` | > 0. **Above the brief's budget is allowed** — warned about, never blocked; the buyer decides |
+| `deliveryDays` | one of `3, 5, 7, 10, 14, 21` |
+| `revisionsIncluded` | one of `1, 2, 3` |
+| `sampleItemIds` | 0–3 **published** `pfi_…` items owned by the proposing creator |
 
 **Filters** — `requestId` · `creatorId` (→ `users.id`) · `status` (repeatable) ·
 `price_gte` / `price_lte` · `sort`: `createdAt` (default `desc`), `price`,
@@ -1542,6 +1586,14 @@ proposing creator.
 `shortlisted` and `declined` are plain `PATCH`es. **`accepted` is not** — it
 creates an order, declines the losing offers, and awards the brief, so it goes
 through the composite operation in §7.
+
+**Creator decisions (Prompt 23)** — `proposalService.editProposal(id, patch)`
+is a plain `PATCH` and is refused unless the offer is still `submitted`: once
+the buyer has shortlisted it they are comparing against numbers they were
+shown, and once it is decided there is nothing left to edit. Editing does not
+notify. `withdrawProposal(id)` moves `submitted|shortlisted → withdrawn`,
+stamps `respondedAt`, and notifies the buyer; `proposalsCount` is **not**
+decremented, because the brief did receive that many offers.
 
 Errors: `403` (not a party) · `404` · `409` `conflict` (a second proposal from
 the same creator on the same request; acting on a closed brief; an illegal
@@ -2876,6 +2928,7 @@ are the reason these belong on the server:
 | 17 | `getOrderTimeline` | `orderService` | 5 | `GET /orders/:id/timeline` |
 | 18 | `getOverview` | `creatorDashboardService` | 11 | `GET /creator/overview` |
 | 19 | `submitForReview` | `portfolioService` | 4 | `POST /portfolioItems/:id/submit` |
+| 20 | `submitProposal` | `proposalService` | 6 | `POST /proposals` |
 
 Operations 16 and 17 were added by Prompt 20 (the buyer's order workspace), and
 operation 18 by Prompt 21 (the creator's) — the mirror of operation 14, section
@@ -2887,7 +2940,9 @@ a revision* and moves the delivery and the order as side effects, so it belongs
 with the record it writes. Operation 6a was split out of operation 6 for the same
 reason in reverse — completing an order is reached from two places (a buyer
 accepting, and Trust & Safety resolving a dispute in the creator's favour), and
-only the first of those goes through a delivery.
+only the first of those goes through a delivery. Operation 20 arrived with
+Prompt 23 (the request board and the creator's proposal flow): it is the supply
+side's entry point, and the only composite whose sequence is mostly *guards*.
 
 ### 7.2 The sequences
 
@@ -3604,6 +3659,57 @@ reviewer's queue is a screen rather than a bell.
 > case, append a `moderation_review_events` row, save the item, return both.
 > `creatorUserId` comes from the bearer token and any id in the body is ignored
 > (§9.2); the owner must also be authorised against the item (§9.1).
+
+---
+
+#### 20. `submitProposal({ requestId, creatorId, coverMessage, price, deliveryDays, revisionsIncluded, sampleItemIds })`
+
+A creator answers a brief. One intention, three records: the offer is written,
+the brief's counter moves, and the buyer is told.
+
+**Mock — `POST /proposals` exists, but the guards and the side effects do not,
+so:**
+
+1. `GET /contentRequests/:requestId` — refuse anything but `status: open` with
+   `409 conflict`
+2. `GET /proposals?requestId=…&creatorId=…&_limit=1` — the duplicate guard;
+   a hit is `409 conflict`
+3. `GET /users/:creatorId` and `GET /creatorProfiles?userId=…` in parallel —
+   refuse a non-`active` account (`403 forbidden`) and a storefront with
+   `availability: false` (`409 conflict`)
+4. Field rules run in the browser (§6.8, "Field rules") → `422
+   validation_failed` with the failing field in `details`
+5. `POST /proposals` → `status: 'submitted'`, `respondedAt: null`
+6. `PATCH /contentRequests/:requestId` → `{ proposalsCount: n + 1 }`
+7. `POST /notifications` → `proposal_received` to the brief's `buyerId`
+
+The guards run **before** anything is written, cheapest first: a closed brief
+and a duplicate are far likelier than a suspended account, and both cost one
+request each.
+
+MOCK-GUARD: step 2 is a read-before-write, so two submissions racing each other
+can both pass it. Laravel makes it `UNIQUE (request_id, creator_id)`.
+
+MOCK-DERIVED: step 6 is a client-side counter update, and two creators
+submitting at the same moment can lose a count. It is also **swallowed on
+failure** — a card that says "3 proposals" when there are four is cosmetic, and
+undoing a proposal that was accepted is not. Step 7 is swallowed for the same
+reason.
+
+The **profile-completeness gate** (≥ 60%) that the UI applies before opening the
+dialog is deliberately *not* in this sequence: it is a marketplace-quality
+nudge rather than an integrity rule, it is explained in visible helper text next
+to the disabled button, and a creator who clears it mid-session should not have
+to reload. Laravel may promote it to a server-side rule; the three guards above
+must be server-side regardless.
+
+**Response** — `201 Created`, the offer.
+
+> **Laravel** — one transaction: authorise the creator from the bearer token
+> (§9.2), lock the request row, insert the proposal against the unique
+> constraint, bump the counter cache, and dispatch the notification from a
+> model listener. `price` is validated but not clamped to the budget — an offer
+> above it is legal and the buyer decides (§6.8).
 
 ---
 

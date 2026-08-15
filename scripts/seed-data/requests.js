@@ -31,6 +31,7 @@ import {
   daysAgo,
   seqId,
 } from '../seed-utils.js'
+import { creatorProfileId } from './profiles.js'
 import { buyerId } from './users.js'
 
 const { PHOTO, VIDEO, BUNDLE } = CONTENT_TYPE
@@ -734,6 +735,70 @@ const SCENARIO_SOURCE = [
     deadlineInDays: 21,
     createdDaysAgo: 4,
   },
+
+  /* --- Open, appended by Prompt 23 ---------------------------------------- */
+  //
+  // The request board needs enough live material to filter meaningfully (§9:
+  // at least eight open briefs across categories and budgets), and one brief
+  // has to carry an **invitation** so the "Invited" badge and the "Invited to
+  // you" filter have something to show. `invitedCreator` is a creator *key*;
+  // the assembly below resolves it to the `cpr_…` the data model stores.
+  //
+  // **Appended rather than slotted into the "Open" block above**, for the same
+  // reason Prompt 21's two were: request ids are assigned in array order, and
+  // inserting rows would renumber every scenario request after them —
+  // including the ones `docs/api-contract.md` and `scripts/smoke-api.mjs`
+  // quote by id.
+  {
+    key: 'open_verde_invite_ava',
+    buyer: 'verde',
+    // The demo creator's own storefront (Ava — food & beverage, e-commerce),
+    // so signing in as `creator@betterblue.test` shows the badge immediately.
+    invitedCreator: 'ava',
+    status: REQUEST_STATUS.OPEN,
+    category: CATEGORY_ID.FOOD_BEVERAGE,
+    contentType: BUNDLE,
+    title: 'Photo and video package for the winter tasting menu launch',
+    description:
+      'We are launching the winter tasting menu across three sites and would like the same photographer to cover stills and short-form video in one pass. We found your food work through the directory and think the warmth in it is exactly right for this menu. Shooting over two evening services in Portland, with the full dish list and plating notes ready on the day.',
+    quantity: 26,
+    videoDurationSec: 30,
+    orientation: ORIENTATION.ANY,
+    usageRights: USAGE_RIGHTS.FULL_COMMERCIAL,
+    brandGuidelines:
+      'Warm, low light with visible steam and texture. Muted greens and warm neutrals, matching the autumn set. No heavy colour grading.',
+    dos: 'Cover every course plated, three wider table scenes, and one vertical reel per course. Leave headroom for menu typography on the stills.',
+    donts: 'No stock props we do not own, no other restaurants’ branding in frame, no licensed music on the reels.',
+    referenceUrls: ['https://verdekitchen.test/press/winter-tasting-brief'],
+    budgetType: BUDGET_TYPE.RANGE,
+    budgetMin: 900,
+    budgetMax: 1300,
+    deadlineInDays: 20,
+    createdDaysAgo: 2,
+  },
+  {
+    key: 'open_urbannest_studio',
+    buyer: 'urbannest',
+    status: REQUEST_STATUS.OPEN,
+    category: CATEGORY_ID.HOME_LIFESTYLE,
+    contentType: PHOTO,
+    title: 'Room sets for the small-space studio collection',
+    description:
+      'A twelve-piece collection built for studio flats, needing room sets that make a small space read as liveable rather than cramped. Shooting at our London showroom, which is already dressed. We supply the floor plan and the shot list.',
+    quantity: 18,
+    orientation: ORIENTATION.LANDSCAPE,
+    usageRights: USAGE_RIGHTS.WEBSITE,
+    brandGuidelines:
+      'Natural daylight only, calm neutrals, and honest proportions. A sofa that photographs larger than it is comes straight back as a return.',
+    dos: 'Photograph each set wide and at seating height. Include one detail frame per piece showing the fabric.',
+    donts: 'No wide-angle distortion, no props we do not sell, no composited windows.',
+    referenceUrls: ['https://urbannest.test/suppliers/room-set-spec'],
+    budgetType: BUDGET_TYPE.FIXED,
+    budgetMin: 450,
+    budgetMax: 450,
+    deadlineInDays: 11,
+    createdDaysAgo: 3,
+  },
 ]
 
 /* -------------------------------------------------------------------------- */
@@ -868,6 +933,12 @@ const scenarioRequests = SCENARIO_SOURCE.map((source) => {
     // A draft may not have picked a date yet (Prompt 18's incomplete draft), so
     // `null` stays `null` rather than becoming "today" via `-null === -0`.
     deadline: source.deadlineInDays == null ? null : daysAgo(-source.deadlineInDays, 17, 0),
+    // Prompt 16's "arrived from a creator's profile" hint, stored as the
+    // storefront id (`cpr_…`) the data model specifies. Absent on every brief
+    // that was written from a blank wizard, which is all but one of them.
+    invitedCreatorId: source.invitedCreator
+      ? creatorProfileId(source.invitedCreator)
+      : undefined,
     status: source.status,
     // Derived in seed-db.js from the proposals on this request.
     proposalsCount: 0,

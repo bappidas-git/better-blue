@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { Icon } from '@iconify/react'
 import AppBar from '@mui/material/AppBar'
@@ -25,6 +25,7 @@ import { listItem, staggerContainer } from '@/components/motion/motionPresets'
 import { appConfig } from '@/config/appConfig'
 import { ROLE_META } from '@/constants/roles'
 import { useAuth } from '@/context/AuthContext'
+import useFeatureFlag from '@/hooks/useFeatureFlag'
 import { paths } from '@/routes/paths'
 import { cssEasing, durations } from '@/theme/motionTokens'
 
@@ -36,7 +37,11 @@ import { cssEasing, durations } from '@/theme/motionTokens'
 
 const NAV_LINKS = [
   { key: 'creators', label: 'Find Creators', to: paths.CREATORS },
-  { key: 'requests', label: 'Browse Requests', to: paths.REQUESTS },
+  // Prompt 23: hidden while `features.publicRequestBoard` is off, because the
+  // page it points at would only tell the visitor the board is not public
+  // today. `flag` is read through `useFeatureFlag`, the single sanctioned
+  // reader of the settings singleton (00 §5).
+  { key: 'requests', label: 'Browse Requests', to: paths.REQUESTS, flag: 'publicRequestBoard' },
   { key: 'how-it-works', label: 'How It Works', to: paths.HOW_IT_WORKS },
   { key: 'pricing', label: 'Pricing', to: paths.PRICING },
 ]
@@ -173,6 +178,15 @@ export default function PublicTopNav() {
   // "Log in" flash before their avatar (Prompt 09).
   const { user, isAuthenticated, logout } = useAuth()
 
+  // One flag is enough for now, so it is read directly rather than through a
+  // loop of hooks. A flag whose value has not arrived yet reads as *off*, which
+  // keeps the nav from flashing a link that is about to disappear.
+  const { isEnabled: isBoardPublic } = useFeatureFlag('publicRequestBoard')
+  const navLinks = useMemo(
+    () => NAV_LINKS.filter((link) => link.flag !== 'publicRequestBoard' || isBoardPublic),
+    [isBoardPublic]
+  )
+
   // Navigating from inside the drawer should leave it behind.
   useEffect(() => {
     setMenuOpen(false)
@@ -205,7 +219,7 @@ export default function PublicTopNav() {
             aria-label="Primary"
             sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', ml: 2, gap: 0.5 }}
           >
-            {NAV_LINKS.map((link) => (
+            {navLinks.map((link) => (
               <Button key={link.key} component={NavLink} to={link.to} sx={desktopLinkSx}>
                 {link.label}
               </Button>
@@ -290,7 +304,7 @@ export default function PublicTopNav() {
               animate="visible"
               sx={{ listStyle: 'none', m: 0, p: 0 }}
             >
-              {NAV_LINKS.map((link) => (
+              {navLinks.map((link) => (
                 <Box component={motion.li} key={link.key} variants={listItem}>
                   <Button component={NavLink} to={link.to} fullWidth sx={drawerLinkSx}>
                     {link.label}

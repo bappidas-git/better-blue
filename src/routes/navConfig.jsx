@@ -82,6 +82,8 @@ export const BADGE_KEY = Object.freeze({
   BUYER_ORDERS_AWAITING_REVIEW: 'buyer.ordersAwaitingReview',
   /** Portfolio items rejected or sent back for changes (Prompt 22). */
   CREATOR_PORTFOLIO_ATTENTION: 'creator.portfolioAttention',
+  /** Proposals a buyer has shortlisted and not yet decided on (Prompt 23). */
+  CREATOR_PROPOSALS_SHORTLISTED: 'creator.proposalsShortlisted',
 })
 
 /* -------------------------------------------------------------------------- */
@@ -150,9 +152,9 @@ export const buyerNav = Object.freeze([
 /* -------------------------------------------------------------------------- */
 
 /**
- * Prompts append: browse + proposals (23), orders (24), earnings (25),
- * disputes (26), notifications (27). Those all belong **between** Overview and
- * Profile — the account entries stay last, the same order the buyer's nav keeps.
+ * Prompts append: orders (24), earnings (25), disputes (26),
+ * notifications (27). Those all belong **between** Overview and Profile — the
+ * account entries stay last, the same order the buyer's nav keeps.
  */
 export const creatorNav = Object.freeze([
   Object.freeze({
@@ -161,6 +163,25 @@ export const creatorNav = Object.freeze([
     icon: 'solar:widget-5-linear',
     path: paths.CREATOR,
     exact: true,
+  }),
+  Object.freeze({
+    // Prompt 23. First after Overview because finding work is the reason a
+    // creator opens the dashboard at all — the mirror of "Requests" sitting at
+    // the top of the buyer's nav.
+    key: 'browse',
+    label: 'Browse requests',
+    icon: 'solar:magnifer-linear',
+    path: paths.CREATOR_BROWSE,
+  }),
+  Object.freeze({
+    // Prompt 23. Straight after Browse: propose, then watch. The badge counts
+    // the offers a buyer has *starred* — the one proposal state where something
+    // good is happening and the creator should look.
+    key: 'proposals',
+    label: 'My proposals',
+    icon: 'solar:document-add-linear',
+    path: paths.CREATOR_PROPOSALS,
+    badgeKey: BADGE_KEY.CREATOR_PROPOSALS_SHORTLISTED,
   }),
   Object.freeze({
     // Prompt 22. Above Profile because a storefront without sample work is the
@@ -257,13 +278,12 @@ export const MORE_NAV_KEYS = Object.freeze({
   // Requests, Orders, and Payments, and `splitBottomNav` pushes Profile into
   // the sheet alongside Settings by overflow rather than by name.
   [ROLES.BUYER]: Object.freeze([NAV_KEY.SETTINGS]),
-  // Left empty by Prompt 21 on purpose, and still empty after Prompt 22 added
-  // Portfolio: `splitBottomNav` collapses nothing while everything fits, so
-  // deferring Settings today would spend a slot on a "More" tile holding one
-  // entry — worse than the four direct destinations the creator currently has.
-  // Add `NAV_KEY.SETTINGS` (and Profile) here in the prompt that pushes the
-  // creator past five destinations.
-  [ROLES.CREATOR]: Object.freeze([]),
+  // Prompt 23 is the one Prompt 21's note anticipated: Browse and Proposals
+  // take the creator to six destinations, so the two account entries move into
+  // the sheet by name. That leaves the bar as Overview · Browse · Proposals ·
+  // Portfolio — find work, track it, keep the storefront current — with More
+  // holding Profile and Settings.
+  [ROLES.CREATOR]: Object.freeze([NAV_KEY.PROFILE, NAV_KEY.SETTINGS]),
   [ROLES.ADMIN]: Object.freeze([]),
   [ROLES.SUPER_ADMIN]: Object.freeze([]),
 })

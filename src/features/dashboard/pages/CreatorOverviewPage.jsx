@@ -38,9 +38,8 @@ import { EMPTY_PLACEHOLDER, formatCurrency, formatNumber } from '@/utils/formatt
 // The stat tiles become the entry points to Browse, Proposals, Orders, and
 // Earnings as those screens arrive. A tile pointing at an unbuilt path would
 // land on the dashboard 404, so each one stays inert until its prompt lands
-// (Prompt 14's rule for `navConfig`, applied to page-level links):
-//   TODO(Prompt 23): link "Matching open requests" → CREATOR_BROWSE.
-//   TODO(Prompt 23): link "Active proposals"      → CREATOR_PROPOSALS.
+// (Prompt 14's rule for `navConfig`, applied to page-level links). Prompt 23
+// lit the first two up; the rest are still waiting:
 //   TODO(Prompt 24): link "Active orders"         → CREATOR_ORDERS.
 //   TODO(Prompt 25): link "Available to withdraw" → CREATOR_EARNINGS.
 
@@ -134,14 +133,14 @@ export default function CreatorOverviewPage() {
       value: overview?.openMatchingRequests ?? EMPTY_PLACEHOLDER,
       icon: 'solar:clipboard-list-linear',
       iconTone: overview?.openMatchingRequests > 0 ? 'brand' : 'info',
-      // TODO(Prompt 23): `to: paths.CREATOR_BROWSE` once the request board renders.
+      to: paths.CREATOR_BROWSE,
     },
     {
       key: 'proposals',
       label: 'Active proposals',
       value: overview?.activeProposals ?? EMPTY_PLACEHOLDER,
       icon: 'solar:document-add-linear',
-      // TODO(Prompt 23): `to: paths.CREATOR_PROPOSALS`.
+      to: paths.CREATOR_PROPOSALS,
     },
     {
       key: 'orders',
@@ -197,7 +196,11 @@ export default function CreatorOverviewPage() {
       description:
         'Find a brief that fits, price it, and say how you would shoot it. The order is created when the buyer accepts.',
       done: (overview?.proposalsTotal ?? 0) > 0,
-      // TODO(Prompt 23): `action: { label: 'Browse requests', to: paths.CREATOR_BROWSE }`.
+      action: {
+        label: 'Browse requests',
+        to: paths.CREATOR_BROWSE,
+        icon: 'solar:magnifer-linear',
+      },
     },
   ]
 
@@ -207,8 +210,7 @@ export default function CreatorOverviewPage() {
       label: 'Browse requests',
       description: 'Find briefs in your categories',
       icon: 'solar:magnifer-linear',
-      // TODO(Prompt 23): `to: paths.CREATOR_BROWSE`.
-      disabledReason: 'The request board arrives with the proposals screen',
+      to: paths.CREATOR_BROWSE,
     },
     {
       key: 'portfolio',
@@ -399,9 +401,8 @@ export default function CreatorOverviewPage() {
           <Typography variant="overline" component="h2" color="text.secondary">
             Quick actions
           </Typography>
-          {/* TODO(Prompt 23): the Browse tile stays inert until the request
-              board renders — a tile that navigates to a 404 is worse than one
-              that plainly does nothing. Prompt 22 lit up the portfolio tile. */}
+          {/* Prompt 22 lit up the portfolio tile and Prompt 23 the Browse one,
+              so all three now navigate. */}
           <QuickActions actions={quickActions} sx={{ mt: 1 }} />
         </Box>
       </Stack>

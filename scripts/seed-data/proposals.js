@@ -659,6 +659,75 @@ Object.entries(LATE_BOARD_PROPOSALS).forEach(([requestKey, offers]) => {
   })
 })
 
+/* Live board, appended by Prompt 23 ------------------------------------------ */
+
+/**
+ * Offers on the two briefs Prompt 23 added to the board, so neither of the
+ * newest requests reads as an empty board slot.
+ *
+ * **Ava is deliberately absent from both.** She is the demo creator, and the
+ * acceptance walkthrough (§14) is "browse → open the invited request → submit
+ * a proposal". A seeded offer from her on either brief would make the duplicate
+ * guard fire on the very first step of the demo. Her invitation is on
+ * `open_verde_invite_ava`, which is left entirely unanswered for that reason.
+ *
+ * Emitted last for the same id-stability reason as `LATE_BOARD_PROPOSALS`.
+ */
+const BOARD_PROPOSALS_23 = {
+  open_verde_invite_ava: [
+    {
+      creator: 'amara',
+      price: 1240,
+      deliveryDays: 14,
+      revisions: 2,
+      status: SUBMITTED,
+      afterDays: 1,
+      message:
+        'I shoot restaurant work as a single documentary pass rather than a stills day and a video day, which is what keeps the two sets looking like one launch. Two evening services, stills and verticals from the same setups, and everything graded together at the end.',
+    },
+  ],
+  open_urbannest_studio: [
+    {
+      creator: 'yuki',
+      price: 440,
+      deliveryDays: 6,
+      revisions: 2,
+      status: SUBMITTED,
+      afterDays: 1,
+      message:
+        'Small rooms are most of what I photograph, and the honest answer is that they read best on a longer lens from further back rather than on a wide angle from the doorway. I would shoot every set wide and at seating height in daylight, and add a fabric detail frame per piece.',
+    },
+    {
+      creator: 'ethan',
+      price: 380,
+      deliveryDays: 9,
+      revisions: 1,
+      status: SUBMITTED,
+      afterDays: 2,
+      message:
+        'I am building out my BetterBlue portfolio and interiors are where I want more work. Comfortable working to a floor plan and a shot list, and I can turn revisions around the same day.',
+    },
+  ],
+}
+
+Object.entries(BOARD_PROPOSALS_23).forEach(([requestKey, offers]) => {
+  const request = requestByKey(requestKey)
+  offers.forEach((offer) => {
+    const createdAt = addDays(request.publishedAt, offer.afterDays)
+    addProposal({
+      requestKey,
+      creatorKey: offer.creator,
+      price: offer.price,
+      deliveryDays: offer.deliveryDays,
+      revisions: offer.revisions,
+      status: offer.status,
+      coverMessage: offer.message,
+      createdAt,
+      respondedAt: offer.status === SUBMITTED ? null : addDays(createdAt, 0.5),
+    })
+  })
+})
+
 export { proposals }
 
 /** The accepted proposal for a request key — the order factory builds on it. */
