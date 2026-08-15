@@ -7,6 +7,7 @@ import { env } from '@/config/env'
 import { ADMIN_ROLES, ROLES } from '@/constants/roles'
 import AuthLayout from '@/layouts/AuthLayout'
 import PublicLayout from '@/layouts/PublicLayout'
+import DashboardLayout from '@/layouts/dashboard/DashboardLayout'
 
 import { adminRoutes } from './adminRoutes'
 import { buyerRoutes } from './buyerRoutes'
@@ -19,17 +20,18 @@ import { authRoutes, devRoutes, publicRoutes } from './publicRoutes'
 // prompts append to — so adding a screen never means editing this file.
 //
 // Branch layout:
-//   /            PublicLayout                     public pages + the 404 catch-all
-//   (pathless)   GuestRoute → AuthLayout          /login, /register, /forgot-password
-//   (pathless)   ProtectedRoute → RoleRoute       /buyer, /creator, /admin
+//   /            PublicLayout                            public pages + the 404 catch-all
+//   (pathless)   GuestRoute → AuthLayout                 /login, /register, /forgot-password
+//   (pathless)   ProtectedRoute → RoleRoute →
+//                DashboardLayout                         /buyer, /creator, /admin
 //
 // The dashboard and auth branches are deliberately *pathless* layout routes
 // whose children carry absolute paths. Giving the branch a `path` would make
 // `/buyer` match the branch itself and render an empty <Outlet /> — a blank
 // page — while it has no children; pathless means unmatched dashboard URLs fall
 // through to the 404 under PublicLayout instead. Children still use the
-// `/buyer/...` constants from ./paths.js, so nothing about the URLs changes when
-// Prompt 14 inserts <DashboardLayout /> between the role guard and its routes.
+// `/buyer/...` constants from ./paths.js, so nothing about the URLs changed when
+// Prompt 14 inserted <DashboardLayout /> between the role guard and its routes.
 //
 // Every guard here is UX only. The Laravel API must enforce the same rules
 // server-side, on every request (00 §11 — see the header of ./guards.jsx).
@@ -66,14 +68,25 @@ export const router = createBrowserRouter([
   },
   {
     // Two guards, two questions: ProtectedRoute asks "signed in?" and remembers
-    // the deep link; RoleRoute asks "the right role?". Prompt 14 inserts
-    // <DashboardLayout /> as a layout route between RoleRoute and its children.
+    // the deep link; RoleRoute asks "the right role?". <DashboardLayout /> then
+    // wraps each area's route table, so every dashboard URL — including the ones
+    // no prompt has built yet, which land on the 404 — renders inside the shell
+    // with its sidebar, top bar, and mobile bar intact (Prompt 14).
     element: <ProtectedRoute />,
     errorElement,
     children: [
-      { element: <RoleRoute roles={[ROLES.BUYER]} />, children: buyerRoutes },
-      { element: <RoleRoute roles={[ROLES.CREATOR]} />, children: creatorRoutes },
-      { element: <RoleRoute roles={ADMIN_ROLES} />, children: adminRoutes },
+      {
+        element: <RoleRoute roles={[ROLES.BUYER]} />,
+        children: [{ element: <DashboardLayout />, children: buyerRoutes }],
+      },
+      {
+        element: <RoleRoute roles={[ROLES.CREATOR]} />,
+        children: [{ element: <DashboardLayout />, children: creatorRoutes }],
+      },
+      {
+        element: <RoleRoute roles={ADMIN_ROLES} />,
+        children: [{ element: <DashboardLayout />, children: adminRoutes }],
+      },
     ],
   },
 ])

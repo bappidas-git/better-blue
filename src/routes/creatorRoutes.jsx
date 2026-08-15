@@ -2,10 +2,11 @@ import { lazy } from 'react'
 
 import { paths } from './paths'
 
-// Creator dashboard route table — mounted under `ProtectedRoute` + `RoleRoute`
-// by ./index.jsx.
+// Creator dashboard route table — mounted under `ProtectedRoute` + `RoleRoute` +
+// `DashboardLayout` by ./index.jsx, so every entry here renders inside the
+// dashboard shell and should render a `DashboardPage`.
 //
-// Prompt 15 builds the real creator overview; until then the only entry is the
+// Prompt 21 builds the real creator overview; until then the only entry is the
 // role home the guards redirect to. Prompts append `{ path, element }` entries
 // here using `React.lazy` pages and the absolute constants from ./paths.js —
 // for example:
@@ -18,7 +19,7 @@ import { paths } from './paths'
 // CREATOR_DISPUTES, CREATOR_DISPUTE_DETAIL_PATTERN, CREATOR_NOTIFICATIONS,
 // CREATOR_PROFILE, CREATOR_SETTINGS.
 
-// TEMP: replaced in Prompt 15.
+// TEMP: replaced in Prompt 21.
 const CreatorHomePlaceholder = lazy(
   () => import('@/features/dashboard/pages/CreatorHomePlaceholder')
 )

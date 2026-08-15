@@ -1,16 +1,17 @@
 import RoleHomePlaceholder from '@/features/dashboard/components/RoleHomePlaceholder'
 
-// TEMP: replaced in Prompt 15 by the real creator overview (proposals sent,
-// active orders, earnings, portfolio status) inside DashboardLayout.
-// Registered at `paths.CREATOR` so the creator role home exists.
+// TEMP: replaced in Prompt 21 by the real creator overview (proposals sent,
+// active orders, earnings, portfolio status). Since Prompt 14 it renders inside
+// `DashboardLayout`, registered at `paths.CREATOR`.
 
 export default function CreatorHomePlaceholder() {
   return (
     <RoleHomePlaceholder
-      title="Creator dashboard"
+      title="Overview"
+      subtitle="Briefs to pitch for, orders to deliver, and what you have earned."
       icon="tabler:camera"
       description="Briefs worth pitching for, the proposals you have sent, orders to deliver, and your earnings will live here."
-      arrivesIn="Prompt 15"
+      arrivesIn="Prompt 21"
     />
   )
 }
