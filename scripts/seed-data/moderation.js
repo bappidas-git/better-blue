@@ -25,7 +25,7 @@ import {
 } from '../seed-utils.js'
 import { ADMIN_ID } from './users.js'
 import { USER_BY_CREATOR_PROFILE, creatorProfileId } from './profiles.js'
-import { portfolioItems } from './portfolio.js'
+import { portfolioItems, rejectionReasonCodeById } from './portfolio.js'
 import { deliveriesFor, orderFor } from './orders.js'
 import { requestId } from './requests.js'
 
@@ -45,10 +45,17 @@ const DECISION_NOTES = {
     'Removed from public view following an upheld member report. The creator has been notified and can appeal through support.',
 }
 
-/** Reason codes attached to a rejection or a changes-requested decision. */
+/**
+ * Fallback reason codes by outcome. An item that states its own reason
+ * (`rejectionReasonCodeById`) wins over these, so the code on the case and the
+ * copy the creator reads always describe the same decision.
+ */
 const REASON_BY_STATUS = {
   [CONTENT_STATUS.REJECTED]: REJECTION_REASON_CODE.IP_VIOLATION,
   [CONTENT_STATUS.REVISION_REQUIRED]: REJECTION_REASON_CODE.LOW_PRODUCTION_QUALITY,
+  // Restricted after an upheld member report about a licensed backdrop — the
+  // contract requires a code on this outcome too (§6.20).
+  [CONTENT_STATUS.RESTRICTED]: REJECTION_REASON_CODE.IP_VIOLATION,
 }
 
 /** Reviewers rotate so the queue is not owned by one admin. */
@@ -99,6 +106,8 @@ function addModerationReview({
   reviewerIndex,
   decidedAt,
   publishedAt,
+  reasonCode,
+  notes,
 }) {
   reviewSequence += 1
   const reviewerId = REVIEWERS[reviewerIndex % REVIEWERS.length]
@@ -131,13 +140,18 @@ function addModerationReview({
   const decisionStatus =
     outcome === CONTENT_STATUS.RESTRICTED ? CONTENT_STATUS.APPROVED : outcome
 
+  // The item's own copy, when it has any, is what the creator was actually
+  // sent — so it is the note on the decision rather than the generic line.
+  const decisionNote =
+    (decisionStatus === outcome ? notes : undefined) ?? DECISION_NOTES[decisionStatus]
+
   if (!isOpen) {
     history.push({
       at: decidedAt,
       byId: reviewerId,
       fromStatus: CONTENT_STATUS.UNDER_REVIEW,
       toStatus: decisionStatus,
-      note: DECISION_NOTES[decisionStatus],
+      note: decisionNote,
     })
   }
 
@@ -168,8 +182,11 @@ function addModerationReview({
       creatorId: creatorUserId,
       status: outcome,
       reviewerId: isWaiting ? undefined : reviewerId,
-      notes: isOpen ? undefined : DECISION_NOTES[decisionStatus],
-      reasonCode: REASON_BY_STATUS[outcome],
+      // `notes` summarises where the case stands *now*, which is the note on
+      // its last step — for a restricted item that is the restriction, not the
+      // approval that preceded it.
+      notes: isOpen ? undefined : history[history.length - 1].note,
+      reasonCode: reasonCode ?? REASON_BY_STATUS[outcome],
       history,
       submittedAt,
       reviewedAt: isOpen ? null : history[history.length - 1].at,
@@ -187,6 +204,8 @@ queuedItems.forEach((item, index) => {
     reviewerIndex: index,
     decidedAt: addHours(item.submittedAt, 12),
     publishedAt: item.publishedAt,
+    reasonCode: rejectionReasonCodeById[item.id],
+    notes: item.rejectionReason,
   })
 })
 

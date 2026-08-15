@@ -146,19 +146,23 @@ and `orders.deliveryDueAt` may be in the future.
 Prompt 05 may not modify `src/constants` (§17), so a few small string sets are
 owned by `scripts/seed-utils.js` and documented here. A later prompt that needs
 them in the app should promote them into `src/constants` and re-point the seed —
-which is what Prompt 16 did with `ORIENTATION` and `BUDGET_TYPE`: both now live
-in `src/constants/statuses.js` (with `STATUS_META` entries) and `seed-utils.js`
-re-exports them, so the seed's imports did not change. What is left:
+which is what Prompt 16 did with `ORIENTATION` and `BUDGET_TYPE`, and Prompt 22
+with `VISIBILITY` and `MODERATION_SUBJECT` (the portfolio manager switches the
+first and writes records discriminated by the second): all four now live in
+`src/constants/statuses.js` and `seed-utils.js` re-exports them, so the seed's
+imports did not change. What is left:
 
 | Constant | Values | Used by |
 |---|---|---|
 | `MEDIA_TYPE` | `image`, `video` | `portfolioItems.mediaType`, delivery files, dispute evidence |
-| `VISIBILITY` | `public`, `unlisted` | `portfolioItems.visibility` |
 | `REPORT_REASON` | `prohibited_content`, `intellectual_property`, `misleading_claims`, `spam`, `other` | `reports.reason` |
 
-`MODERATION_SUBJECT`, `REPORT_SUBJECT`, and `ENTITY_TYPE` (the polymorphic
-link targets used by notifications, audit logs, moderation reviews, and
-reports) live in the same module.
+`REPORT_SUBJECT` and `ENTITY_TYPE` (the polymorphic link targets used by
+notifications, audit logs, and reports) live in the same module.
+
+`VISIBILITY` carries `STATUS_META` entries; `MODERATION_SUBJECT` deliberately
+does not — it discriminates a record rather than describing a status, and never
+renders through `StatusChip`.
 
 ---
 
@@ -305,14 +309,49 @@ on after a member report), one archived, and two private drafts.
 | `mediaType` | enum | `MEDIA_TYPE` |
 | `status` | enum | `CONTENT_STATUS` |
 | `visibility` | enum | `VISIBILITY` |
-| `rejectionReason` | string? | present only on rejected items |
-| `submittedAt` | datetime | `null` while a draft |
+| `brandCredit` | string? | "Created for: …" — optional, added by Prompt 22 |
+| `rejectionReason` | string? | present only on rejected items; cleared on re-submission |
+| `submittedAt` | datetime | `null` while a draft; re-stamped on every submission |
 | `publishedAt` | datetime | `null` until published |
 | `createdAt` | datetime | |
+| `updatedAt` | datetime? | last owner edit — written by Prompt 22's operations only, so seeded rows omit it |
 
 **MySQL** `portfolio_items` — FK to `creator_profiles`; `tags` becomes
 `portfolio_item_tags`; index `(status, published_at DESC)` for the public grid
 and `(creator_profile_id, status)` for the creator's own list.
+
+#### Moderation notes (Prompt 22)
+
+Four decisions govern the owner's half of the lifecycle. All four are enforced
+in `portfolioService` against `CONTENT_STATUS_MACHINE` — never in a component —
+and the reviewer's half (`approved`, `rejected`, `revision_required`,
+`published`, `restricted`) stays with `moderationService` and the admin console.
+
+- **Edit-republish.** Editing a **published** item moves it to `submitted` and
+  **unpublishes it immediately**: it leaves the public profile and discovery
+  now, and returns only when a reviewer approves it again. The alternative —
+  leaving the old version live while the edit is reviewed — would mean the
+  public profile showing content that no longer matches the record under
+  review, so the machine carries a `published → submitted` edge and the UI
+  confirms the consequence in plain words before saving. `publishedAt` is
+  deliberately **not** cleared: it is the record of when the piece was last
+  live, and only `status` decides what is public.
+- **Archiving is final.** `archived` is a terminal state — there is no restore
+  in v1. Archiving is offered from `draft`, `rejected`, `published`, and
+  `restricted`, and confirmed as irreversible. An item in review cannot be
+  archived out from under the reviewer.
+- **Re-submission resets the case.** Submitting again re-opens the *existing*
+  `moderationReviews` record rather than creating a second one: `reviewerId`,
+  `notes`, `reasonCode`, and `reviewedAt` are cleared, `submittedAt` is
+  re-stamped, and a `history` entry records who moved it and from where. The
+  item's own `rejectionReason` is cleared at the same time, so a creator never
+  reads a decision about a submission they have already replaced.
+- **Visibility is not moderation.** `unlisted` keeps an item approved and
+  published while excluding it from every public query
+  (`portfolioService.listPublished` filters `status: published` **and**
+  `visibility: public`). Only published items can be switched; an unpublished
+  item is already invisible. Share-by-link can be built on top of the same
+  stored value later without touching the enum.
 
 ### `categories` — 12
 
@@ -686,6 +725,11 @@ history), and two deliverables pulled out of auto-approval.
 | `history` | object[] | `{ at, byId, fromStatus, toStatus, note? }` — appended on every transition |
 | `submittedAt` | datetime | |
 | `reviewedAt` | datetime | `null` while open — this is what the queue filters on |
+
+A case is created by `portfolioService.submitForReview` on a creator's **first**
+submission and re-opened on every one after it (see the portfolio moderation
+notes above), so there is exactly one case per portfolio item and its `history`
+is the whole story of that item's reviews.
 
 **MySQL** `moderation_reviews` — index `(status, submitted_at)` for the queue
 and `(subject_type, subject_id)`; `history` becomes

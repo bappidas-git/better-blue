@@ -10,6 +10,7 @@
 // listing walkthroughs (00 §1).
 
 import { CATEGORY_ID } from '../../src/constants/categoriesFallback.js'
+import { REJECTION_REASON_CODE } from '../../src/constants/policy.js'
 import { CONTENT_STATUS, CONTENT_TYPE } from '../../src/constants/statuses.js'
 import { imageUrl, IMAGE_SIZES } from '../../src/constants/images.js'
 import {
@@ -522,6 +523,7 @@ const PORTFOLIO_SOURCE = {
       contentType: PHOTO,
       tags: ['macro', 'facial oil', 'texture', 'launch'],
       status: CONTENT_STATUS.REJECTED,
+      rejectionReasonCode: REJECTION_REASON_CODE.IP_VIOLATION,
       rejectionReason:
         'Two frames use a licensed stock background without proof of a commercial licence. Re-submit with your own backdrop or attach the licence.',
     },
@@ -606,6 +608,10 @@ const PORTFOLIO_SOURCE = {
       contentType: PHOTO,
       tags: ['new build', 'show home', 'development'],
       status: CONTENT_STATUS.REJECTED,
+      // The reason a creator reads and the code the reviewer picked have to
+      // agree — this one is about missing details, not rights (see
+      // `rejectionReasonCodeById` below).
+      rejectionReasonCode: REJECTION_REASON_CODE.METADATA_INCOMPLETE,
       rejectionReason:
         'Category, content type, and usage details are missing from the submission, so the work cannot be indexed correctly. Add them and re-submit.',
     },
@@ -642,6 +648,17 @@ function itemAgeDays(creatorKey, index, total) {
 
 let sequence = 0
 
+/**
+ * Item id → the `REJECTION_REASON_CODE` a reviewer picked for it.
+ *
+ * Source-only: the code lives on the `moderationReviews` record (that is where
+ * a decision belongs), not on the item, so it is collected here rather than
+ * written into the record below. `scripts/seed-data/moderation.js` reads it so
+ * the case's `reasonCode` and the item's `rejectionReason` copy describe the
+ * same decision.
+ */
+export const rejectionReasonCodeById = {}
+
 export const portfolioItems = Object.entries(PORTFOLIO_SOURCE).flatMap(
   ([creatorKey, items]) =>
     items.map((item, index) => {
@@ -654,6 +671,8 @@ export const portfolioItems = Object.entries(PORTFOLIO_SOURCE).flatMap(
       const publishedAt = PUBLISHED_LIFECYCLE.has(status)
         ? addDays(submittedAt, 1)
         : null
+
+      if (item.rejectionReasonCode) rejectionReasonCodeById[id] = item.rejectionReasonCode
 
       return compact({
         id,

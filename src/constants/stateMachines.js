@@ -126,9 +126,29 @@ export const DELIVERY_STATUS_MACHINE = defineMachine('DELIVERY_STATUS', {
   [DELIVERY_STATUS.ACCEPTED]: [],
 })
 
-/** Moderation lifecycle for portfolio items and deliverables. */
+/**
+ * Moderation lifecycle for portfolio items and deliverables.
+ *
+ * Prompt 22 (the creator's portfolio manager) added three **owner** edges to
+ * this map. Every one of them is a move the creator makes on their own work;
+ * none of them is a moderation outcome, and the reviewer's half of the machine
+ * — who may reach `approved`, `rejected`, `revision_required`, `published`, and
+ * `restricted`, and from where — is untouched. 00 §9 fixes the CONTENT_STATUS
+ * *values*, not this map, and the owner edges are documented in
+ * `docs/data-model.md` (moderation notes) and `docs/api-contract.md` §6.5.
+ *
+ *   draft     → archived    retire a sample you never submitted
+ *   rejected  → archived    give up on a submission rather than fix it
+ *   published → submitted   the **edit-republish policy**: editing live work
+ *                           re-opens a review, and the item leaves the public
+ *                           profile until a reviewer approves it again
+ *
+ * The last one is the consequential one, so it is stated once here and enforced
+ * in exactly one place — `portfolioService.submitForReview` (00 §9: the UI never
+ * moves a status itself).
+ */
 export const CONTENT_STATUS_MACHINE = defineMachine('CONTENT_STATUS', {
-  [CONTENT_STATUS.DRAFT]: [CONTENT_STATUS.SUBMITTED],
+  [CONTENT_STATUS.DRAFT]: [CONTENT_STATUS.SUBMITTED, CONTENT_STATUS.ARCHIVED],
   [CONTENT_STATUS.SUBMITTED]: [CONTENT_STATUS.UNDER_REVIEW],
   [CONTENT_STATUS.UNDER_REVIEW]: [
     CONTENT_STATUS.APPROVED,
@@ -136,9 +156,13 @@ export const CONTENT_STATUS_MACHINE = defineMachine('CONTENT_STATUS', {
     CONTENT_STATUS.REVISION_REQUIRED,
   ],
   [CONTENT_STATUS.APPROVED]: [CONTENT_STATUS.PUBLISHED],
-  [CONTENT_STATUS.REJECTED]: [CONTENT_STATUS.SUBMITTED],
+  [CONTENT_STATUS.REJECTED]: [CONTENT_STATUS.SUBMITTED, CONTENT_STATUS.ARCHIVED],
   [CONTENT_STATUS.REVISION_REQUIRED]: [CONTENT_STATUS.SUBMITTED],
-  [CONTENT_STATUS.PUBLISHED]: [CONTENT_STATUS.RESTRICTED, CONTENT_STATUS.ARCHIVED],
+  [CONTENT_STATUS.PUBLISHED]: [
+    CONTENT_STATUS.SUBMITTED,
+    CONTENT_STATUS.RESTRICTED,
+    CONTENT_STATUS.ARCHIVED,
+  ],
   [CONTENT_STATUS.RESTRICTED]: [CONTENT_STATUS.PUBLISHED, CONTENT_STATUS.ARCHIVED],
   [CONTENT_STATUS.ARCHIVED]: [],
 })

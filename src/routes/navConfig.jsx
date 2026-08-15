@@ -80,6 +80,8 @@ export const BADGE_KEY = Object.freeze({
   BUYER_PROPOSALS_AWAITING: 'buyer.proposalsAwaiting',
   /** Deliveries waiting on the buyer's review (Prompt 20). */
   BUYER_ORDERS_AWAITING_REVIEW: 'buyer.ordersAwaitingReview',
+  /** Portfolio items rejected or sent back for changes (Prompt 22). */
+  CREATOR_PORTFOLIO_ATTENTION: 'creator.portfolioAttention',
 })
 
 /* -------------------------------------------------------------------------- */
@@ -148,10 +150,9 @@ export const buyerNav = Object.freeze([
 /* -------------------------------------------------------------------------- */
 
 /**
- * Prompts append: portfolio (22), browse + proposals (23), orders (24),
- * earnings (25), disputes (26), notifications (27). Those all belong **between**
- * Overview and Profile — the account entries stay last, the same order the
- * buyer's nav keeps.
+ * Prompts append: browse + proposals (23), orders (24), earnings (25),
+ * disputes (26), notifications (27). Those all belong **between** Overview and
+ * Profile — the account entries stay last, the same order the buyer's nav keeps.
  */
 export const creatorNav = Object.freeze([
   Object.freeze({
@@ -160,6 +161,17 @@ export const creatorNav = Object.freeze([
     icon: 'solar:widget-5-linear',
     path: paths.CREATOR,
     exact: true,
+  }),
+  Object.freeze({
+    // Prompt 22. Above Profile because a storefront without sample work is the
+    // thing most likely to be costing this creator briefs. The badge counts the
+    // items a reviewer has handed back — the only portfolio state where the
+    // marketplace is waiting on the creator rather than the other way round.
+    key: 'portfolio',
+    label: 'Portfolio',
+    icon: 'solar:gallery-linear',
+    path: paths.CREATOR_PORTFOLIO,
+    badgeKey: BADGE_KEY.CREATOR_PORTFOLIO_ATTENTION,
   }),
   Object.freeze({
     // Prompt 21. "Profile" here means the public storefront, not the account —
@@ -245,11 +257,12 @@ export const MORE_NAV_KEYS = Object.freeze({
   // Requests, Orders, and Payments, and `splitBottomNav` pushes Profile into
   // the sheet alongside Settings by overflow rather than by name.
   [ROLES.BUYER]: Object.freeze([NAV_KEY.SETTINGS]),
-  // Left empty by Prompt 21 on purpose. `splitBottomNav` collapses nothing
-  // while everything fits, so deferring Settings today would spend a slot on a
-  // "More" tile holding one entry — worse than the three direct destinations
-  // the creator currently has. Add `NAV_KEY.SETTINGS` (and Profile) here in the
-  // prompt that pushes the creator past five destinations.
+  // Left empty by Prompt 21 on purpose, and still empty after Prompt 22 added
+  // Portfolio: `splitBottomNav` collapses nothing while everything fits, so
+  // deferring Settings today would spend a slot on a "More" tile holding one
+  // entry — worse than the four direct destinations the creator currently has.
+  // Add `NAV_KEY.SETTINGS` (and Profile) here in the prompt that pushes the
+  // creator past five destinations.
   [ROLES.CREATOR]: Object.freeze([]),
   [ROLES.ADMIN]: Object.freeze([]),
   [ROLES.SUPER_ADMIN]: Object.freeze([]),

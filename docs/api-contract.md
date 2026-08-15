@@ -1193,7 +1193,8 @@ and the moderation queue's.
 | `GET` | `/portfolioItems` | **Public** (published only) · Owner · Admin | Portfolio grid |
 | `GET` | `/portfolioItems/:id` | Public if published, else Owner/Admin | Item detail |
 | `POST` | `/portfolioItems` | Owner (creator) | Add work |
-| `PATCH` | `/portfolioItems/:id` | Owner | Edit, submit for review, archive |
+| `PATCH` | `/portfolioItems/:id` | Owner | Edit, archive, change visibility |
+| `POST` | `/portfolioItems/:id/submit` | Owner | **Composite** — submit for review (§7) |
 | `PATCH` | `/portfolioItems/:id` | Admin `content.manage` | Restrict / unrestrict |
 
 **Filters** — `creatorId` (→ `creatorProfiles.id`, **not** `users.id` — see
@@ -1248,11 +1249,26 @@ and the moderation queue's.
 ```
 
 A rejected item additionally carries `rejectionReason` (a string shown to the
-creator); items that were never rejected omit the field.
+creator); items that were never rejected omit the field. Items created or edited
+through the portfolio manager also carry an optional `brandCredit` ("Created
+for: …") and an `updatedAt` stamp.
 
-**Submitting for review** is a `PATCH` to `status: "submitted"` plus a
-`moderationReviews` record (§6.20). `status` follows `CONTENT_STATUS_MACHINE`
-(§8) — an illegal jump is `409` `conflict` with `details: { from, to }`.
+**Submitting for review** moves `status` to `submitted` **and** opens or
+re-opens the item's `moderationReviews` record (§6.20) — one intention, two
+writes, so it is composite operation 19 in §7 rather than a bare `PATCH`.
+`status` follows `CONTENT_STATUS_MACHINE` (§8) — an illegal jump is `409`
+`conflict` with `details: { from, to }`.
+
+**Owner transitions** (Prompt 22, all guarded by the same machine):
+`draft|rejected|revision_required → submitted`, `published → submitted`
+(the **edit-republish policy** — editing live work unpublishes it until it is
+approved again), and `draft|rejected|published|restricted → archived`, which is
+terminal. `visibility` is a separate `PATCH` and is only accepted on a
+`published` item; it is not a moderation state.
+
+> **The public grid is `status: published` AND `visibility: public`.** Both
+> halves are required — an `unlisted` item is approved and published but must
+> not appear on the public profile, in discovery previews, or in search.
 
 Errors: `403` (not the owner; or a creator setting `status` to a
 moderator-only value such as `approved`/`published`/`restricted`) · `404` · `409`
@@ -2859,10 +2875,13 @@ are the reason these belong on the server:
 | 16 | `submitReview` | `reviewService` | 5 | `POST /reviews` |
 | 17 | `getOrderTimeline` | `orderService` | 5 | `GET /orders/:id/timeline` |
 | 18 | `getOverview` | `creatorDashboardService` | 11 | `GET /creator/overview` |
+| 19 | `submitForReview` | `portfolioService` | 4 | `POST /portfolioItems/:id/submit` |
 
 Operations 16 and 17 were added by Prompt 20 (the buyer's order workspace), and
 operation 18 by Prompt 21 (the creator's) — the mirror of operation 14, section
-for section.
+for section. Operation 19 arrived with Prompt 22 (the portfolio manager): it is
+the smallest composite in the table and the only one that writes across the
+creator/moderation boundary.
 Operation 7 lives in `revisionService` rather than `deliveryService`: it *creates
 a revision* and moves the delivery and the order as side effects, so it belongs
 with the record it writes. Operation 6a was split out of operation 6 for the same
@@ -3547,6 +3566,47 @@ the bearer token and must ignore any id the client sends (§9.2).
 
 ---
 
+#### 19. `submitForReview(itemId, { creatorUserId })`
+
+A creator sends a piece of sample work into the Trust & Safety queue. One
+intention, two records: the item's `status` and the moderation case behind it
+have to move together or the queue and the portfolio disagree about what is
+waiting.
+
+**Mock — `POST /portfolioItems/:id/submit` does not exist, so:**
+
+1. `GET /portfolioItems/:id` — guard `status → submitted` against
+   `CONTENT_STATUS_MACHINE`; an illegal move is `409` `conflict`
+2. `GET /moderationReviews?subjectType=portfolio_item&subjectId=:id&_limit=1` —
+   has this been reviewed before?
+3. **New case** — `POST /moderationReviews` with `status: 'submitted'`,
+   `creatorId` (a **`usr_…`**, not the item's `cpr_…`), and a one-entry
+   `history`
+   **Existing case** — `PATCH /moderationReviews/:id` clearing `reviewerId`,
+   `notes`, `reasonCode`, and `reviewedAt`, re-stamping `submittedAt`, and
+   appending to `history`
+4. `PATCH /portfolioItems/:id` → `{ status: 'submitted', submittedAt,
+   updatedAt, rejectionReason: null }`
+
+Step 4 is **last on purpose.** If the case cannot be written, the item stays
+exactly where it was and the creator retries a submission — the opposite order
+would leave a draft marked "submitted" against a queue that never received it.
+
+MOCK-APPEND: step 3 re-sends the whole `history` array, because JSON Server
+cannot append to one (§6.20). Two writers at once lose an entry.
+
+No notification is emitted: the creator performed the action themselves, and the
+reviewer's queue is a screen rather than a bell.
+
+**Response** — `{ item, review }`, the two updated records.
+
+> **Laravel** — one transaction: guard the transition, `updateOrCreate` the
+> case, append a `moderation_review_events` row, save the item, return both.
+> `creatorUserId` comes from the bearer token and any id in the body is ignored
+> (§9.2); the owner must also be authorised against the item (§9.1).
+
+---
+
 ## 8. Status and enum reference
 
 **`src/constants/` is the single source of truth.** The seed script imports
@@ -3612,15 +3672,14 @@ support.manage · settings.manage · announcements.send · audit.view
 
 **Enum-likes owned by `scripts/seed-utils.js`** — not yet in `src/constants`
 (`docs/data-model.md` §3); a later prompt should promote them. `ORIENTATION`
-and `BUDGET_TYPE` took that path in Prompt 16 and now live in `statuses.js`
-above, with the seed re-exporting them.
+and `BUDGET_TYPE` took that path in Prompt 16, and `VISIBILITY` and
+`MODERATION_SUBJECT` in Prompt 22; all four now live in `statuses.js` above,
+with the seed re-exporting them.
 
 | Constant | Values | Used by |
 |---|---|---|
 | `MEDIA_TYPE` | `image` · `video` | `portfolioItems.mediaType`, delivery files, dispute evidence |
-| `VISIBILITY` | `public` · `unlisted` | `portfolioItems.visibility` |
 | `REPORT_REASON` | `prohibited_content` · `intellectual_property` · `misleading_claims` · `spam` · `other` | `reports.reason` |
-| `MODERATION_SUBJECT` | `portfolio_item` · `delivery` | `moderationReviews.subjectType` |
 | `REPORT_SUBJECT` | `portfolio_item` · `creator_profile` · `request` | `reports.subjectType` |
 | `ENTITY_TYPE` | `user` · `creator_profile` · `portfolio_item` · `category` · `request` · `proposal` · `order` · `delivery` · `revision` · `payment` · `payout` · `dispute` · `review` · `moderation_review` · `report` · `support_ticket` · `affiliate_profile` · `affiliate_earning` · `platform_settings` | polymorphic `entityType` on notifications and audit logs |
 
@@ -3654,12 +3713,13 @@ DELIVERY   submitted → revision_requested|accepted
            revision_requested → ∅   (the next version is a NEW record)
            accepted → ∅
 
-CONTENT    draft → submitted · submitted → under_review
+CONTENT    draft → submitted|archived · submitted → under_review
            under_review → approved|rejected|revision_required
-           approved → published · rejected → submitted
+           approved → published · rejected → submitted|archived
            revision_required → submitted
-           published → restricted|archived · restricted → published|archived
-           archived → ∅
+           published → submitted|restricted|archived   (submitted = edit-republish)
+           restricted → published|archived
+           archived → ∅            (terminal — no restore in v1)
 
 DISPUTE    open → under_review
            under_review → awaiting_buyer|awaiting_creator|escalated|resolved
@@ -3674,6 +3734,13 @@ PAYOUT     requested → processing|rejected · processing → paid
 **Laravel must re-implement these maps server-side.** They are the difference
 between a marketplace and a spreadsheet: without them a client could move a
 `refunded` order back to `in_progress` and release a payment twice.
+
+CONTENT's edges split by **who** may take them, and the API must enforce that
+split even though one map describes both: the owner may take
+`draft|rejected|revision_required|published → submitted` and
+`draft|rejected|published|restricted → archived`, and everything else —
+`under_review`, `approved`, `rejected`, `revision_required`, `published`,
+`restricted` — is reachable only through the moderation endpoints (§6.5, §6.20).
 
 Every status also has `{ label, tone, description }` in `STATUS_META`, which
 powers `StatusChip` and — importantly for this contract — supplies the

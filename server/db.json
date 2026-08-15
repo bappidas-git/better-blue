@@ -12479,7 +12479,8 @@
       "creatorId": "usr_creator_chloe",
       "status": "restricted",
       "reviewerId": "usr_admin_priya",
-      "notes": "Commercial brand content, rights and metadata in order. Approved for publication.",
+      "notes": "Removed from public view following an upheld member report. The creator has been notified and can appeal through support.",
+      "reasonCode": "ip_violation",
       "history": [
         {
           "at": "2026-06-24T12:20:00.000Z",
@@ -12527,7 +12528,7 @@
       "creatorId": "usr_creator_chloe",
       "status": "rejected",
       "reviewerId": "usr_admin_maya",
-      "notes": "Does not meet the Content Policy on rights and licensing. The creator has been sent the reason and can re-submit once it is resolved.",
+      "notes": "Two frames use a licensed stock background without proof of a commercial licence. Re-submit with your own backdrop or attach the licence.",
       "reasonCode": "ip_violation",
       "history": [
         {
@@ -12549,7 +12550,7 @@
           "byId": "usr_admin_maya",
           "fromStatus": "under_review",
           "toStatus": "rejected",
-          "note": "Does not meet the Content Policy on rights and licensing. The creator has been sent the reason and can re-submit once it is resolved."
+          "note": "Two frames use a licensed stock background without proof of a commercial licence. Re-submit with your own backdrop or attach the licence."
         }
       ],
       "submittedAt": "2026-07-29T12:20:00.000Z",
@@ -12703,8 +12704,8 @@
       "creatorId": "usr_creator_ethan",
       "status": "rejected",
       "reviewerId": "usr_admin_priya",
-      "notes": "Does not meet the Content Policy on rights and licensing. The creator has been sent the reason and can re-submit once it is resolved.",
-      "reasonCode": "ip_violation",
+      "notes": "Category, content type, and usage details are missing from the submission, so the work cannot be indexed correctly. Add them and re-submit.",
+      "reasonCode": "metadata_incomplete",
       "history": [
         {
           "at": "2026-08-02T12:20:00.000Z",
@@ -12725,7 +12726,7 @@
           "byId": "usr_admin_priya",
           "fromStatus": "under_review",
           "toStatus": "rejected",
-          "note": "Does not meet the Content Policy on rights and licensing. The creator has been sent the reason and can re-submit once it is resolved."
+          "note": "Category, content type, and usage details are missing from the submission, so the work cannot be indexed correctly. Add them and re-submit."
         }
       ],
       "submittedAt": "2026-08-02T12:20:00.000Z",
