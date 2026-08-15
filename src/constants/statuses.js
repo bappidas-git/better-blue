@@ -177,6 +177,34 @@ export const ORIENTATION = Object.freeze({
 /** Budget shape on a content request — `fixed` sets `budgetMin === budgetMax`. */
 export const BUDGET_TYPE = Object.freeze({ FIXED: 'fixed', RANGE: 'range' })
 
+/**
+ * Who can reach a **published** portfolio item (`portfolioItems.visibility`).
+ *
+ * Promoted here by Prompt 22 (the portfolio manager lets a creator switch it),
+ * which is the path `scripts/seed-utils.js` reserved for exactly this — that
+ * module now re-exports these two rather than owning a second copy, so the seed
+ * and the app can never drift.
+ *
+ * `unlisted` is **not** a moderation state: the item stays approved and
+ * published, it is simply excluded from every public query — the public
+ * profile, the discovery preview strips, and search. A future prompt can add
+ * share-by-link without changing the stored value or this enum.
+ */
+export const VISIBILITY = Object.freeze({ PUBLIC: 'public', UNLISTED: 'unlisted' })
+
+/**
+ * What a `moderationReviews` record is about (`subjectType`). Promoted from the
+ * seed by Prompt 22 for the same reason as {@link VISIBILITY}: the portfolio
+ * manager now writes moderation records, so the app needs the discriminator.
+ *
+ * Deliberately **not** in `STATUS_ENUMS` — it discriminates a record, it is not
+ * a status, and it never renders through `StatusChip`.
+ */
+export const MODERATION_SUBJECT = Object.freeze({
+  PORTFOLIO_ITEM: 'portfolio_item',
+  DELIVERY: 'delivery',
+})
+
 export const REPORT_STATUS = Object.freeze({
   OPEN: 'open',
   REVIEWED: 'reviewed',
@@ -223,6 +251,7 @@ export const STATUS_ENUMS = Object.freeze({
   CONTENT_TYPE,
   ORIENTATION,
   BUDGET_TYPE,
+  VISIBILITY,
   REPORT_STATUS,
   TICKET_STATUS,
   USAGE_RIGHTS,
@@ -632,6 +661,20 @@ export const STATUS_META = Object.freeze({
     label: 'Budget range',
     tone: 'neutral',
     description: 'A window creators price into, from your minimum to your maximum.',
+  },
+
+  /* Portfolio visibility (VISIBILITY) */
+  public: {
+    label: 'Public',
+    tone: 'success',
+    description:
+      'Shown on your public profile and in discovery once it has been published.',
+  },
+  unlisted: {
+    label: 'Unlisted',
+    tone: 'neutral',
+    description:
+      'Published, but kept off your public profile and out of discovery.',
   },
 
   /* Reports (REPORT_STATUS) */

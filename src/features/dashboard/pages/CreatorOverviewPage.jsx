@@ -185,8 +185,11 @@ export default function CreatorOverviewPage() {
                 : ''
             }. Sample work is the first thing a buyer looks at.`,
       done: (portfolio?.published ?? 0) >= PORTFOLIO_TARGET,
-      // TODO(Prompt 22): `action: { label: 'Add work', to: paths.CREATOR_PORTFOLIO }`
-      // once the portfolio manager renders.
+      action: {
+        label: 'Add work',
+        to: paths.CREATOR_PORTFOLIO,
+        icon: 'solar:gallery-add-linear',
+      },
     },
     {
       key: 'proposal',
@@ -212,8 +215,7 @@ export default function CreatorOverviewPage() {
       label: 'Add portfolio item',
       description: 'Show buyers your sample work',
       icon: 'solar:gallery-add-linear',
-      // TODO(Prompt 22): `to: paths.CREATOR_PORTFOLIO`.
-      disabledReason: 'Portfolio management arrives in the next release',
+      to: paths.CREATOR_PORTFOLIO,
     },
     {
       key: 'profile',
@@ -397,9 +399,9 @@ export default function CreatorOverviewPage() {
           <Typography variant="overline" component="h2" color="text.secondary">
             Quick actions
           </Typography>
-          {/* TODO(Prompts 22–23): the first two tiles are inert until the
-              portfolio manager and the request board render — a tile that
-              navigates to a 404 is worse than one that plainly does nothing. */}
+          {/* TODO(Prompt 23): the Browse tile stays inert until the request
+              board renders — a tile that navigates to a 404 is worse than one
+              that plainly does nothing. Prompt 22 lit up the portfolio tile. */}
           <QuickActions actions={quickActions} sx={{ mt: 1 }} />
         </Box>
       </Stack>

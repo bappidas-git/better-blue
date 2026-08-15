@@ -22,6 +22,7 @@ import {
 } from '@/routes/navConfig'
 import { notificationService } from '@/services/notificationService'
 import { orderService } from '@/services/orderService'
+import { portfolioService } from '@/services/portfolioService'
 import { requestService } from '@/services/requestService'
 import { durations, easing } from '@/theme/motionTokens'
 import { storage } from '@/utils/storage'
@@ -154,12 +155,21 @@ export default function DashboardLayout() {
     { enabled: Boolean(user?.id) && isBuyer }
   )
 
+  // Prompt 22: portfolio items a reviewer rejected or handed back for changes.
+  const isCreator = user?.role === ROLES.CREATOR
+  const { data: portfolioAttention } = useApiQuery(
+    () => portfolioService.countNeedingAttention(user?.id),
+    [user?.id, pathname],
+    { enabled: Boolean(user?.id) && isCreator }
+  )
+
   const badges = useMemo(
     () => ({
       [BADGE_KEY.BUYER_PROPOSALS_AWAITING]: proposalsAwaiting ?? 0,
       [BADGE_KEY.BUYER_ORDERS_AWAITING_REVIEW]: ordersAwaitingReview ?? 0,
+      [BADGE_KEY.CREATOR_PORTFOLIO_ATTENTION]: portfolioAttention ?? 0,
     }),
-    [ordersAwaitingReview, proposalsAwaiting]
+    [ordersAwaitingReview, portfolioAttention, proposalsAwaiting]
   )
 
   return (

@@ -97,16 +97,15 @@ export function pick(list, index) {
 /** Stored file kind on portfolio items and delivery files. */
 export const MEDIA_TYPE = Object.freeze({ IMAGE: 'image', VIDEO: 'video' })
 
-/** Who can reach a portfolio item once it is published. */
-export const VISIBILITY = Object.freeze({ PUBLIC: 'public', UNLISTED: 'unlisted' })
-
-export { BUDGET_TYPE, ORIENTATION } from '../src/constants/statuses.js'
-
-/** What a moderation review is about. */
-export const MODERATION_SUBJECT = Object.freeze({
-  PORTFOLIO_ITEM: 'portfolio_item',
-  DELIVERY: 'delivery',
-})
+// VISIBILITY and MODERATION_SUBJECT took the same path in Prompt 22 (the
+// portfolio manager switches visibility and writes moderation records), so all
+// four of these are re-exported rather than declared.
+export {
+  BUDGET_TYPE,
+  MODERATION_SUBJECT,
+  ORIENTATION,
+  VISIBILITY,
+} from '../src/constants/statuses.js'
 
 /** What a member report is about. */
 export const REPORT_SUBJECT = Object.freeze({
