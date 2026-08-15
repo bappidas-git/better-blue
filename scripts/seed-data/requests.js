@@ -675,6 +675,65 @@ const SCENARIO_SOURCE = [
     deadlineInDays: -18,
     createdDaysAgo: 56,
   },
+
+  /* --- Open, appended by Prompt 21 ---------------------------------------- */
+  //
+  // The creator overview counts the live briefs in the signed-in creator's
+  // categories, and the demo creator (Ava — food & beverage, e-commerce
+  // products) had exactly one to look at. These two give that tile something to
+  // say, and give the request board two more categories' worth of material.
+  //
+  // **Appended rather than slotted into the "Open" block above**: request ids
+  // are assigned in array order, and inserting two rows at the top would
+  // renumber every scenario request after them — including the ones
+  // `docs/api-contract.md` and `scripts/smoke-api.mjs` quote by id. The same
+  // reasoning kept h29/h30 at the end of `HISTORY_ENGAGEMENTS` in Prompt 15.
+  {
+    key: 'open_cocoa_truffle',
+    buyer: 'cocoa',
+    status: REQUEST_STATUS.OPEN,
+    category: CATEGORY_ID.FOOD_BEVERAGE,
+    contentType: PHOTO,
+    title: 'Product photography for the single-origin truffle collection',
+    description:
+      'We are launching a twelve-piece truffle collection and need photography for the online shop, the printed insert, and organic social. Shooting in our Chicago kitchen over one day. We will have every piece plated, the packaging flats, and our own linens and boards ready.',
+    quantity: 24,
+    orientation: ORIENTATION.SQUARE,
+    usageRights: USAGE_RIGHTS.FULL_COMMERCIAL,
+    brandGuidelines:
+      'Dark, warm, and tactile. Deep browns and brass, matte surfaces, one clear light source. Product-accurate colour above all — chocolate that photographs grey does not sell.',
+    dos: 'Photograph each piece straight on and cut in half. Include three packaging scenes and one flat lay of the full collection.',
+    donts: 'No melting or smearing for effect, no props we do not stock, no competitor packaging in frame.',
+    referenceUrls: ['https://cocoaandco.test/press/truffle-collection-brief'],
+    budgetType: BUDGET_TYPE.RANGE,
+    budgetMin: 520,
+    budgetMax: 780,
+    deadlineInDays: 16,
+    createdDaysAgo: 6,
+  },
+  {
+    key: 'open_craftware_giftset',
+    buyer: 'craftware',
+    status: REQUEST_STATUS.OPEN,
+    category: CATEGORY_ID.ECOMMERCE_PRODUCTS,
+    contentType: PHOTO,
+    title: 'Listing photography for the winter gift set range',
+    description:
+      'Six gift sets going live for the winter season, each needing a full listing set: hero, angles, contents laid out, and one in-use frame. Product ships to your studio and is yours to keep. We supply the shot list and the marketplace spec sheet.',
+    quantity: 30,
+    orientation: ORIENTATION.SQUARE,
+    usageRights: USAGE_RIGHTS.WEBSITE,
+    brandGuidelines:
+      'Pure white background on the hero and angle frames, exactly as the marketplace spec requires. In-use frames on a workbench, natural light, no styling clutter.',
+    dos: 'Deliver every frame on the marketplace-required square crop. Include one scale reference per set.',
+    donts: 'No composited shadows, no third-party tool brands in frame, no heavy retouching of tool marks.',
+    referenceUrls: ['https://craftware.test/suppliers/listing-photo-spec'],
+    budgetType: BUDGET_TYPE.RANGE,
+    budgetMin: 480,
+    budgetMax: 700,
+    deadlineInDays: 21,
+    createdDaysAgo: 4,
+  },
 ]
 
 /* -------------------------------------------------------------------------- */

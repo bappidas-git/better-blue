@@ -16,9 +16,19 @@ import Typography from '@mui/material/Typography'
 /**
  * @param {object} props
  * @param {{percent: number, completed: number, total: number, missing: Array<{key: string, label: string}>}} props.completeness
+ *   `completed`/`total` may be weights rather than field counts (the creator
+ *   profile weights its fields), which is why only the percentage and the
+ *   missing labels are rendered as numbers a reader would check.
+ * @param {React.ReactNode} [props.completeMessage] the line shown at 100% —
+ *   overridden by the creator profile, whose readers are buyers rather than
+ *   creators (Prompt 21)
  * @param {object} [props.sx] MUI system styles
  */
-export default function ProfileCompletenessMeter({ completeness, sx }) {
+export default function ProfileCompletenessMeter({
+  completeness,
+  completeMessage = 'Everything is filled in. Creators can see who they would be working with.',
+  sx,
+}) {
   const { percent, completed, total, missing } = completeness
   const isComplete = percent === 100
 
@@ -48,7 +58,7 @@ export default function ProfileCompletenessMeter({ completeness, sx }) {
             <Icon icon="tabler:circle-check" width={18} />
           </Box>
           <Typography variant="body2" color="text.secondary">
-            Everything is filled in. Creators can see who they would be working with.
+            {completeMessage}
           </Typography>
         </Stack>
       ) : (

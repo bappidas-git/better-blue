@@ -17,6 +17,126 @@ const creatorProfiles = createCrudService('creatorProfiles', {
 const DEFAULT_SORT = 'ratingAvg'
 
 /* -------------------------------------------------------------------------- */
+/* Profile completeness                                                       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * What "a complete storefront" means, in the order the creator profile screen
+ * asks for it — the same shape `BUYER_PROFILE_FIELDS` uses, with one addition:
+ * a **weight**.
+ *
+ * The buyer's seven details are all roughly as consequential as each other, so
+ * that helper counts them equally. A creator's are not: a missing payout method
+ * means earnings cannot leave escrow at all, while a missing language list
+ * costs a line on the About panel. Weighting is how the meter stops telling a
+ * creator they are "90% done" when the one field standing between them and
+ * getting paid is the empty one.
+ *
+ *   percent = round(100 × Σ weight(filled) / Σ weight(all))
+ *
+ * Weights, and why:
+ *   4  payoutMethod   no payout method, no way to be paid
+ *   3  bio            the thing a buyer actually reads before hiring
+ *   2  tagline        the one line on every discovery card
+ *   2  categories     decides which briefs this creator is matched to
+ *   2  startingPrice  filterable, and sets the buyer's expectation
+ *   1  displayName / contentTypes / location / languages / avatarUrl
+ *
+ * `avatarUrl` lives on `users` rather than the storefront, which is why
+ * {@link getCreatorProfileCompleteness} takes both records — the same split
+ * `getBuyerProfileCompleteness` handles.
+ *
+ * This list is the single definition behind the meter on the profile screen and
+ * the first step of the creator onboarding checklist, so the two can never
+ * disagree about what is still missing.
+ */
+export const CREATOR_PROFILE_FIELDS = Object.freeze([
+  Object.freeze({ key: 'displayName', label: 'Display name', source: 'profile', weight: 1 }),
+  Object.freeze({ key: 'tagline', label: 'Tagline', source: 'profile', weight: 2 }),
+  Object.freeze({ key: 'bio', label: 'About you', source: 'profile', weight: 3 }),
+  Object.freeze({ key: 'categories', label: 'Categories', source: 'profile', weight: 2 }),
+  Object.freeze({ key: 'contentTypes', label: 'Content types', source: 'profile', weight: 1 }),
+  Object.freeze({ key: 'startingPrice', label: 'Starting price', source: 'profile', weight: 2 }),
+  Object.freeze({ key: 'location', label: 'Location', source: 'profile', weight: 1 }),
+  Object.freeze({ key: 'languages', label: 'Languages', source: 'profile', weight: 1 }),
+  Object.freeze({ key: 'payoutMethod', label: 'Payout method', source: 'profile', weight: 4 }),
+  Object.freeze({ key: 'avatarUrl', label: 'Profile photo', source: 'user', weight: 1 }),
+])
+
+/**
+ * Is this field filled in? One rule per shape, because "empty" means something
+ * different for a string, a list, a price, and a payout method.
+ */
+function hasCreatorValue(key, value) {
+  if (key === 'startingPrice') return Number(value) > 0
+  if (key === 'payoutMethod') return String(value?.accountMasked ?? '').trim().length > 0
+  if (Array.isArray(value)) return value.length > 0
+  return String(value ?? '').trim().length > 0
+}
+
+/**
+ * How much of a creator's storefront is filled in.
+ *
+ * A pure derivation over the two records — no request is made — so the profile
+ * screen can recompute it on every keystroke while the same numbers drive the
+ * onboarding checklist on the creator overview. Laravel will expose the same
+ * figure on `GET /creatorProfiles/:id` as a read-only attribute; when it does,
+ * this stays as the client-side preview of an unsaved form.
+ *
+ * @param {object|null} profile the `creatorProfiles` record (or draft form values)
+ * @param {object|null} user the `users` record (or draft form values)
+ * @returns {{percent: number, completed: number, total: number,
+ *   missing: Array<{key: string, label: string}>}} `completed`/`total` are
+ *   **weights**, not field counts — the meter prints the percentage, and the
+ *   chips below it name what is missing
+ */
+export function getCreatorProfileCompleteness(profile, user) {
+  const missing = CREATOR_PROFILE_FIELDS.filter((field) => {
+    const record = field.source === 'user' ? user : profile
+    return !hasCreatorValue(field.key, record?.[field.key])
+  })
+
+  const total = CREATOR_PROFILE_FIELDS.reduce((sum, field) => sum + field.weight, 0)
+  const missingWeight = missing.reduce((sum, field) => sum + field.weight, 0)
+  const completed = total - missingWeight
+
+  return {
+    percent: Math.round((completed / total) * 100),
+    completed,
+    total,
+    missing: missing.map(({ key, label }) => ({ key, label })),
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Payout details                                                             */
+/* -------------------------------------------------------------------------- */
+
+/** How many trailing digits of an account number survive masking. */
+const ACCOUNT_VISIBLE_DIGITS = 4
+
+/**
+ * Turns a typed account number into the **only** form BetterBlue keeps.
+ *
+ * SECURITY (00 §14): the full number is never stored, never sent, and never
+ * leaves the form's own component state — this function runs on the way into
+ * the patch body, so what reaches the API is `"**** 4821"` and nothing else.
+ * That is enough for a creator to recognise which account they nominated, which
+ * is all the payout screens (Prompt 25) and the settlement console (Prompt 32)
+ * ever display. A real payout integration would exchange the number for a
+ * provider token server-side and store that token instead; the masked string
+ * stays as the display value either way.
+ *
+ * @param {string} accountNumber as typed — digits, spaces, and dashes tolerated
+ * @returns {string} `"**** 1234"`, or `''` when there are too few digits
+ */
+export function maskAccountNumber(accountNumber) {
+  const digits = String(accountNumber ?? '').replace(/\D/g, '')
+  if (digits.length < ACCOUNT_VISIBLE_DIGITS) return ''
+  return `**** ${digits.slice(-ACCOUNT_VISIBLE_DIGITS)}`
+}
+
+/* -------------------------------------------------------------------------- */
 /* Orderings                                                                  */
 /* -------------------------------------------------------------------------- */
 
@@ -379,6 +499,27 @@ export const creatorProfileService = Object.freeze({
    * @returns {Promise<object>} the updated storefront
    */
   update: (id, patch) => creatorProfiles.update(id, patch),
+
+  /**
+   * Opens or closes a storefront to new work — the switch on the creator
+   * overview and the profile screen (Prompt 21 §4.4).
+   *
+   * Named rather than left as a bare `update({ availability })` because it is
+   * one of the few edits with a **marketplace-wide** consequence: `search`
+   * filters on `availability`, so turning it off removes the storefront from
+   * discovery for as long as it stays off (contract §6.4). Orders already in
+   * flight are untouched — this closes the front door, it does not abandon the
+   * work behind it.
+   *
+   * @param {string} id `cpr_…`
+   * @param {boolean} availability `true` to accept new requests
+   * @returns {Promise<object>} the updated storefront
+   *
+   * **Future endpoint:** `PATCH /creatorProfiles/:id` → `{ availability }`,
+   * authorised against the owner of the storefront (00 §11).
+   */
+  setAvailability: (id, availability) =>
+    creatorProfiles.update(id, { availability: Boolean(availability) }),
 })
 
 export default creatorProfileService

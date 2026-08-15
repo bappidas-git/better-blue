@@ -147,7 +147,12 @@ export const buyerNav = Object.freeze([
 /* Creator                                                                    */
 /* -------------------------------------------------------------------------- */
 
-/** Prompts append: browse (23), proposals (23), orders (24), portfolio (22), earnings (25), disputes (26), profile + settings (21), notifications (27). */
+/**
+ * Prompts append: portfolio (22), browse + proposals (23), orders (24),
+ * earnings (25), disputes (26), notifications (27). Those all belong **between**
+ * Overview and Profile — the account entries stay last, the same order the
+ * buyer's nav keeps.
+ */
 export const creatorNav = Object.freeze([
   Object.freeze({
     key: NAV_KEY.OVERVIEW,
@@ -155,6 +160,21 @@ export const creatorNav = Object.freeze([
     icon: 'solar:widget-5-linear',
     path: paths.CREATOR,
     exact: true,
+  }),
+  Object.freeze({
+    // Prompt 21. "Profile" here means the public storefront, not the account —
+    // the thing buyers read. The account lives under Settings.
+    key: NAV_KEY.PROFILE,
+    label: 'Profile',
+    icon: 'solar:user-id-linear',
+    path: paths.CREATOR_PROFILE,
+  }),
+  Object.freeze({
+    key: NAV_KEY.SETTINGS,
+    label: 'Settings',
+    icon: 'solar:settings-linear',
+    path: paths.CREATOR_SETTINGS,
+    // No badge: settings never nags.
   }),
 ])
 
@@ -225,6 +245,11 @@ export const MORE_NAV_KEYS = Object.freeze({
   // Requests, Orders, and Payments, and `splitBottomNav` pushes Profile into
   // the sheet alongside Settings by overflow rather than by name.
   [ROLES.BUYER]: Object.freeze([NAV_KEY.SETTINGS]),
+  // Left empty by Prompt 21 on purpose. `splitBottomNav` collapses nothing
+  // while everything fits, so deferring Settings today would spend a slot on a
+  // "More" tile holding one entry — worse than the three direct destinations
+  // the creator currently has. Add `NAV_KEY.SETTINGS` (and Profile) here in the
+  // prompt that pushes the creator past five destinations.
   [ROLES.CREATOR]: Object.freeze([]),
   [ROLES.ADMIN]: Object.freeze([]),
   [ROLES.SUPER_ADMIN]: Object.freeze([]),

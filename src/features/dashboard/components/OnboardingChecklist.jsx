@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 import { Icon } from '@iconify/react'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -9,6 +11,7 @@ import Typography from '@mui/material/Typography'
 import { alpha } from '@mui/material/styles'
 
 import { useLinkProps } from '@/hooks/useLinkProps'
+import { getItem, setItem } from '@/utils/storage'
 
 // What a dashboard shows a member on their first visit, instead of four zeroes
 // and an empty chart: the two or three things that turn an empty account into a
@@ -19,8 +22,15 @@ import { useLinkProps } from '@/hooks/useLinkProps'
 // from reality or get stuck ticked. The caller computes each step's `done`;
 // this component only draws them.
 //
-// Generic on purpose: the creator (Prompt 21) and affiliate onboarding states
-// render the same component with their own steps.
+// Generic on purpose: the buyer (Prompt 15), the creator (Prompt 21), and the
+// affiliate onboarding states all render this component with their own steps.
+//
+// Prompt 21 added one optional behaviour and changed nothing else: pass a
+// `storageKey` and a finished checklist collapses to a single congratulatory
+// line with a way to put it away for good, instead of sitting at the top of the
+// dashboard forever. Callers that omit it — the buyer overview, which swaps the
+// checklist out for the stat band the moment the account stops being fresh —
+// behave exactly as before.
 
 function StepAction({ action }) {
   const linkProps = useLinkProps(action.to)
@@ -115,6 +125,56 @@ function Step({ step, index, isLast, isNext }) {
   )
 }
 
+/** The finished state: one line, and a way to clear it off the dashboard. */
+function CompletedCard({ title, doneMessage, onDismiss, sx, ...rest }) {
+  return (
+    <Card sx={sx} {...rest}>
+      <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={2}
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+        >
+          <Box
+            aria-hidden="true"
+            sx={{
+              width: 40,
+              height: 40,
+              flexShrink: 0,
+              borderRadius: '50%',
+              display: 'grid',
+              placeItems: 'center',
+              color: 'success.main',
+              bgcolor: (theme) => alpha(theme.palette.success.main, 0.12),
+            }}
+          >
+            <Icon icon="tabler:check" width={22} />
+          </Box>
+
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Typography variant="subtitle2" component="h2">
+              {title}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+              {doneMessage}
+            </Typography>
+          </Box>
+
+          <Button
+            size="small"
+            color="inherit"
+            variant="outlined"
+            onClick={onDismiss}
+            sx={{ flexShrink: 0 }}
+          >
+            Dismiss
+          </Button>
+        </Stack>
+      </CardContent>
+    </Card>
+  )
+}
+
 /**
  * @param {object} props
  * @param {React.ReactNode} [props.title='Get set up'] card heading
@@ -123,15 +183,31 @@ function Step({ step, index, isLast, isNext }) {
  *   action?: {label: string, to?: string, onClick?: () => void, icon?: string,
  *   disabled?: boolean, primary?: boolean}}>} props.steps
  *   the steps, in the order they should be done
+ * @param {string} [props.storageKey] opt in to the finished state: once every
+ *   step is done the card collapses to one line, and dismissing it persists
+ *   under this key so it stays gone. Omit for a checklist the caller stops
+ *   rendering itself.
+ * @param {React.ReactNode} [props.doneTitle='You are all set'] heading for the
+ *   collapsed state
+ * @param {React.ReactNode} [props.doneMessage] one line under it
  * @param {object} [props.sx] MUI system styles
  */
 export default function OnboardingChecklist({
   title = 'Get set up',
   description,
   steps = [],
+  storageKey,
+  doneTitle = 'You are all set',
+  doneMessage = 'Every setup step is done. Nothing here needs you any more.',
   sx,
   ...rest
 }) {
+  // Read once, at mount: a dashboard that re-rendered a dismissed card back
+  // into view would be worse than one that never hid it.
+  const [isDismissed, setDismissed] = useState(() =>
+    storageKey ? getItem(storageKey, false) === true : false
+  )
+
   if (steps.length === 0) return null
 
   const completed = steps.filter((step) => step.done).length
@@ -139,6 +215,24 @@ export default function OnboardingChecklist({
   // The first unfinished step is the one being asked for — it gets the filled
   // button, so there is never a row of equally loud calls to action.
   const nextIndex = steps.findIndex((step) => !step.done)
+  const isComplete = nextIndex === -1
+
+  if (storageKey && isComplete) {
+    if (isDismissed) return null
+
+    return (
+      <CompletedCard
+        title={doneTitle}
+        doneMessage={doneMessage}
+        onDismiss={() => {
+          setDismissed(true)
+          setItem(storageKey, true)
+        }}
+        sx={sx}
+        {...rest}
+      />
+    )
+  }
 
   return (
     <Card sx={sx} {...rest}>
