@@ -171,6 +171,17 @@ page reload loses one. The workflow survives it — the payment simply stays
   (deliveryService.acceptDelivery / disputeService.resolveDispute)
 ```
 
+**Delivering does not move money.** `deliveryService.submitDelivery` walks the
+order from `in_progress` (or `revision_requested`) to `delivered` and opens the
+version's Trust & Safety case, and it touches neither the payment nor the
+ledger: the escrow stays exactly where it is until the buyer accepts. That is
+also why the moderation outcome — auto-approved or queued, per
+`platformSettings.moderation.autoApproveDeliveries` (contract §7 operation 5) —
+has **no** bearing on the release. A version pulled into review is still a
+version the buyer can accept, and accepting it releases the escrow; withholding
+a creator's money on a content decision is a dispute or a suspension, not a
+side effect of a queue.
+
 **Who moves what.** `paymentService` moves *money* — payments, ledger rows,
 commission records. The *order's* own transition is always the caller's, because
 the same release settles an accepted delivery, an auto-acceptance, and a dispute

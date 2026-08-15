@@ -673,6 +673,21 @@ export const requestService = Object.freeze({
   },
 
   /**
+   * The businesses behind a set of accounts, as any creator-facing surface is
+   * allowed to show them — trading name, logo, industry, location.
+   *
+   * The same join `listBoard` runs, exposed because the creator's order list and
+   * order workspace need exactly it: an order carries `buyerId` and nothing
+   * about who that is (Prompt 24 §4.3). Sharing the helper rather than writing a
+   * second one is also what keeps "public information only" a single decision —
+   * no email, no phone, no spend, in one place.
+   *
+   * @param {string[]} buyerUserIds `usr_…`
+   * @returns {Promise<Map<string, object>>} `usr_…` → the public buyer summary
+   */
+  getBuyerSummaries: (buyerUserIds = []) => loadBuyers(buyerUserIds),
+
+  /**
    * **One brief as the board shows it** (§4.3) — the brief itself, the business
    * that posted it, and the one figure that says whether they finish what they
    * start.

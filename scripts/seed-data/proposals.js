@@ -728,6 +728,64 @@ Object.entries(BOARD_PROPOSALS_23).forEach(([requestKey, offers]) => {
   })
 })
 
+/* -------------------------------------------------------------------------- */
+/* Prompt 24 — the award behind the demo creator's delivered order            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The offer Ava won on `awarded_verde_pastry`, which becomes the delivered
+ * order her workspace opens on (Prompt 24 §9).
+ *
+ * Emitted last, and separately from `AWARD_PROPOSALS`, for the same id-stability
+ * reason as `LATE_BOARD_PROPOSALS`: adding a key to that object would renumber
+ * every proposal created after it, including the ones `docs/api-contract.md`
+ * quotes.
+ */
+const AWARD_PROPOSALS_24 = {
+  awarded_verde_pastry: {
+    creator: 'ava',
+    price: 620,
+    deliveryDays: 6,
+    revisions: 2,
+    awardDaysAgo: 10,
+    message:
+      'Pastry is a race against the light and the counter, so I would shoot the wide frames at opening before the first orders and work through the individual pieces as the room fills. Twelve finished images on the marble, plus the bakers finishing the display, all in daylight with no styling brought in.',
+    alsoDeclined: ['chloe'],
+  },
+}
+
+Object.entries(AWARD_PROPOSALS_24).forEach(([requestKey, award], index) => {
+  const request = requestByKey(requestKey)
+  const awardedAt = daysAgo(award.awardDaysAgo, 15, 20)
+
+  const accepted = addProposal({
+    requestKey,
+    creatorKey: award.creator,
+    price: award.price,
+    deliveryDays: award.deliveryDays,
+    revisions: award.revisions,
+    status: ACCEPTED,
+    coverMessage: award.message,
+    createdAt: addDays(request.publishedAt, 1),
+    respondedAt: awardedAt,
+  })
+  acceptedByRequestKey.set(requestKey, accepted)
+
+  award.alsoDeclined.forEach((creatorKey, declinedIndex) => {
+    addProposal({
+      requestKey,
+      creatorKey,
+      price: award.price + 60 * (declinedIndex + 1),
+      deliveryDays: award.deliveryDays + 2 + declinedIndex,
+      revisions: 1,
+      status: DECLINED,
+      coverMessage: pick(DECLINED_MESSAGES, index + declinedIndex)(request),
+      createdAt: addDays(request.publishedAt, 1.5 + declinedIndex * 0.5),
+      respondedAt: awardedAt,
+    })
+  })
+})
+
 export { proposals }
 
 /** The accepted proposal for a request key — the order factory builds on it. */

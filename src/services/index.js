@@ -44,7 +44,11 @@ export { proposalService } from './proposalService'
 
 /* Orders and delivery ----------------------------------------------------- */
 export { orderService, ORDER_EVENT_TYPE } from './orderService'
-export { deliveryService } from './deliveryService'
+export {
+  deliveryService,
+  DELIVERY_MESSAGE_MAX,
+  DELIVERY_MESSAGE_MIN,
+} from './deliveryService'
 export { revisionService } from './revisionService'
 
 /* Money ------------------------------------------------------------------- */

@@ -12,6 +12,11 @@ import { formatFileSize } from '@/features/orders/utils/orderDisplay'
 
 // One deliverable file, as a tile in the delivery grid.
 //
+// Lives in `features/deliveries` because both sides of an order render it:
+// the buyer reviewing a hand-over (Prompt 20) and the creator reading back
+// what they submitted (Prompt 24). It moved here from `features/orders`
+// unchanged.
+//
 // A `ButtonBase` rather than a decorated `div`: opening a deliverable at full
 // size is the single most common thing done on this screen, and it has to be
 // reachable by keyboard with a name a screen reader can read out (§12). The

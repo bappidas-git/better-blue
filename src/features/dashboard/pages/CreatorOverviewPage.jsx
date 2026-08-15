@@ -39,8 +39,7 @@ import { EMPTY_PLACEHOLDER, formatCurrency, formatNumber } from '@/utils/formatt
 // Earnings as those screens arrive. A tile pointing at an unbuilt path would
 // land on the dashboard 404, so each one stays inert until its prompt lands
 // (Prompt 14's rule for `navConfig`, applied to page-level links). Prompt 23
-// lit the first two up; the rest are still waiting:
-//   TODO(Prompt 24): link "Active orders"         → CREATOR_ORDERS.
+// lit the first two up and Prompt 24 the third; one is still waiting:
 //   TODO(Prompt 25): link "Available to withdraw" → CREATOR_EARNINGS.
 
 /** Chart height by breakpoint (§11). */
@@ -148,7 +147,7 @@ export default function CreatorOverviewPage() {
       value: overview?.activeOrders ?? EMPTY_PLACEHOLDER,
       icon: 'solar:box-linear',
       iconTone: overview?.activeOrders > 0 ? 'warning' : 'brand',
-      // TODO(Prompt 24): `to: paths.CREATOR_ORDERS`.
+      to: paths.CREATOR_ORDERS,
     },
     {
       key: 'available',

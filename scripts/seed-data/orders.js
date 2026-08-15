@@ -504,6 +504,37 @@ HISTORY_ENGAGEMENTS.forEach((engagement, index) => {
   })
 })
 
+/* -------------------------------------------------------------------------- */
+/* Prompt 24 — the demo creator's delivered order                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Work Ava has handed over and the buyer has not yet reviewed — the third state
+ * her order workspace needs alongside the in-progress and revision-requested
+ * ones she already has (Prompt 24 §9).
+ *
+ * Built **after** the history engagements rather than inside `SCENARIO_ORDERS`:
+ * order and delivery ids are handed out in creation order, so inserting one
+ * into the scenario list would renumber every archived order after it,
+ * including `ord_020`, which `docs/api-contract.md` quotes.
+ */
+buildOrder({
+  requestKey: 'awarded_verde_pastry',
+  buyer: 'verde',
+  creator: 'ava',
+  status: ORDER_STATUS.DELIVERED,
+  fundedAfterHours: 4,
+  deliveries: [
+    {
+      submittedDaysAgo: 1,
+      status: DELIVERY_STATUS.SUBMITTED,
+      fileCount: 3,
+      message:
+        'Twelve finished images attached: the counter wide at opening, each pastry straight on against the marble, and two frames of the bakers finishing the display. Everything shot in daylight with nothing styled in, and both bakers have signed releases on file.',
+    },
+  ],
+})
+
 export { orders, deliveries, revisions }
 
 /** The order created from a request key (scenario key or history key). */

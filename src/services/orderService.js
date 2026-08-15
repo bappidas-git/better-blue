@@ -296,6 +296,38 @@ export const orderService = Object.freeze({
   },
 
   /**
+   * How many orders a creator has in each status — the counts on the tab strip
+   * of `/creator/orders` (Prompt 24 §4.3).
+   *
+   * The mirror of {@link orderService.countsByStatus}, and separate for the same
+   * reason: the tabs describe the whole account, so a search or a page turn must
+   * not move them.
+   *
+   * MOCK-AGGREGATE: one capped page folded client-side (contract §4.1), with
+   * `capped` saying so rather than implying an exactness the fold lacks.
+   *
+   * @param {string} creatorId `usr_…`
+   * @returns {Promise<{total: number, capped: boolean, byStatus: Object<string, number>}>}
+   *
+   * **Future endpoint:** `GET /creator/orders/counts` — one `GROUP BY status`.
+   */
+  async countsByCreatorStatus(creatorId) {
+    const byStatus = Object.fromEntries(Object.values(ORDER_STATUS).map((status) => [status, 0]))
+    if (!creatorId) return { total: 0, capped: false, byStatus }
+
+    const { items, total } = await orderService.listByCreator(creatorId, {
+      page: 1,
+      limit: COUNT_LIMIT,
+    })
+
+    items.forEach((order) => {
+      if (byStatus[order.status] !== undefined) byStatus[order.status] += 1
+    })
+
+    return { total, capped: total > items.length, byStatus }
+  },
+
+  /**
    * The nav badge: deliveries sitting on this buyer's desk. An order at
    * `delivered` is the one state where the marketplace is waiting on the buyer
    * and money is standing still, so it is the number worth putting on the nav.
@@ -377,6 +409,28 @@ export const orderService = Object.freeze({
       page: 1,
       limit: 1,
       filters: { status: [...ACTIVE_ORDER_STATUSES] },
+    })
+    return total
+  },
+
+  /**
+   * The creator's nav badge: orders whose next move is theirs (Prompt 24 §4.7).
+   *
+   * Narrower than {@link orderService.countActiveByCreator} on purpose. That
+   * one answers "what is outstanding" for the availability guard; this one
+   * answers "what are you holding up", which is the only thing worth a number on
+   * a nav entry — and it is exactly the pair of statuses behind the Active tab
+   * it links to, so the badge and the tab can never disagree.
+   *
+   * @param {string} creatorId `usr_…`
+   * @returns {Promise<number>} `0` when nothing is waiting on them
+   */
+  async countAwaitingDelivery(creatorId) {
+    if (!creatorId) return 0
+    const { total } = await orderService.listByCreator(creatorId, {
+      page: 1,
+      limit: 1,
+      filters: { status: [ORDER_STATUS.IN_PROGRESS, ORDER_STATUS.REVISION_REQUESTED] },
     })
     return total
   },
