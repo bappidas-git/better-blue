@@ -314,6 +314,50 @@ export const orderService = Object.freeze({
   },
 
   /**
+   * The orders created by a set of accepted proposals — how a creator's
+   * proposal list links an accepted offer to the engagement it became
+   * (Prompt 23 §4.6).
+   *
+   * MOCK-JOIN: one request with the ids OR'd (contract §4.1), rather than one
+   * per card. Laravel: `GET /proposals?…&include=order`.
+   *
+   * @param {string[]} proposalIds `prp_…`
+   * @returns {Promise<Map<string, object>>} `prp_…` → the order it created
+   */
+  async listByProposalIds(proposalIds = []) {
+    const ids = [...new Set(proposalIds.filter(Boolean))]
+    if (ids.length === 0) return new Map()
+
+    const { items } = await orders.list({
+      page: 1,
+      limit: COUNT_LIMIT,
+      filters: { proposalId: ids },
+    })
+    return new Map(items.map((order) => [order.proposalId, order]))
+  },
+
+  /**
+   * How many engagements a business has taken all the way to completion — the
+   * one number on the request board's buyer card that says whether a brief
+   * comes from somebody who finishes what they start (Prompt 23 §4.3).
+   *
+   * @param {string} buyerId `usr_…`
+   * @returns {Promise<number>} `0` when the business has none yet
+   *
+   * **Future endpoint:** part of `GET /contentRequests/:id?include=buyer` — a
+   * counter cache on the buyer profile rather than a second query.
+   */
+  async countCompletedForBuyer(buyerId) {
+    if (!buyerId) return 0
+    const { total } = await orderService.listByBuyer(buyerId, {
+      page: 1,
+      limit: 1,
+      filters: { status: ORDER_STATUS.COMPLETED },
+    })
+    return total
+  },
+
+  /**
    * How many of a creator's orders are still in flight — the number behind the
    * availability confirmation and the deactivation guard on the creator's own
    * screens (Prompt 21 §4.6).

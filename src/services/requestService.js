@@ -1,5 +1,12 @@
 // Buyer briefs — `docs/api-contract.md` §6.7. The demand side of the
 // marketplace and the source of the public request board.
+//
+// CYCLE: this module, `proposalService`, and `orderService` all import each
+// other — closing a brief declines its offers, submitting an offer bumps the
+// brief's counter, and the board's buyer card counts that business's completed
+// orders. Every one of those references sits **inside a function body**, never
+// at module scope, so ES module live bindings resolve any evaluation order.
+// Keep it that way when extending these three.
 
 import { appConfig } from '@/config/appConfig'
 import { NOTIFICATION_TYPE } from '@/constants/notificationTypes'
@@ -17,9 +24,12 @@ import { assertTransition } from '@/utils/stateMachine'
 import { API_ERROR_CODE, createApiError } from './api/apiError'
 import { createCrudService } from './api/crudFactory'
 import { SORT_ORDER } from './api/listAdapter'
+import { buyerProfileService } from './buyerProfileService'
 import { notificationService } from './notificationService'
+import { orderService } from './orderService'
 import { proposalService } from './proposalService'
 import { uploadService, UPLOAD_PURPOSE } from './uploadService'
+import { userService } from './userService'
 
 const contentRequests = createCrudService('contentRequests', { idPrefix: ID_PREFIX.REQUEST })
 
@@ -215,6 +225,57 @@ async function loadOwnedRequest(id, buyerId) {
     throw createApiError(API_ERROR_CODE.FORBIDDEN, 'This request belongs to another account.')
   }
   return request
+}
+
+/**
+ * The business behind a brief, as the request board is allowed to show it:
+ * the trading name, the logo, and how long they have been on BetterBlue.
+ *
+ * Public information only (Prompt 23 §4.2) — no email, no phone, no spend. The
+ * account is read for `name` and `createdAt`; everything else comes from the
+ * `buyerProfiles` record, which is the business's own public description.
+ *
+ * MOCK-JOIN: two requests for a whole page of briefs (accounts by id, profiles
+ * by `userId`), because `_embed`/`_expand` are banned (00 §10). Laravel
+ * serialises this from `GET /contentRequests?…&include=buyer`.
+ *
+ * @param {string[]} buyerUserIds `usr_…`
+ * @returns {Promise<Map<string, object>>} `usr_…` → the public buyer summary
+ */
+async function loadBuyers(buyerUserIds) {
+  const ids = [...new Set(buyerUserIds.filter(Boolean))]
+  if (ids.length === 0) return new Map()
+
+  const [accounts, businesses] = await Promise.all([
+    userService.listByIds(ids),
+    buyerProfileService.list({ page: 1, limit: FOLD_LIMIT, filters: { userId: ids } }),
+  ])
+
+  const businessByUserId = new Map(
+    businesses.items.map((business) => [business.userId, business])
+  )
+
+  return new Map(
+    accounts.map((account) => {
+      const business = businessByUserId.get(account.id)
+      return [
+        account.id,
+        {
+          userId: account.id,
+          // The person's name is the fallback for a business that has not
+          // filled its profile in — a card with no name at all is worse.
+          name: account.name,
+          companyName: business?.companyName ?? null,
+          logoUrl: business?.logoUrl ?? null,
+          industry: business?.industry ?? null,
+          location: business?.location ?? null,
+          bio: business?.bio ?? null,
+          website: business?.website ?? null,
+          memberSince: business?.createdAt ?? account.createdAt ?? null,
+        },
+      ]
+    })
+  )
 }
 
 /**
@@ -569,6 +630,82 @@ export const requestService = Object.freeze({
       filters: { requestId: openIds, status: PROPOSAL_STATUS.SUBMITTED },
     })
     return total
+  },
+
+  /**
+   * **The request board** — every open brief, with the business behind it
+   * (Prompt 23 §4.2).
+   *
+   * One function for both surfaces: the public board at `/requests` and the
+   * creator's in-dashboard browse view render the same cards from the same
+   * call, differing only in the chrome around them and in the filters they
+   * default to.
+   *
+   * A failed buyer join is **not** a failed board: the briefs render with
+   * `buyer: null` and the card falls back to the brief alone. The work is the
+   * payload; the logo is the garnish.
+   *
+   * @param {import('./api/listAdapter').ListParams} [params] page, limit, sort,
+   *   `search`, and any filter `list` accepts — `status` is forced to `open`
+   * @returns {Promise<import('./api/listAdapter').ListResult>} open briefs, each
+   *   with `buyer` (see `loadBuyers`)
+   *
+   * **Future endpoint:** `GET /contentRequests?status=open&include=buyer`.
+   */
+  async listBoard(params = {}) {
+    const result = await requestService.listOpen(params)
+    if (result.items.length === 0) return result
+
+    let buyers = new Map()
+    try {
+      buyers = await loadBuyers(result.items.map((request) => request.buyerId))
+    } catch {
+      // See above.
+    }
+
+    return {
+      ...result,
+      items: result.items.map((request) => ({
+        ...request,
+        buyer: buyers.get(request.buyerId) ?? null,
+      })),
+    }
+  },
+
+  /**
+   * **One brief as the board shows it** (§4.3) — the brief itself, the business
+   * that posted it, and the one figure that says whether they finish what they
+   * start.
+   *
+   * Deliberately readable by anyone: a signed-out visitor sees the same brief a
+   * creator does, and only the *actions* beside it are gated (§4.3). Nothing
+   * private crosses this boundary — see `loadBuyers`.
+   *
+   * MOCK-JOIN: up to four requests (brief, then account + profile + completed
+   * order count). Laravel: `GET /contentRequests/:id?include=buyer`, with the
+   * count served from a counter cache.
+   *
+   * @param {string} id `req_…`
+   * @returns {Promise<{request: object, buyer: object|null}>} `buyer` is `null`
+   *   when the business could not be read — the brief still renders
+   * @throws {ApiError} `not_found` when there is no such brief
+   */
+  async getBoardRequest(id) {
+    const request = await contentRequests.getById(id)
+
+    let buyer = null
+    try {
+      const [buyers, completedOrders] = await Promise.all([
+        loadBuyers([request.buyerId]),
+        orderService.countCompletedForBuyer(request.buyerId),
+      ])
+      const summary = buyers.get(request.buyerId)
+      if (summary) buyer = { ...summary, completedOrders }
+    } catch {
+      // The brief is what the creator came for.
+    }
+
+    return { request, buyer }
   },
 
   /**

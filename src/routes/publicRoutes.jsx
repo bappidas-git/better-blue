@@ -28,11 +28,14 @@ const CreatorsPage = lazy(() => import('@/features/discovery/pages/CreatorsPage'
 // featured shelf tile, and every shared profile link lands.
 const CreatorProfilePage = lazy(() => import('@/features/creatorProfile/pages/CreatorProfilePage'))
 
-// STUB (Prompt 11): linked from the public top nav and the footer, and Prompt 11
-// requires every nav and footer link to resolve — so it is mounted now with a
-// placeholder page rather than left to hit the 404. Prompt 23 replaces the page
-// component; this entry stays as it is.
+// The public request board (Prompt 23) — the supply-side twin of creator
+// discovery. Mounted as a stub by Prompt 11 so the top nav and the footer had
+// somewhere to land; the route entries are unchanged, the pages are now real.
+// Both are gated on `features.publicRequestBoard` inside the pages themselves.
 const RequestBoardPage = lazy(() => import('@/features/requests/pages/RequestBoardPage'))
+const RequestBoardDetailPage = lazy(
+  () => import('@/features/requests/pages/RequestBoardDetailPage')
+)
 
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
 const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage'))
@@ -51,7 +54,6 @@ const DevDesignPage = import.meta.env.DEV
  * route of `paths.HOME`; everything else registers an absolute path.
  *
  * Waiting to be appended here:
- * - Prompt 23 — REQUEST_DETAIL_PATTERN (REQUESTS is mounted below, as a stub)
  * - Prompt 32 — REFERRAL_PATTERN
  */
 export const publicRoutes = [
@@ -67,10 +69,11 @@ export const publicRoutes = [
   { path: paths.TERMS, element: <TermsPage /> },
   { path: paths.PRIVACY, element: <PrivacyPage /> },
 
-  /* Marketplace discovery — the request board is a stub until Prompt 23. */
+  /* Marketplace discovery — creators (Prompt 12/13) and briefs (Prompt 23). */
   { path: paths.CREATORS, element: <CreatorsPage /> },
   { path: paths.CREATOR_PROFILE_PATTERN, element: <CreatorProfilePage /> },
   { path: paths.REQUESTS, element: <RequestBoardPage /> },
+  { path: paths.REQUEST_DETAIL_PATTERN, element: <RequestBoardDetailPage /> },
 ]
 
 /**

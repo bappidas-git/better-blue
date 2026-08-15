@@ -23,6 +23,7 @@ import {
 import { notificationService } from '@/services/notificationService'
 import { orderService } from '@/services/orderService'
 import { portfolioService } from '@/services/portfolioService'
+import { proposalService } from '@/services/proposalService'
 import { requestService } from '@/services/requestService'
 import { durations, easing } from '@/theme/motionTokens'
 import { storage } from '@/utils/storage'
@@ -163,13 +164,21 @@ export default function DashboardLayout() {
     { enabled: Boolean(user?.id) && isCreator }
   )
 
+  // Prompt 23: proposals a buyer has shortlisted and not yet decided on.
+  const { data: proposalsShortlisted } = useApiQuery(
+    () => proposalService.countShortlisted(user?.id),
+    [user?.id, pathname],
+    { enabled: Boolean(user?.id) && isCreator }
+  )
+
   const badges = useMemo(
     () => ({
       [BADGE_KEY.BUYER_PROPOSALS_AWAITING]: proposalsAwaiting ?? 0,
       [BADGE_KEY.BUYER_ORDERS_AWAITING_REVIEW]: ordersAwaitingReview ?? 0,
       [BADGE_KEY.CREATOR_PORTFOLIO_ATTENTION]: portfolioAttention ?? 0,
+      [BADGE_KEY.CREATOR_PROPOSALS_SHORTLISTED]: proposalsShortlisted ?? 0,
     }),
-    [ordersAwaitingReview, portfolioAttention, proposalsAwaiting]
+    [ordersAwaitingReview, portfolioAttention, proposalsAwaiting, proposalsShortlisted]
   )
 
   return (
