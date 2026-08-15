@@ -8,6 +8,7 @@ import ApiGallery from '@/features/dashboard/components/devGallery/ApiGallery'
 import ComponentsGallery from '@/features/dashboard/components/devGallery/ComponentsGallery'
 import FormsGallery from '@/features/dashboard/components/devGallery/FormsGallery'
 import MotionGallery from '@/features/dashboard/components/devGallery/MotionGallery'
+import PaymentsGallery from '@/features/dashboard/components/devGallery/PaymentsGallery'
 import TokensGallery from '@/features/dashboard/components/devGallery/TokensGallery'
 import WidgetsGallery from '@/features/dashboard/components/devGallery/WidgetsGallery'
 import useDocumentTitle from '@/hooks/useDocumentTitle'
@@ -26,6 +27,7 @@ const TABS = [
   { value: 'motion', label: 'Motion', Panel: MotionGallery },
   { value: 'widgets', label: 'Widgets', Panel: WidgetsGallery },
   { value: 'api', label: 'API', Panel: ApiGallery },
+  { value: 'payments', label: 'Payments', Panel: PaymentsGallery },
 ]
 
 export default function DevDesignPage() {

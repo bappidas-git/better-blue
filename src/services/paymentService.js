@@ -1,16 +1,359 @@
-// Escrow payments and the ledger — `docs/api-contract.md` §6.12, §6.13.
+// Escrow payments and the ledger — `docs/api-contract.md` §6.12, §6.13, §7
+// operations 2–4 and 11. The architecture is documented end to end in
+// `docs/payments.md`; this file is that document in code.
 //
-// Baseline reads only. The escrow workflow — funding an order, releasing to the
-// creator, refunding — arrives in Prompt 17 together with the dummy payment
-// provider in `services/payments/`.
+// Three rules hold everything together:
+//
+// 1. **The provider is invisible above this file.** `services/payments/` is
+//    imported here and nowhere else (Prompt 17 §7). Features see payment
+//    records, never charges, references, or card numbers.
+// 2. **One money movement = exactly one `transactions` row.** Every write goes
+//    through `writeTransaction`, and every description comes from
+//    `constants/transactionTemplates.js`.
+// 3. **Every amount goes through `utils/money.js`.** No `*`, `+`, or `-` on
+//    money outside those helpers.
+//
+// MOCK-ATOMICITY: each workflow below is a sequence of REST calls with no
+// transaction around it (contract §7). They are ordered so the least damaging
+// thing happens first — provider → payment → order → ledger → notifications —
+// and a failure after the money moved throws a deliberately loud `server_error`
+// naming what was written and what was not. Laravel wraps the whole sequence in
+// `DB::transaction()` and this paragraph goes away.
 
+import { appConfig } from '@/config/appConfig'
+import { NOTIFICATION_TYPE } from '@/constants/notificationTypes'
+import { isAdminRole } from '@/constants/roles'
+import {
+  ORDER_STATUS_MACHINE,
+  PAYMENT_STATUS_MACHINE,
+} from '@/constants/stateMachines'
+import {
+  ORDER_STATUS,
+  PAYMENT_STATUS,
+  PAYOUT_STATUS,
+  TRANSACTION_TYPE,
+} from '@/constants/statuses'
+import {
+  REFUND_CONTEXT,
+  transactionDescription,
+} from '@/constants/transactionTemplates'
+import { formatCurrency } from '@/utils/formatters'
 import { ID_PREFIX } from '@/utils/id'
+import {
+  applyRate,
+  round2,
+  subtractMoney,
+  sumMoney,
+  toAmount,
+} from '@/utils/money'
+import { assertTransition } from '@/utils/stateMachine'
 
+import { API_ERROR_CODE, createApiError } from './api/apiError'
 import { createCrudService } from './api/crudFactory'
 import { SORT_ORDER } from './api/listAdapter'
+import { auditService } from './auditService'
+import { creatorProfileService } from './creatorProfileService'
+import { notificationService } from './notificationService'
+import { getPaymentProvider } from './payments'
+import { payoutService } from './payoutService'
+import { settingsService, SETTINGS_FALLBACK } from './settingsService'
 
 const payments = createCrudService('payments', { idPrefix: ID_PREFIX.PAYMENT })
 const transactions = createCrudService('transactions', { idPrefix: ID_PREFIX.TRANSACTION })
+const commissions = createCrudService('commissions', { idPrefix: ID_PREFIX.COMMISSION })
+
+// The escrow workflow reads and moves the order it is funding, and
+// `orderService` already imports *this* service — so it keeps its own handle on
+// the collection rather than importing back and making the services graph
+// cyclic. `orders.status` is only ever moved here through `assertTransition`,
+// exactly as it is there (contract §6.9).
+const orders = createCrudService('orders', { idPrefix: ID_PREFIX.ORDER })
+
+/** Provider page ceiling (contract §4.1) — bounds the folds below. */
+const FOLD_LIMIT = 100
+
+/**
+ * Payment states that mean money was actually taken for an order, and it must
+ * not be charged again.
+ *
+ * `processing` is deliberately **not** here: an attempt whose tab was closed
+ * mid-charge would otherwise strand the order forever, and the seeded checkout
+ * scenario (`ord_001`) carries exactly that — a failed attempt plus a
+ * `processing` retry (contract §7 operation 2). Retrying leaves the stale row
+ * where it is. Laravel prevents the genuine double charge with the idempotency
+ * key from contract §1.8, which the mock stack has no way to honour.
+ */
+const LIVE_PAYMENT_STATUSES = Object.freeze([
+  PAYMENT_STATUS.HELD,
+  PAYMENT_STATUS.RELEASED,
+  PAYMENT_STATUS.REFUNDED,
+  PAYMENT_STATUS.PARTIALLY_REFUNDED,
+])
+
+/** Order states in which the buyer's money is sitting in escrow. */
+const ESCROW_HELD_ORDER_STATUSES = Object.freeze([
+  ORDER_STATUS.IN_PROGRESS,
+  ORDER_STATUS.DELIVERED,
+  ORDER_STATUS.REVISION_REQUESTED,
+  ORDER_STATUS.DISPUTED,
+])
+
+/** Payout states that have already reserved part of the balance. */
+const PENDING_PAYOUT_STATUSES = Object.freeze([
+  PAYOUT_STATUS.REQUESTED,
+  PAYOUT_STATUS.PROCESSING,
+])
+
+/**
+ * Ledger types that move a **BetterBlue balance** and therefore carry a
+ * `balanceAfter` (contract §6.13). A buyer's `charge` settles against their
+ * card and holds no balance, so its `balanceAfter` is `null`.
+ */
+const BALANCE_BEARING_TYPES = new Set([
+  TRANSACTION_TYPE.RELEASE,
+  TRANSACTION_TYPE.COMMISSION,
+  TRANSACTION_TYPE.PAYOUT,
+  TRANSACTION_TYPE.AFFILIATE_COMMISSION,
+])
+
+/** Ledger types that make up a creator's lifetime earnings. */
+const EARNING_TYPES = new Set([TRANSACTION_TYPE.RELEASE, TRANSACTION_TYPE.COMMISSION])
+
+const nowIso = () => new Date().toISOString()
+
+/** `conflict` is the contract's code for "not in the right state" (§3.2). */
+const invalidState = (message, details) =>
+  createApiError(API_ERROR_CODE.CONFLICT, message, details, 409)
+
+/**
+ * Runs a status change through its machine and reports a rejection the way the
+ * contract does: `409 conflict` with `details: { from, to }` (§8.1).
+ * `assertTransition` throws a plain `Error`, so it is mapped here rather than
+ * leaking a non-`ApiError` out of the services layer.
+ */
+function transitionTo(machine, from, to, message) {
+  try {
+    return assertTransition(machine, from, to)
+  } catch (failure) {
+    throw invalidState(message, { from, to, transition: failure.message })
+  }
+}
+
+/**
+ * Thrown when a sequence fails **after** money moved. There is no rollback in
+ * the mock stack (contract §7), so the error names exactly what was written:
+ * silently swallowing it is how a payment ends up `held` against an order that
+ * never started.
+ */
+function inconsistency(step, done, cause) {
+  return createApiError(
+    API_ERROR_CODE.SERVER_ERROR,
+    `The payment was taken but ${step} did not complete. ` +
+      'Support needs to reconcile this order by hand — nothing was rolled back.',
+    { step, completed: done, cause: cause?.message }
+  )
+}
+
+/**
+ * Card metadata that may be stored: a brand and a masked tail, never a full
+ * number (contract §9.4). The number is handed to the provider and dropped.
+ */
+function storableMethod(method) {
+  const digits = String(method?.number ?? '').replace(/\D/g, '')
+  return {
+    brand: method?.brand ?? 'card',
+    last4: String(method?.last4 ?? digits.slice(-4)),
+  }
+}
+
+/** ISO timestamp `days` after `iso` — the delivery clock starts at funding. */
+function addDaysIso(iso, days) {
+  const start = Date.parse(iso)
+  const count = Number(days)
+  if (!Number.isFinite(start) || !Number.isFinite(count)) return null
+  return new Date(start + count * 24 * 60 * 60 * 1000).toISOString()
+}
+
+/**
+ * The creator's balance before a new row.
+ *
+ * MOCK-BALANCE: `balanceAfter` is derived and JSON Server derives nothing
+ * (contract §6.13), so the newest balance-bearing row is read back and added
+ * to. Two concurrent writes would produce two rows with the same balance —
+ * Laravel computes it inside the transaction instead.
+ */
+async function latestBalanceOf(userId) {
+  const { items } = await transactions.list({
+    page: 1,
+    limit: 5,
+    sort: 'createdAt',
+    order: SORT_ORDER.DESC,
+    filters: { userId },
+  })
+
+  const latest = items.find((row) => Number.isFinite(Number(row.balanceAfter)))
+  return latest ? Number(latest.balanceAfter) : 0
+}
+
+/**
+ * **The only writer of `transactions`.** One call = one money movement
+ * (Prompt 17 §4.4).
+ *
+ * @param {object} entry
+ * @param {string} entry.type a `TRANSACTION_TYPE` value
+ * @param {string} entry.userId whose ledger this row belongs to
+ * @param {number} entry.amount signed from `userId`'s perspective — negative
+ *   when money leaves them, positive when it arrives
+ * @param {object} [entry.context] copy context for `transactionDescription`
+ * @param {string} [entry.orderId]
+ * @param {string} [entry.paymentId]
+ * @param {string} [entry.payoutId]
+ * @returns {Promise<object>} the created row
+ */
+async function writeTransaction({ type, userId, amount, context, orderId, paymentId, payoutId }) {
+  const signed = round2(amount)
+  const balanceAfter = BALANCE_BEARING_TYPES.has(type)
+    ? round2(sumMoney([await latestBalanceOf(userId), signed]))
+    : null
+
+  return transactions.create({
+    type,
+    ...(orderId ? { orderId } : {}),
+    ...(paymentId ? { paymentId } : {}),
+    ...(payoutId ? { payoutId } : {}),
+    userId,
+    amount: signed,
+    currency: appConfig.defaultCurrency,
+    description: transactionDescription(type, context ?? {}),
+    balanceAfter,
+  })
+}
+
+/** Fire-and-forget notify: a bell item must never fail a settled payment. */
+async function notifyQuietly(notification) {
+  try {
+    return await notificationService.notify(notification)
+  } catch {
+    return null
+  }
+}
+
+/** Audit only when a member of staff did it (00 §14). */
+async function auditIfAdmin(actor, entry) {
+  if (!actor?.id || !isAdminRole(actor.role)) return null
+  try {
+    return await auditService.log({ actorId: actor.id, actorRole: actor.role, ...entry })
+  } catch {
+    return null
+  }
+}
+
+/** The payment currently holding an order's money, or `null`. */
+async function findHeldPayment(orderId) {
+  const { items } = await payments.list({
+    page: 1,
+    limit: 1,
+    sort: 'createdAt',
+    order: SORT_ORDER.DESC,
+    filters: { orderId, status: PAYMENT_STATUS.HELD },
+  })
+  return items[0] ?? null
+}
+
+/**
+ * The commission rate that applies to an order. The rate is **frozen on the
+ * order at award time** (contract §6.9), so a later settings change cannot
+ * reprice work that is already under way; settings are only consulted for an
+ * order that predates the field.
+ */
+async function rateForOrder(order) {
+  const frozen = Number(order?.commissionRate)
+  if (Number.isFinite(frozen)) return frozen
+  const { rate } = await paymentService.computeCommission(order?.price ?? 0, {
+    categoryId: order?.categoryId,
+    creatorId: order?.creatorId,
+  })
+  return rate
+}
+
+/**
+ * Settles escrow to the creator: the two ledger rows, the commission record,
+ * the order's money fields, and the creator's notification.
+ *
+ * Shared by `releasePayment` and the partial-refund branch of `refundPayment`,
+ * which settle the same way on different bases — the full price in the first
+ * case, the retained amount in the second (contract §6.14: `baseAmount` is
+ * "the amount actually settled").
+ */
+async function settleEscrow({ order, payment, baseAmount, rate, settledAt }) {
+  const commissionAmount = applyRate(baseAmount, rate)
+  const creatorEarnings = subtractMoney(baseAmount, commissionAmount)
+
+  const releaseRow = await writeTransaction({
+    type: TRANSACTION_TYPE.RELEASE,
+    userId: order.creatorId,
+    amount: baseAmount,
+    orderId: order.id,
+    paymentId: payment.id,
+    context: { title: order.title },
+  })
+
+  const commission = await commissions.create({
+    orderId: order.id,
+    rate,
+    baseAmount,
+    amount: commissionAmount,
+    currency: order.currency ?? appConfig.defaultCurrency,
+  })
+
+  const commissionRow = await writeTransaction({
+    type: TRANSACTION_TYPE.COMMISSION,
+    userId: order.creatorId,
+    amount: -commissionAmount,
+    orderId: order.id,
+    paymentId: payment.id,
+    context: { title: order.title, rate },
+  })
+
+  // Orders carry their money fields from award time; an order that somehow
+  // reached settlement without them gets them from what actually settled,
+  // rather than being left with nulls on the earnings screens.
+  const moneyPatch = {}
+  if (!Number.isFinite(Number(order.commissionAmount))) {
+    moneyPatch.commissionAmount = commissionAmount
+  }
+  if (!Number.isFinite(Number(order.creatorEarnings))) {
+    moneyPatch.creatorEarnings = creatorEarnings
+  }
+  if (!Number.isFinite(Number(order.commissionRate))) moneyPatch.commissionRate = rate
+  const settledOrder = Object.keys(moneyPatch).length
+    ? await orders.update(order.id, moneyPatch)
+    : order
+
+  await notifyQuietly({
+    userId: order.creatorId,
+    type: NOTIFICATION_TYPE.PAYMENT_RELEASED,
+    title: 'Payment released',
+    body:
+      `${formatCurrency(creatorEarnings, order.currency)} from “${order.title}” is on its way to ` +
+      'your BetterBlue balance, after commission. Request a payout whenever you are ready.',
+    entityType: 'order',
+    entityId: order.id,
+  })
+
+  // AFFILIATE-HOOK (Prompt 34): processConversion(order) — a completed order is
+  // what converts a referral, and the referrer's share comes out of the
+  // commission written just above (contract §7 operation 10). It belongs here,
+  // after the money is settled, and must not be able to fail the settlement.
+
+  return {
+    commission,
+    creatorEarnings,
+    order: settledOrder,
+    transactions: [releaseRow, commissionRow],
+    settledAt,
+  }
+}
 
 export const paymentService = Object.freeze({
   /**
@@ -73,10 +416,627 @@ export const paymentService = Object.freeze({
    */
   getTransactionById: (id) => transactions.getById(id),
 
-  // —— workflow operations (added by later prompts) ——
-  // initiateOrderPayment / releasePayment / refundPayment — Prompt 17
-  // (payments & escrow), contract §7 operations 2–4. Each writes the payment,
-  // the ledger rows, the commission record, and the notifications together.
+  /**
+   * The fee records (admin `payments.manage`, contract §6.14) — exactly one per
+   * released order.
+   *
+   * @param {import('./api/listAdapter').ListParams} [params] filters: `orderId`,
+   *   `createdAt_gte`/`createdAt_lte`; sorts: `createdAt`, `amount`
+   * @returns {Promise<import('./api/listAdapter').ListResult>}
+   */
+  listCommissions: (params = {}) =>
+    commissions.list({ sort: 'createdAt', order: SORT_ORDER.DESC, ...params }),
+
+  /* —— workflow operations —————————————————————————————————————————————— */
+
+  /**
+   * BetterBlue's fee on an amount — the one place the rate is resolved
+   * (contract §6.14: `amount = round(baseAmount × rate, 2)`).
+   *
+   * Writes nothing, so screens can call it to preview a fee before anything is
+   * committed. A category override beats the platform default; both come from
+   * `platformSettings` through `settingsService`, which falls back rather than
+   * throwing, because a missing rate would silently price an order at zero
+   * commission.
+   *
+   * @param {number} amount the base amount, in currency units
+   * @param {object} [context]
+   * @param {string} [context.categoryId] `cat_…` — checked for an override
+   * @param {string} [context.creatorId] `usr_…` — reserved, see below
+   * @returns {Promise<{rate: number, amount: number}>} the rate as a decimal
+   *   fraction and the fee, rounded to cents
+   *
+   * **Future endpoint:** part of `POST /proposals/:id/accept` and
+   * `POST /orders/:id/release` — the server recomputes the fee and never trusts
+   * a client-sent amount (contract §9.3).
+   */
+  async computeCommission(amount, { categoryId, creatorId } = {}) {
+    const rate = await settingsService.getCommissionRate({ categoryId })
+
+    // CREATOR-RATE-HOOK (Prompt 35, admin settings): a per-creator negotiated
+    // rate overrides the category rate here — `creatorId` is already threaded
+    // through every call site so that change stays inside this function.
+    void creatorId
+
+    return { rate, amount: applyRate(amount, rate) }
+  },
+
+  /**
+   * **Funds an order.** The buyer pays, the money is held in escrow, and work
+   * starts (contract §7 operation 2).
+   *
+   * Written in the order that fails safest: charge the provider, settle the
+   * payment record, start the order, write the ledger, then notify. A decline
+   * stops after the payment record and leaves the order untouched, so the buyer
+   * can simply try another card.
+   *
+   * @param {string} orderId `ord_…`
+   * @param {object} options
+   * @param {object} options.method `{ brand, last4, number? }` — the number is
+   *   handed to the provider and never stored (contract §9.4)
+   * @returns {Promise<object>} the `held` payment
+   * @throws {ApiError} `conflict` when the order is not `pending_payment` or
+   *   already has money against it · `payment_failed` (402) on a decline, with
+   *   `details.reason` carrying the provider's code and `details.payment` the
+   *   failed record · `server_error` when the sequence broke after the charge
+   *
+   * **Future endpoint:** `POST /orders/:id/pay` → `{ order, payment }`. The
+   * amount is not in the request — the server reads it from the order.
+   */
+  async initiateOrderPayment(orderId, { method } = {}) {
+    const order = await orders.getById(orderId)
+
+    if (order.status !== ORDER_STATUS.PENDING_PAYMENT) {
+      throw invalidState(
+        'This order is not waiting for payment. Reload the page to see where it got to.',
+        { from: order.status, to: ORDER_STATUS.IN_PROGRESS }
+      )
+    }
+
+    const existing = await payments.list({
+      page: 1,
+      limit: FOLD_LIMIT,
+      filters: { orderId, status: [...LIVE_PAYMENT_STATUSES] },
+    })
+    if (existing.total > 0) {
+      throw invalidState('This order has already been paid for.', {
+        paymentId: existing.items[0]?.id,
+        status: existing.items[0]?.status,
+      })
+    }
+
+    const provider = await getPaymentProvider()
+    const amount = round2(order.price)
+    const currency = order.currency ?? appConfig.defaultCurrency
+
+    const payment = await payments.create({
+      orderId,
+      buyerId: order.buyerId,
+      amount,
+      currency,
+      provider: provider.key,
+      method: storableMethod(method),
+      status: PAYMENT_STATUS.INITIATED,
+      providerRef: null,
+      heldAt: null,
+      releasedAt: null,
+      refundedAt: null,
+    })
+
+    const charge = await provider.createPayment({ amount, currency, method })
+    await payments.update(payment.id, {
+      status: transitionTo(
+        PAYMENT_STATUS_MACHINE,
+        payment.status,
+        PAYMENT_STATUS.PROCESSING,
+        'This payment can no longer be processed.'
+      ),
+      providerRef: charge.providerRef,
+    })
+
+    const confirmation = await provider.confirmPayment(charge.providerRef)
+
+    if (confirmation.status !== 'succeeded') {
+      const failed = await payments.update(payment.id, {
+        status: transitionTo(
+          PAYMENT_STATUS_MACHINE,
+          PAYMENT_STATUS.PROCESSING,
+          PAYMENT_STATUS.FAILED,
+          'This payment can no longer be failed.'
+        ),
+        failureReason: confirmation.failureReason,
+      })
+
+      // A decline is a `402` in the target contract (§6.12), so it is a thrown
+      // `ApiError` here too: checkout branches on `error.details.reason` and
+      // keeps doing exactly that after the Laravel swap.
+      throw createApiError(
+        API_ERROR_CODE.PAYMENT_FAILED,
+        confirmation.failureReason,
+        { reason: confirmation.failureCode, payment: failed },
+        402
+      )
+    }
+
+    const heldAt = nowIso()
+
+    try {
+      const held = await payments.update(payment.id, {
+        status: transitionTo(
+          PAYMENT_STATUS_MACHINE,
+          PAYMENT_STATUS.PROCESSING,
+          PAYMENT_STATUS.HELD,
+          'This payment can no longer be held.'
+        ),
+        heldAt,
+      })
+
+      const orderPatch = {
+        status: transitionTo(
+          ORDER_STATUS_MACHINE,
+          order.status,
+          ORDER_STATUS.IN_PROGRESS,
+          'This order can no longer be started.'
+        ),
+        activatedAt: heldAt,
+      }
+      // The delivery clock starts when the money does, not when the proposal
+      // was accepted — `acceptProposal` stores `deliveryDays` and this is where
+      // it becomes a date (Prompt 17 §4.3).
+      const dueAt = addDaysIso(heldAt, order.deliveryDays)
+      if (dueAt) orderPatch.deliveryDueAt = dueAt
+
+      await orders.update(orderId, orderPatch)
+
+      await writeTransaction({
+        type: TRANSACTION_TYPE.CHARGE,
+        userId: order.buyerId,
+        amount: -amount,
+        orderId,
+        paymentId: payment.id,
+        context: { title: order.title },
+      })
+
+      await Promise.all([
+        notifyQuietly({
+          userId: order.creatorId,
+          type: NOTIFICATION_TYPE.ORDER_PAID,
+          title: 'Order funded — you can start',
+          body:
+            `“${order.title}” is funded. ${formatCurrency(amount, currency)} is held in escrow ` +
+            'and released to you when the buyer accepts your delivery.',
+          entityType: 'order',
+          entityId: orderId,
+        }),
+        notifyQuietly({
+          userId: order.buyerId,
+          type: NOTIFICATION_TYPE.ORDER_PAID,
+          title: 'Payment received',
+          body:
+            `We are holding ${formatCurrency(amount, currency)} for “${order.title}”. ` +
+            'Nothing reaches the creator until you accept the delivery.',
+          entityType: 'order',
+          entityId: orderId,
+        }),
+      ])
+
+      return held
+    } catch (failure) {
+      if (failure?.code === API_ERROR_CODE.CONFLICT) throw failure
+      throw inconsistency('the order could not be started', { paymentId: payment.id }, failure)
+    }
+  },
+
+  /**
+   * **Releases escrow to the creator**, minus commission — the most
+   * consequential operation in the product (contract §7 operation 3).
+   *
+   * Moves money only. The order's own transition to `completed` belongs to the
+   * caller (`orderService` / `deliveryService.acceptDelivery`), because
+   * accepting a delivery, auto-accepting, and resolving a dispute all release
+   * the same way but finish the order differently.
+   *
+   * @param {string} orderId `ord_…`
+   * @param {object} [options]
+   * @param {string} [options.reason='buyer_accepted'] why it was released —
+   *   recorded in the audit entry for an admin release
+   * @param {{id: string, role: string}} [options.actor] who released it; an
+   *   admin actor also writes a `payment.release` audit entry
+   * @returns {Promise<{payment: object, commission: object, creatorEarnings: number,
+   *   transactions: object[]}>}
+   * @throws {ApiError} `conflict` when no payment is held on the order
+   *
+   * **Future endpoint:** `POST /orders/:id/release` →
+   * `{ order, payment, commission, transactions }`, one transaction guarded by
+   * `commissions.order_id UNIQUE` so a double release is impossible.
+   */
+  async releasePayment(orderId, { reason = 'buyer_accepted', actor } = {}) {
+    const order = await orders.getById(orderId)
+    const held = await findHeldPayment(orderId)
+
+    if (!held) {
+      throw invalidState(
+        'There is no payment held on this order, so there is nothing to release.',
+        { orderId, expected: PAYMENT_STATUS.HELD }
+      )
+    }
+
+    // What actually settles: the escrow, less anything a dispute already sent
+    // back (contract §6.14).
+    const baseAmount = subtractMoney(held.amount, held.refundedAmount ?? 0)
+    const rate = await rateForOrder(order)
+    const releasedAt = nowIso()
+
+    const payment = await payments.update(held.id, {
+      status: transitionTo(
+        PAYMENT_STATUS_MACHINE,
+        held.status,
+        PAYMENT_STATUS.RELEASED,
+        'This payment can no longer be released.'
+      ),
+      releasedAt,
+    })
+
+    try {
+      const settlement = await settleEscrow({
+        order,
+        payment,
+        baseAmount,
+        rate,
+        settledAt: releasedAt,
+      })
+
+      await auditIfAdmin(actor, {
+        action: 'payment.release',
+        entityType: 'payment',
+        entityId: payment.id,
+        meta: {
+          orderId,
+          reason,
+          baseAmount,
+          commissionAmount: settlement.commission.amount,
+          creatorEarnings: settlement.creatorEarnings,
+        },
+      })
+
+      return {
+        payment,
+        commission: settlement.commission,
+        creatorEarnings: settlement.creatorEarnings,
+        transactions: settlement.transactions,
+      }
+    } catch (failure) {
+      throw inconsistency(
+        'the release could not be recorded in full',
+        { paymentId: payment.id, status: PAYMENT_STATUS.RELEASED },
+        failure
+      )
+    }
+  },
+
+  /**
+   * **Returns money to the buyer**, in full or in part (contract §7 operation 4).
+   *
+   * Partial-refund policy, and the reason it is written down here as well as in
+   * `docs/payments.md`: **commission applies only to the portion the creator
+   * keeps.** A partial refund therefore settles in the same call — the buyer
+   * gets their part back, the creator is released the remainder, and the
+   * commission is charged on that remainder (`commissions.baseAmount =
+   * amount − refunded`). The payment ends `partially_refunded` carrying both
+   * `refundedAt` and `releasedAt`, which is a terminal state in
+   * `PAYMENT_STATUS_MACHINE` — there is nothing left to settle afterwards.
+   *
+   * Moves money only; the order's own transition (`cancelled`, `refunded`, or
+   * on to `completed`) belongs to the caller, because the machine reaches those
+   * states from different places (00 §9).
+   *
+   * @param {string} orderId `ord_…`
+   * @param {object} [options]
+   * @param {number} [options.amount] defaults to the whole held amount
+   * @param {string} [options.reason] shown to both parties and audited
+   * @param {string} [options.context] a `REFUND_CONTEXT` clause for the ledger
+   * @param {{id: string, role: string}} [options.actor] an admin actor also
+   *   writes a `payment.refund` audit entry
+   * @returns {Promise<object>} the `refunded` or `partially_refunded` payment
+   * @throws {ApiError} `conflict` when no payment is held ·
+   *   `validation_failed` with `details.amount` when the amount is not between
+   *   zero and the held amount
+   *
+   * **Future endpoint:** `POST /payments/:id/refund` →
+   * `{ payment, order, transactions }`, with the amount validated server-side.
+   */
+  async refundPayment(orderId, { amount, reason, context, actor } = {}) {
+    const order = await orders.getById(orderId)
+    const held = await findHeldPayment(orderId)
+
+    if (!held) {
+      throw invalidState(
+        'There is no payment held on this order, so there is nothing to refund.',
+        { orderId, expected: PAYMENT_STATUS.HELD }
+      )
+    }
+
+    const requested = toAmount(amount ?? held.amount)
+    if (requested === null || requested <= 0 || requested > held.amount) {
+      throw createApiError(
+        API_ERROR_CODE.VALIDATION_FAILED,
+        'That refund amount is not valid for this payment.',
+        {
+          amount: `Enter an amount between ${formatCurrency(0.01, held.currency)} and ` +
+            `${formatCurrency(held.amount, held.currency)}.`,
+        },
+        422
+      )
+    }
+
+    const isFull = requested >= held.amount
+    const refundedAt = nowIso()
+    const provider = await getPaymentProvider()
+    await provider.refund(held.providerRef, requested)
+
+    try {
+      const payment = await payments.update(held.id, {
+        status: transitionTo(
+          PAYMENT_STATUS_MACHINE,
+          held.status,
+          isFull ? PAYMENT_STATUS.REFUNDED : PAYMENT_STATUS.PARTIALLY_REFUNDED,
+          'This payment can no longer be refunded.'
+        ),
+        refundedAt,
+        refundedAmount: requested,
+        // A partial refund settles the rest in the same breath, so the payment
+        // is released at the same moment it is refunded (contract §6.12).
+        ...(isFull ? {} : { releasedAt: refundedAt }),
+      })
+
+      await writeTransaction({
+        type: isFull ? TRANSACTION_TYPE.REFUND : TRANSACTION_TYPE.PARTIAL_REFUND,
+        userId: order.buyerId,
+        amount: requested,
+        orderId,
+        paymentId: payment.id,
+        context: { title: order.title, context: context ?? REFUND_CONTEXT.DISPUTE },
+      })
+
+      let settlement = null
+      if (!isFull) {
+        settlement = await settleEscrow({
+          order,
+          payment,
+          baseAmount: subtractMoney(held.amount, requested),
+          rate: await rateForOrder(order),
+          settledAt: refundedAt,
+        })
+      }
+
+      const amountCopy = formatCurrency(requested, held.currency)
+      await Promise.all([
+        notifyQuietly({
+          userId: order.buyerId,
+          type: NOTIFICATION_TYPE.PAYMENT_REFUNDED,
+          title: isFull ? 'Refund issued' : 'Partial refund issued',
+          body:
+            `${amountCopy} from “${order.title}” is on its way back to your card. ` +
+            'Card refunds usually settle within a few working days.',
+          entityType: 'order',
+          entityId: orderId,
+        }),
+        notifyQuietly({
+          userId: order.creatorId,
+          type: NOTIFICATION_TYPE.PAYMENT_REFUNDED,
+          title: isFull ? 'Order refunded' : 'Partial refund on your order',
+          body: isFull
+            ? `The escrow on “${order.title}” has been returned to the buyer. ${reason ?? ''}`.trim()
+            : `${amountCopy} of the escrow on “${order.title}” was returned to the buyer; ` +
+              `${formatCurrency(settlement?.creatorEarnings ?? 0, held.currency)} has been released to you.`,
+          entityType: 'order',
+          entityId: orderId,
+        }),
+      ])
+
+      await auditIfAdmin(actor, {
+        action: 'payment.refund',
+        entityType: 'payment',
+        entityId: payment.id,
+        meta: { orderId, amount: requested, full: isFull, reason },
+      })
+
+      return payment
+    } catch (failure) {
+      if (failure?.code === API_ERROR_CODE.CONFLICT) throw failure
+      throw inconsistency(
+        'the refund could not be recorded in full',
+        { paymentId: held.id, refundedAmount: requested },
+        failure
+      )
+    }
+  },
+
+  /**
+   * A creator's money, in the four figures the earnings screens show
+   * (Prompt 18 builds on this).
+   *
+   * - `held` — escrow on orders still in flight; not theirs yet.
+   * - `available` — balance they can withdraw today: everything the ledger has
+   *   settled, less payouts already requested or processing.
+   * - `paidOut` — settlements actually paid.
+   * - `lifetime` — every release net of commission, ever.
+   *
+   * MOCK-AGGREGATE: four figures folded from up to three list calls, each
+   * capped at {@link FOLD_LIMIT} rows (contract §4.1) — comfortably above any
+   * seeded creator, and gone the moment Laravel answers this with one query.
+   *
+   * @param {string} creatorId `usr_…`
+   * @returns {Promise<{held: number, available: number, paidOut: number,
+   *   lifetime: number, pendingPayouts: number, balance: number, currency: string}>}
+   *
+   * **Future endpoint:** `GET /creator/earnings` — one authenticated request
+   * computing all of it with three `SUM()`s.
+   */
+  async getEarningsSummary(creatorId) {
+    const empty = {
+      held: 0,
+      available: 0,
+      paidOut: 0,
+      lifetime: 0,
+      pendingPayouts: 0,
+      balance: 0,
+      currency: appConfig.defaultCurrency,
+    }
+    if (!creatorId) return empty
+
+    const [activeOrders, ledger, payouts] = await Promise.all([
+      orders.list({
+        page: 1,
+        limit: FOLD_LIMIT,
+        filters: { creatorId, status: [...ESCROW_HELD_ORDER_STATUSES] },
+      }),
+      transactions.list({ page: 1, limit: FOLD_LIMIT, filters: { userId: creatorId } }),
+      payoutService.listByCreator(creatorId, { page: 1, limit: FOLD_LIMIT }),
+    ])
+
+    const held = sumMoney(
+      activeOrders.items.map((order) =>
+        Number.isFinite(Number(order.creatorEarnings))
+          ? order.creatorEarnings
+          : subtractMoney(order.price, order.commissionAmount ?? 0)
+      )
+    )
+
+    const lifetime = sumMoney(
+      ledger.items.filter((row) => EARNING_TYPES.has(row.type)).map((row) => row.amount)
+    )
+
+    // The ledger balance is the balance of record (contract §6.13): every row
+    // this creator's account carries, payouts and affiliate commission
+    // included.
+    const balance = sumMoney(ledger.items.map((row) => row.amount))
+
+    const paidOut = sumMoney(
+      payouts.items
+        .filter((payout) => payout.status === PAYOUT_STATUS.PAID)
+        .map((payout) => payout.amount)
+    )
+
+    const pendingPayouts = sumMoney(
+      payouts.items
+        .filter((payout) => PENDING_PAYOUT_STATUSES.includes(payout.status))
+        .map((payout) => payout.amount)
+    )
+
+    return {
+      held,
+      // Money already claimed by an open request is not available twice.
+      available: Math.max(0, subtractMoney(balance, pendingPayouts)),
+      paidOut,
+      lifetime,
+      pendingPayouts,
+      balance,
+      currency: ledger.items[0]?.currency ?? appConfig.defaultCurrency,
+    }
+  },
+
+  /**
+   * **Requests a payout** of a creator's available balance (contract §7
+   * operation 11).
+   *
+   * No ledger row is written here: money only leaves the balance when a finance
+   * admin marks the payout `paid` (contract §6.15, Prompt 32). Until then the
+   * amount is simply reserved out of `available`.
+   *
+   * SECURITY: the balance is computed in the browser and JSON Server checks
+   * nothing — the clearest "never trust the client" case in this API (§9.3).
+   * Laravel recomputes both the balance and the minimum server-side.
+   *
+   * @param {string} creatorId `usr_…`
+   * @param {object} options
+   * @param {number} options.amount how much to withdraw
+   * @returns {Promise<object>} the `requested` payout
+   * @throws {ApiError} `validation_failed` with `details.amount` when the
+   *   amount is below `platformSettings.general.payoutMinAmount` or above the
+   *   available balance
+   *
+   * **Future endpoint:** `POST /payouts` → `{ payout }`; the client sends only
+   * the amount and the server derives the creator, the method, and the limits.
+   */
+  async requestPayout(creatorId, { amount } = {}) {
+    const requested = toAmount(amount)
+
+    const [settings, summary, profile] = await Promise.all([
+      settingsService.getSettings().catch(() => SETTINGS_FALLBACK),
+      paymentService.getEarningsSummary(creatorId),
+      creatorProfileService.getByUserId(creatorId).catch(() => null),
+    ])
+
+    const minimum = Number(
+      settings?.general?.payoutMinAmount ?? SETTINGS_FALLBACK.general.payoutMinAmount
+    )
+
+    if (requested === null || requested <= 0) {
+      throw createApiError(
+        API_ERROR_CODE.VALIDATION_FAILED,
+        'Enter the amount you would like to withdraw.',
+        { amount: 'Enter an amount.' },
+        422
+      )
+    }
+
+    if (requested < minimum) {
+      throw createApiError(
+        API_ERROR_CODE.VALIDATION_FAILED,
+        'That is below the payout minimum.',
+        {
+          amount: `The minimum payout is ${formatCurrency(minimum, summary.currency)}.`,
+          minimum,
+        },
+        422
+      )
+    }
+
+    if (requested > summary.available) {
+      throw createApiError(
+        API_ERROR_CODE.VALIDATION_FAILED,
+        'That is more than your available balance.',
+        {
+          amount: `You have ${formatCurrency(summary.available, summary.currency)} available` +
+            (summary.pendingPayouts > 0
+              ? `, with ${formatCurrency(summary.pendingPayouts, summary.currency)} already requested.`
+              : '.'),
+          available: summary.available,
+        },
+        422
+      )
+    }
+
+    const payout = await payoutService.create({
+      creatorId,
+      amount: requested,
+      currency: summary.currency,
+      // Snapshotted so a later change of bank details cannot rewrite a
+      // historical settlement (contract §6.15).
+      method: profile?.payoutMethod ?? null,
+      status: PAYOUT_STATUS.REQUESTED,
+      processedAt: null,
+    })
+
+    await notifyQuietly({
+      userId: creatorId,
+      type: NOTIFICATION_TYPE.PAYOUT_REQUESTED,
+      title: 'Payout requested',
+      body:
+        `${formatCurrency(requested, summary.currency)} is on its way to your bank account. ` +
+        'Payouts are reviewed by our finance team and usually settle within three working days.',
+      entityType: 'payout',
+      entityId: payout.id,
+    })
+
+    return payout
+  },
 })
+
+// The dummy processor's test cards, re-exported so the checkout screen and the
+// dev gallery can show them **without importing `services/payments/`** — that
+// folder stays behind this service (Prompt 17 §7).
+export { DUMMY_TEST_CARDS, PAYMENT_FAILURE_CODE } from './payments'
 
 export default paymentService

@@ -1566,6 +1566,13 @@ time** so a later edit to the brief cannot rewrite history. `commissionRate` is
 copied from `platformSettings.commission.defaultRate` at the same moment, so a
 rate change never repricessettled work.
 
+Orders created by `acceptProposal` also carry **`deliveryDays`** — the agreed
+turnaround from the proposal — and start with `deliveryDueAt: null`. The clock
+starts at funding, so `POST /orders/:id/pay` computes
+`deliveryDueAt = heldAt + deliveryDays` (§7 operations 1–2). Seeded orders
+predate the field and keep the due date they were generated with; both shapes
+read the same way, because consumers only ever read `deliveryDueAt`.
+
 `cancelledAt` is set for both `cancelled` **and** `refunded` orders.
 
 **Cancel** — `POST /orders/:id/cancel`
@@ -2730,6 +2737,14 @@ award time, `affiliate.commissionRate` sizes every affiliate earning,
 auto-acceptance, and `features.*` are the feature flags behind
 `useFeatureFlag`.
 
+**Optional key — `paymentProvider`** (Prompt 17). Selects the payment provider
+implementation (`"dummy"`, and later the real processor's key). It is **absent
+from the seeded settings on purpose**: `getPaymentProvider()` defaults to
+`"dummy"`, so the prototype needs no configuration, and switching processors is
+one `PATCH` away rather than a deploy (`docs/payments.md` §10). An unrecognised
+value falls back to `dummy` rather than failing a payment. Admin-only, like the
+rest of the non-public settings.
+
 **Update** — `PATCH /platformSettings`
 
 ```json
@@ -2802,6 +2817,7 @@ are the reason these belong on the server:
 | 12 | `broadcastAnnouncement` | `notificationService` | 1 + N | `POST /announcements` |
 | 13 | `getStats` | `landingService` | 4 | `GET /stats/landing` |
 | 14 | `getOverview` | `buyerDashboardService` | 8 | `GET /buyer/overview` |
+| 15 | `cancelOrder` | `orderService` | 3 + refund | `POST /orders/:id/cancel` |
 
 ### 7.2 The sequences
 
@@ -2827,6 +2843,14 @@ The buyer picks a winner. Creates the order.
 8. `POST /notifications` × (1 + losing offers) — `proposal_accepted`,
    `proposal_declined`
 
+> **Implementation note (Prompt 17).** Step 6 stores the proposal's
+> `deliveryDays` on the order and leaves `deliveryDueAt: null`. The delivery
+> clock starts when the money does, so the due date is computed by
+> `initiateOrderPayment` (operation 2) rather than at award time — an order that
+> waits three days for payment does not lose three days of its turnaround. The
+> rate in `commissionRate` comes from `paymentService.computeCommission`, which
+> is the same function the release path uses.
+
 **Laravel — `POST /proposals/:id/accept` → `{ order, proposal }`**
 
 One transaction: lock the request, verify it is `open` and the caller owns it,
@@ -2846,16 +2870,27 @@ The buyer funds the order and work begins.
 2. `POST /payments` — `status: 'initiated'`, amount copied from the order
 3. Charge the dummy provider in `services/payments/` (no HTTP — it resolves or
    rejects locally)
-4. `PATCH /payments/:id` → `{ status: 'processing' }` → then
+4. `PATCH /payments/:id` → `{ status: 'processing', providerRef }` → then
    `{ status: 'held', heldAt }` — or `{ status: 'failed', failureReason }`
-5. `PATCH /orders/:id` → `{ status: 'in_progress', activatedAt }`
+5. `PATCH /orders/:id` → `{ status: 'in_progress', activatedAt }`, plus
+   `deliveryDueAt = heldAt + deliveryDays` when the order carries one
 6. `POST /transactions` — `type: 'charge'`, `userId: buyerId`,
    `amount: −price`, `balanceAfter: null`
-7. `POST /notifications` — `order_paid` to the creator
+7. `POST /notifications` × 2 — `order_paid` to the creator, and the buyer's
+   receipt
 
 On failure the sequence stops after step 4 and the order stays
 `pending_payment`, which is why the seed contains a `failed` attempt **and** a
 `processing` retry on `ord_001`.
+
+> **Implementation note (Prompt 17).** The guard in step 1 refuses an order that
+> already has a `held`, `released`, `refunded`, or `partially_refunded` payment —
+> **not** one merely `processing`. An attempt whose tab was closed mid-charge
+> would otherwise strand the order forever, and the seeded scenario above is
+> exactly that shape. Preventing a genuine double charge is the idempotency key's
+> job (§1.8), which only the real backend can honour. The steps are also ordered
+> payment → order → ledger → notifications, so an interruption never leaves a
+> ledger row for an order that did not start (`docs/payments.md` §9).
 
 **Laravel — `POST /orders/:id/pay` → `{ order, payment }`**
 
@@ -2889,6 +2924,14 @@ in the product.
 9. `processConversion(orderId)` (operation 10) and `POST /notifications` —
    `payment_released`, `order_completed`
 
+> **Implementation note (Prompt 17).** `paymentService.releasePayment` performs
+> steps 1–6 and the `payment_released` notification — it moves **money** only.
+> Steps 7, 8, and `order_completed` belong to the caller
+> (`deliveryService.acceptDelivery`, `disputeService.resolveDispute`), because
+> the same release finishes an accepted delivery, an auto-acceptance, and a
+> dispute differently. Step 5's balance read is `writeTransaction`'s job, and the
+> affiliate hook in step 9 is marked in place for Prompt 34.
+
 **Laravel — `POST /orders/:id/release` → `{ order, payment, commission, transactions }`**
 
 One transaction with `SELECT … FOR UPDATE` on the order, guarded by
@@ -2911,10 +2954,19 @@ Full or partial return to the buyer, from a cancellation or a dispute.
 4. `POST /transactions` — `type: 'refund' | 'partial_refund'`,
    `userId: buyerId`, `amount: +refund`
 5. Full refund → `PATCH /orders/:id` `{ status: 'refunded', cancelledAt }`.
-   Partial refund → the order continues to `completed` via `releasePayment`,
-   with `commissions.baseAmount = price − refunded`
+   Partial refund → the order continues to `completed`, with
+   `commissions.baseAmount = price − refunded`
 6. `POST /auditLogs` — `payment.refund`, `meta: { amount, reason }`
 7. `POST /notifications` — both parties
+
+> **Implementation note (Prompt 17).** A partial refund **settles in the same
+> call**: `partially_refunded` is a terminal state in `PAYMENT_STATUS_MACHINE`,
+> so the payment cannot later transition to `released`. It therefore ends
+> carrying both `refundedAt` and `releasedAt`, with the `partial_refund`,
+> `release`, and `commission` rows and the `commissions` record all written by
+> `refundPayment` — matching the seeded partial-refund order exactly. Commission
+> is charged only on the creator-kept portion (`docs/payments.md` §6). As with
+> the release, the **order's** own transition belongs to the caller.
 
 **Laravel — `POST /payments/:id/refund` → `{ payment, order, transactions }`**
 
@@ -3223,6 +3275,38 @@ id the client sends (§9.2).
 
 ---
 
+#### 15. `cancelOrder(orderId, { byRole, reason })`
+
+An engagement ends early. Added in Prompt 17 alongside the escrow workflow,
+because a cancellation is only safe once the refund path exists.
+
+**Mock:**
+
+1. `GET /orders/:id` — decide which of the two paths applies
+2. Funded order (admin only) → the whole of operation 4 for the full amount
+3. `PATCH /orders/:id` → `{ status: 'cancelled', cancelledAt }`
+4. `POST /notifications` × 2 — `order_cancelled` to both parties
+5. `POST /auditLogs` — `order.cancel`, `meta: { fromStatus, reason, refunded }`
+   (admin actor only)
+
+Two paths, deliberately different: from `pending_payment` **either party** may
+walk away and nothing is refunded because nothing was collected; from
+`in_progress`, `revision_requested`, or `disputed` **only an admin** may cancel,
+and the escrow goes back to the buyer *first* — an order is never left cancelled
+while BetterBlue still holds the money.
+
+**Laravel — `POST /orders/:id/cancel` → `{ order, payment }`**
+
+```json
+{ "reason": "The campaign was pulled from the schedule." }
+```
+
+The refund and the cancellation are one transaction, and the role check is
+server-side: a party cancelling a funded order is `403`, not a UI affordance
+that happens to be hidden.
+
+---
+
 ## 8. Status and enum reference
 
 **`src/constants/` is the single source of truth.** The seed script imports
@@ -3259,16 +3343,22 @@ implementing from this document alone — if they ever disagree with the code,
 | `REJECTION_REASON_CODE` | `policy.js` | `policy_prohibited_content` · `low_production_quality` · `mismatch_with_brief` · `ip_violation` · `metadata_incomplete` · `other` |
 | `PERMISSIONS` | `permissions.js` | 16 keys — below |
 
-**`NOTIFICATION_TYPE`** (`notificationTypes.js`) — 21 values:
+**`NOTIFICATION_TYPE`** (`notificationTypes.js`) — 24 values:
 
 ```
 proposal_received · proposal_shortlisted · proposal_accepted · proposal_declined
 order_paid · delivery_submitted · revision_requested · delivery_accepted
-order_completed · payment_released · payout_processed · dispute_opened
-dispute_message · dispute_resolved · moderation_approved · moderation_rejected
+order_completed · order_cancelled · payment_released · payment_refunded
+payout_requested · payout_processed · dispute_opened · dispute_message
+dispute_resolved · moderation_approved · moderation_rejected
 moderation_revision · account_status_changed · affiliate_conversion
 affiliate_payout · system_announcement
 ```
+
+`order_cancelled`, `payment_refunded`, and `payout_requested` were added in
+Prompt 17: the escrow workflow ends an order three ways and only completion had
+a type of its own. They carry no seeded rows — the seed predates them — and map
+onto the existing `orders` and `payments` preference categories.
 
 **`PERMISSIONS`** (`permissions.js`) — `super_admin` implicitly holds all;
 `admin` accounts carry a `permissions` array; buyers and creators hold none:

@@ -24,6 +24,7 @@ import {
   PROPOSAL_STATUS,
   REQUEST_STATUS,
 } from '@/constants/statuses'
+import { subtractMoney, sumMoney } from '@/utils/money'
 
 import { toApiError } from './api/apiError'
 import { buyerProfileService } from './buyerProfileService'
@@ -79,11 +80,8 @@ export const SPEND_MONTHS = 6
 /** Rows in the overview's activity feed. */
 export const ACTIVITY_LIMIT = 8
 
-/** Currency-safe rounding, matching `scripts/seed-utils.js#round2`. */
-const round2 = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100
-
 /** What a buyer actually paid on one payment: charged, less anything refunded. */
-const netAmount = (payment) => Number(payment.amount ?? 0) - Number(payment.refundedAmount ?? 0)
+const netAmount = (payment) => subtractMoney(payment.amount ?? 0, payment.refundedAmount ?? 0)
 
 /**
  * The last {@link SPEND_MONTHS} months, oldest first, as empty buckets.
@@ -173,11 +171,11 @@ async function loadSpend(buyerId, now) {
 
   spent.forEach((payment) => {
     const bucket = bucketByKey.get(dayjs(payment.createdAt).format('YYYY-MM'))
-    if (bucket) bucket.amount = round2(bucket.amount + netAmount(payment))
+    if (bucket) bucket.amount = sumMoney([bucket.amount, netAmount(payment)])
   })
 
   return {
-    totalSpent: round2(spent.reduce((sum, payment) => sum + netAmount(payment), 0)),
+    totalSpent: sumMoney(spent.map(netAmount)),
     currency: items[0]?.currency ?? appConfig.defaultCurrency,
     spendByMonth: byMonth,
   }
