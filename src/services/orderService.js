@@ -117,6 +117,14 @@ const EVENT_STYLE = Object.freeze({
   [ORDER_EVENT_TYPE.ORDER_CANCELLED]: { icon: 'solar:close-circle-linear', tone: 'neutral' },
 })
 
+/**
+ * `completeOrder`'s default reason: the buyer accepted the delivery themselves,
+ * rather than an auto-acceptance, an admin, or a dispute resolution finishing
+ * the order for them. Named because Prompt 27 branches a notification on it —
+ * see the emit inside `completeOrder`.
+ */
+const COMPLETION_REASON_BUYER_ACCEPTED = 'buyer_accepted'
+
 /** One timeline entry, or `null` when the moment it describes never happened. */
 function event(type, at, title, description) {
   if (!at) return null
@@ -804,7 +812,10 @@ export const orderService = Object.freeze({
    * the completion are the same transaction, so there is no window in which a
    * delivery is accepted but the creator has not been paid.
    */
-  async completeOrder(orderId, { release = true, reason = 'buyer_accepted', actor } = {}) {
+  async completeOrder(
+    orderId,
+    { release = true, reason = COMPLETION_REASON_BUYER_ACCEPTED, actor } = {}
+  ) {
     const order = await orders.getById(orderId)
 
     // Checked before the money moves: a release against an order that cannot
@@ -850,6 +861,27 @@ export const orderService = Object.freeze({
       entityType: 'order',
       entityId: orderId,
     })
+
+    // Prompt 27 (emit-coverage audit, docs/notifications-audit.md): the buyer
+    // hears about this **only when they did not do it themselves**. Accepting a
+    // delivery already ends on a confirmation screen, so a bell item for it
+    // would be a notification about your own click. Every other route here — an
+    // auto-acceptance running out the clock, an admin releasing escrow, a
+    // dispute resolved in the creator's favour — happens while the buyer is
+    // elsewhere, and their escrow leaving without a word was the gap.
+    if (reason !== COMPLETION_REASON_BUYER_ACCEPTED) {
+      await notifyQuietly({
+        userId: order.buyerId,
+        type: NOTIFICATION_TYPE.ORDER_COMPLETED,
+        title: 'Order completed',
+        body:
+          `“${order.title}” has been completed` +
+          (settlement ? ' and the payment has been released to the creator from escrow.' : '.') +
+          ' The deliverables stay available on the order.',
+        entityType: 'order',
+        entityId: orderId,
+      })
+    }
 
     return {
       order: completed,

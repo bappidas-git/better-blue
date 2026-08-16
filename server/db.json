@@ -189,7 +189,7 @@
       "avatarUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23F5F3FF%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%237C3AED%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3ENW%3C%2Ftext%3E%3C%2Fsvg%3E",
       "phone": "+1 503 555 0142",
       "createdAt": "2026-04-22T10:15:00.000Z",
-      "lastLoginAt": "2026-08-16T00:50:16.767Z",
+      "lastLoginAt": "2026-08-14T08:30:00.000Z",
       "notificationPrefs": {
         "marketplace": {
           "inApp": true
@@ -12989,7 +12989,7 @@
       "title": "Payout sent to your bank",
       "body": "Your $1,200 payout has been processed and should arrive within three working days.",
       "entityType": "payout",
-      "entityId": "pyo_001",
+      "entityId": "pyo_002",
       "read": true,
       "createdAt": "2026-07-24T20:15:00.000Z"
     },
@@ -13187,7 +13187,7 @@
       "title": "Payout is being processed",
       "body": "Your $1,500 payout has moved to processing and will be marked paid once the transfer settles.",
       "entityType": "payout",
-      "entityId": "pyo_003",
+      "entityId": "pyo_005",
       "read": false,
       "createdAt": "2026-08-10T20:15:00.000Z"
     },
@@ -13322,6 +13322,361 @@
       "entityId": "ord_040",
       "read": true,
       "createdAt": "2026-07-27T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_042",
+      "userId": "usr_buyer_verde",
+      "type": "proposal_declined",
+      "title": "A proposal was withdrawn",
+      "body": "One of the creators on “20 seasonal menu photos for our autumn dinner service” has withdrawn their proposal. The others are unaffected.",
+      "entityType": "request",
+      "entityId": "req_001",
+      "read": false,
+      "createdAt": "2026-08-11T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_043",
+      "userId": "usr_buyer_verde",
+      "type": "order_paid",
+      "title": "Payment held in escrow",
+      "body": "$520 is held for “Pastry counter stills for the morning service page” and releases to Ava Martinez when you accept the delivery.",
+      "entityType": "order",
+      "entityId": "ord_047",
+      "read": true,
+      "createdAt": "2026-08-08T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_044",
+      "userId": "usr_buyer_verde",
+      "type": "delivery_submitted",
+      "title": "Ava Martinez submitted a delivery",
+      "body": "Twelve finished images for the pastry counter page are ready to review, including both baker frames with releases on file.",
+      "entityType": "order",
+      "entityId": "ord_047",
+      "read": false,
+      "createdAt": "2026-08-13T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_045",
+      "userId": "usr_buyer_verde",
+      "type": "order_completed",
+      "title": "Order completed",
+      "body": "“Supper club coverage for the harvest series” has been completed and the payment released to Amara Osei from escrow.",
+      "entityType": "order",
+      "entityId": "ord_045",
+      "read": true,
+      "createdAt": "2026-08-06T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_046",
+      "userId": "usr_buyer_verde",
+      "type": "dispute_opened",
+      "title": "Your dispute has been received",
+      "body": "A reviewer has been assigned to the winter chef’s table tasting menu case. You will hear from them in the case thread.",
+      "entityType": "dispute",
+      "entityId": "dsp_006",
+      "read": true,
+      "createdAt": "2026-08-02T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_047",
+      "userId": "usr_buyer_verde",
+      "type": "dispute_message",
+      "title": "BetterBlue replied to your dispute",
+      "body": "A reviewer has asked whether the two missing courses are back on the Friday menu, and whether a return visit works for you.",
+      "entityType": "dispute",
+      "entityId": "dsp_006",
+      "read": false,
+      "createdAt": "2026-08-10T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_048",
+      "userId": "usr_buyer_verde",
+      "type": "dispute_message",
+      "title": "New message on the courtyard films dispute",
+      "body": "A reviewer has watched both cuts against the brief and asked the creator whether a reshoot at dusk is possible.",
+      "entityType": "dispute",
+      "entityId": "dsp_007",
+      "read": true,
+      "createdAt": "2026-08-09T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_049",
+      "userId": "usr_buyer_verde",
+      "type": "system_announcement",
+      "title": "Content Policy updated",
+      "body": "The Content Policy has been restated with clearer examples of what may and may not be commissioned. Nothing you have briefed is affected.",
+      "read": true,
+      "createdAt": "2026-07-14T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_050",
+      "userId": "usr_creator_ava",
+      "type": "delivery_accepted",
+      "title": "Delivery accepted",
+      "body": "Verde Kitchen accepted the ingredient sourcing stills. The escrow has been released to you.",
+      "entityType": "order",
+      "entityId": "ord_043",
+      "read": true,
+      "createdAt": "2026-07-29T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_051",
+      "userId": "usr_creator_ava",
+      "type": "order_completed",
+      "title": "Order completed",
+      "body": "“Barista process films for the seasonal drinks menu” is complete and $576 has been added to your balance, after commission.",
+      "entityType": "order",
+      "entityId": "ord_042",
+      "read": true,
+      "createdAt": "2026-07-26T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_052",
+      "userId": "usr_creator_ava",
+      "type": "payout_requested",
+      "title": "Payout requested",
+      "body": "Your $600 payout request has been received and is being processed. It is reserved out of your available balance until it settles.",
+      "entityType": "payout",
+      "entityId": "pyo_003",
+      "read": true,
+      "createdAt": "2026-08-09T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_053",
+      "userId": "usr_creator_ava",
+      "type": "dispute_opened",
+      "title": "A dispute was opened on your order",
+      "body": "Verde Kitchen raised a quality dispute about the courtyard films. Respond in the case thread — a reviewer has been assigned.",
+      "entityType": "dispute",
+      "entityId": "dsp_007",
+      "read": true,
+      "createdAt": "2026-08-06T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_054",
+      "userId": "usr_creator_ava",
+      "type": "dispute_message",
+      "title": "A reviewer is waiting on you",
+      "body": "BetterBlue has asked whether a reshoot at dusk with the heaters lit is possible, and by when. The case is waiting on your reply.",
+      "entityType": "dispute",
+      "entityId": "dsp_007",
+      "read": false,
+      "createdAt": "2026-08-11T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_055",
+      "userId": "usr_creator_ava",
+      "type": "moderation_approved",
+      "title": "Portfolio item approved",
+      "body": "Your bakery counter lifestyle set was approved and is now live on your public profile.",
+      "entityType": "portfolio_item",
+      "entityId": "pfi_009",
+      "read": true,
+      "createdAt": "2026-08-03T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_056",
+      "userId": "usr_creator_ava",
+      "type": "system_announcement",
+      "title": "Payout minimum lowered to $50",
+      "body": "You can now withdraw from a smaller balance. The processing time is unchanged at three working days.",
+      "read": false,
+      "createdAt": "2026-07-30T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_057",
+      "userId": "usr_creator_ava",
+      "type": "proposal_declined",
+      "title": "A brief you proposed on was closed",
+      "body": "Cocoa & Co closed “Seasonal gift box photography for a limited spring range” without awarding it, so your proposal has ended.",
+      "entityType": "request",
+      "entityId": "req_010",
+      "read": true,
+      "createdAt": "2026-07-11T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_058",
+      "userId": "usr_admin_maya",
+      "type": "dispute_opened",
+      "title": "New dispute: scope mismatch",
+      "body": "Verde Kitchen opened a scope dispute on the winter chef’s table tasting menu — six of eight courses covered. Assigned to you.",
+      "entityType": "dispute",
+      "entityId": "dsp_006",
+      "read": true,
+      "createdAt": "2026-08-02T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_059",
+      "userId": "usr_admin_maya",
+      "type": "dispute_opened",
+      "title": "New dispute: quality issue",
+      "body": "Verde Kitchen opened a quality dispute on the courtyard dining films. Two of three delivered, heaters unlit in both.",
+      "entityType": "dispute",
+      "entityId": "dsp_007",
+      "read": true,
+      "createdAt": "2026-08-06T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_060",
+      "userId": "usr_admin_maya",
+      "type": "dispute_message",
+      "title": "New message on an escalated case",
+      "body": "The buyer has replied on the marina resort non-delivery case. Still nothing submitted, and the print slot cannot be held.",
+      "entityType": "dispute",
+      "entityId": "dsp_008",
+      "read": false,
+      "createdAt": "2026-08-09T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_061",
+      "userId": "usr_admin_maya",
+      "type": "dispute_resolved",
+      "title": "Dispute closed in the creator’s favour",
+      "body": "The loft showroom case was closed after the master files were confirmed sharp at full resolution. Payment released.",
+      "entityType": "dispute",
+      "entityId": "dsp_005",
+      "read": true,
+      "createdAt": "2026-07-31T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_062",
+      "userId": "usr_admin_maya",
+      "type": "moderation_rejected",
+      "title": "Your review decision was recorded",
+      "body": "The new-build show home series was rejected for missing category, content type, and usage details. The creator has been told what to add.",
+      "entityType": "portfolio_item",
+      "entityId": "pfi_067",
+      "read": true,
+      "createdAt": "2026-08-08T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_063",
+      "userId": "usr_admin_maya",
+      "type": "moderation_revision",
+      "title": "Your review decision was recorded",
+      "body": "The lakeside venue tour film was sent back for changes. It returns to the queue when the creator re-submits.",
+      "entityType": "portfolio_item",
+      "entityId": "pfi_062",
+      "read": true,
+      "createdAt": "2026-08-02T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_064",
+      "userId": "usr_admin_maya",
+      "type": "account_status_changed",
+      "title": "Creator account suspended",
+      "body": "Chloe Dubois was suspended pending a licensing review. Payouts are on hold and the balance is untouched.",
+      "entityType": "user",
+      "entityId": "usr_creator_chloe",
+      "read": true,
+      "createdAt": "2026-07-16T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_065",
+      "userId": "usr_admin_maya",
+      "type": "system_announcement",
+      "title": "Content Policy examples expanded",
+      "body": "The policy now carries worked examples for each prohibited category, so review notes can cite one rather than paraphrase.",
+      "read": false,
+      "createdAt": "2026-07-14T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_066",
+      "userId": "usr_super",
+      "type": "dispute_message",
+      "title": "Escalated case still open",
+      "body": "The marina resort non-delivery case has had a reply but no files. Nineteen days open, five since the last decision point.",
+      "entityType": "dispute",
+      "entityId": "dsp_008",
+      "read": false,
+      "createdAt": "2026-08-09T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_067",
+      "userId": "usr_super",
+      "type": "dispute_resolved",
+      "title": "Partial refund issued",
+      "body": "The villa and terrace case closed with a quarter of the order value returned to Atlas Travel Co and the rest released.",
+      "entityType": "dispute",
+      "entityId": "dsp_004",
+      "read": true,
+      "createdAt": "2026-07-27T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_068",
+      "userId": "usr_super",
+      "type": "moderation_approved",
+      "title": "Content approved",
+      "body": "The studio campaign film for the sustainable denim drop cleared review and is live on the creator’s profile.",
+      "entityType": "portfolio_item",
+      "entityId": "pfi_020",
+      "read": true,
+      "createdAt": "2026-08-06T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_069",
+      "userId": "usr_super",
+      "type": "moderation_rejected",
+      "title": "Submission rejected",
+      "body": "The new-build show home series was rejected for incomplete metadata. Second rejection for this creator this month.",
+      "entityType": "portfolio_item",
+      "entityId": "pfi_067",
+      "read": false,
+      "createdAt": "2026-08-08T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_070",
+      "userId": "usr_super",
+      "type": "payout_requested",
+      "title": "Payout awaiting review",
+      "body": "Isla Bergstrom has requested $900. It is the oldest unprocessed settlement in the queue.",
+      "entityType": "payout",
+      "entityId": "pyo_006",
+      "read": false,
+      "createdAt": "2026-08-12T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_071",
+      "userId": "usr_super",
+      "type": "payout_processed",
+      "title": "Payout moved to processing",
+      "body": "Liam Chen’s $1,500 payout was approved and is with the bank. It settles to paid once the transfer clears.",
+      "entityType": "payout",
+      "entityId": "pyo_005",
+      "read": true,
+      "createdAt": "2026-08-10T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_072",
+      "userId": "usr_super",
+      "type": "payment_refunded",
+      "title": "Full refund issued",
+      "body": "$610 was returned to Bloom Botanics after no deliverables were submitted on the serum packaging order.",
+      "entityType": "order",
+      "entityId": "ord_016",
+      "read": true,
+      "createdAt": "2026-07-12T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_073",
+      "userId": "usr_super",
+      "type": "order_cancelled",
+      "title": "Order cancelled before payment",
+      "body": "The winter travel showcase recap was cancelled before it was funded, so nothing was charged and nothing is owed.",
+      "entityType": "order",
+      "entityId": "ord_015",
+      "read": true,
+      "createdAt": "2026-07-24T20:15:00.000Z"
+    },
+    {
+      "id": "ntf_074",
+      "userId": "usr_super",
+      "type": "system_announcement",
+      "title": "Weekly marketplace summary",
+      "body": "Twelve orders funded, nine completed, two disputes opened, and one account suspended in the last seven days.",
+      "read": false,
+      "createdAt": "2026-08-12T20:15:00.000Z"
     }
   ],
   "moderationReviews": [

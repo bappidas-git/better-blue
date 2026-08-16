@@ -21,7 +21,10 @@ import { paths } from './paths'
 // components** the buyer's table mounts, parameterised by the signed-in role
 // rather than duplicated per dashboard.
 //
-// Paths still reserved in ./paths.js: CREATOR_NOTIFICATIONS.
+// Prompt 27 mounted the notification centre — the same shared feature page the
+// buyer's table mounts, role-aware inside.
+//
+// Every path reserved in ./paths.js for this role is now mounted.
 
 const CreatorOverviewPage = lazy(
   () => import('@/features/dashboard/pages/CreatorOverviewPage')
@@ -48,6 +51,9 @@ const CreatorSettingsPage = lazy(
 )
 const DisputesListPage = lazy(() => import('@/features/disputes/pages/DisputesListPage'))
 const DisputeDetailPage = lazy(() => import('@/features/disputes/pages/DisputeDetailPage'))
+const NotificationsPage = lazy(
+  () => import('@/features/notifications/pages/NotificationsPage')
+)
 const NotFoundPage = lazy(() => import('@/features/staticPages/pages/NotFoundPage'))
 
 export const creatorRoutes = [
@@ -60,6 +66,7 @@ export const creatorRoutes = [
   { path: paths.CREATOR_EARNINGS, element: <CreatorEarningsPage /> },
   { path: paths.CREATOR_DISPUTES, element: <DisputesListPage /> },
   { path: paths.CREATOR_DISPUTE_DETAIL_PATTERN, element: <DisputeDetailPage /> },
+  { path: paths.CREATOR_NOTIFICATIONS, element: <NotificationsPage /> },
   { path: paths.CREATOR_PROFILE, element: <CreatorProfilePage /> },
   { path: paths.CREATOR_SETTINGS, element: <CreatorSettingsPage /> },
   // Keeps the whole `/creator` subtree guarded — see buyerRoutes.jsx.
