@@ -2965,6 +2965,9 @@ are the reason these belong on the server:
 | 23 | `postMessage` | `disputeService` | 5 + N | `POST /disputes/:id/messages` |
 | 24 | `getOverviewStats` | `adminService` | 9 | `GET /admin/overview` |
 | 25 | `getAttentionQueues` | `adminService` | 5 | `GET /admin/attention` |
+| 26 | `claimForReview` | `moderationService` | 3 | `PATCH /moderationReviews/:id` |
+| 27 | `decide` | `moderationService` | 5 | `POST /moderationReviews/:id/decision` |
+| 28 | `actionReport` | `reportService` | 5 | `POST /reports/:id/action` |
 
 Operations 16 and 17 were added by Prompt 20 (the buyer's order workspace), and
 operation 18 by Prompt 21 (the creator's) — the mirror of operation 14, section
@@ -2988,7 +2991,11 @@ the thread moves the case's own status rather than the order's. The decision
 itself stays operation 8. Operations 24 and 25 arrived with Prompt 28 (the admin
 console's foundation): they are the platform-wide mirror of 14 and 18 — reads
 that never write, and the reason no admin screen ever queries a collection to
-compute a statistic.
+compute a statistic. Operations 26–28 arrived with Prompt 30 (content
+moderation) and close the loop operation 19 opened: 19 puts content in the
+queue, 26 takes it off, 27 decides it and propagates that decision to the
+content, the creator, and the audit trail, and 28 is how a member report becomes
+a case in the first place.
 
 ### 7.2 The sequences
 
@@ -4064,6 +4071,93 @@ reads with their joins, returned together. Each list should be scoped to the
 caller's permissions server-side (`disputes.resolve`, `moderation.review`,
 `orders.manage`), returning an empty list rather than a `403` for a queue the
 admin cannot work — the screen is shared, the rows are not.
+
+---
+
+#### 26. `claimForReview(reviewId, { actor })`
+
+A reviewer takes a case off the queue. Added by Prompt 30.
+
+**Mock:**
+
+1. `GET /moderationReviews/:id` — guard `submitted → under_review`
+   (`CONTENT_STATUS_MACHINE`); a case somebody else already claimed fails `409`
+2. `PATCH /moderationReviews/:id` → `{ status: 'under_review', reviewerId, history }`
+   (MOCK-APPEND: the whole array is re-sent, §6.20)
+3. `PATCH /portfolioItems/:id` → `{ status: 'under_review' }` — **best effort**,
+   so the creator's manager reads "with our team". Deliveries are not mirrored
+   (see operation 27)
+
+**Laravel** — a conditional `UPDATE … WHERE reviewer_id IS NULL`, so two
+reviewers cannot claim the same case, plus the event row. `moderation.review`.
+
+---
+
+#### 27. `decide(reviewId, { decision, notes, reasonCode, actor })`
+
+**The operation the whole console exists for.** `decision` is one of `approve`,
+`reject`, `request_changes`, `restrict`; `notes` is required for all but the
+first, and `reasonCode` (`REJECTION_REASON_CODE`) for `reject` and `restrict`.
+Added by Prompt 30.
+
+**Mock:**
+
+1. `GET /moderationReviews/:id` + `GET /portfolioItems/:id` (or `/deliveries/:id`)
+2. guard the transition — against the **case** for the three submission
+   decisions, and against the **subject** for `restrict`, which acts on content
+   that is already live
+3. `PATCH /moderationReviews/:id` → `{ status, reviewerId, notes, reasonCode,
+   reviewedAt, history }`
+4. propagate to the subject — **not** best effort, because a case that says
+   "approved" over content nobody can see is undetectable from the console:
+   - *portfolio item* — `approve` walks `under_review → approved → published`
+     and stamps `publishedAt`; `reject`/`request_changes` mirror the status and
+     write `rejectionReason` (what the creator reads, Prompt 22); `restrict`
+     walks `published → restricted`
+   - *delivery* — **record-only.** `deliveries.status` belongs to the buyer's
+     review (§6.10) and a content review never moves it: a buyer who has been
+     sent work does not lose it because Trust & Safety is still reading.
+     `restrict` flags each `files[]` entry `restricted: true`, which keeps the
+     file out of reuse surfaces while leaving the order flow untouched
+5. `POST /notifications` — `moderation_approved` / `moderation_rejected` /
+   `moderation_revision` to the creator, carrying the reason label and the note
+   (a restriction reuses `moderation_rejected`; there is no
+   `moderation_restricted` type — 00 §9)
+6. `POST /auditLogs` — `moderation.<decision>`
+
+Steps 5 and 6 are best effort: neither a bell item nor an audit line may undo a
+decision that has already been recorded.
+
+**Laravel — `POST /moderationReviews/:id/decision`** — all six inside one
+transaction, with `history` an `INSERT` into `moderation_review_events`. Gated on
+`moderation.review`; `restrict` on already-published content is the case for
+`content.manage`. Errors: `403` · `404` · `409` (illegal transition, or a case
+decided while the reviewer was reading it) · `422` (missing reason or notes).
+
+---
+
+#### 28. `actionReport(reportId, { note, actor })`
+
+A member report is upheld. For a reported **portfolio item** the content goes
+into the review queue — its existing open case, or a new one opened for the
+purpose (`ensureReviewForSubject`). Reported profiles and requests close here and
+are acted on where they live (the account, Prompt 29; the request board,
+Prompt 31). Added by Prompt 30.
+
+**Mock:**
+
+1. `GET /reports/:id`
+2. `GET /moderationReviews?subjectType=portfolio_item&subjectId=…&_limit=1` —
+   is it already in the queue?
+3. `POST /moderationReviews` when it is not — `status: 'submitted'`, with a
+   history entry naming the report as the reason it was opened
+4. `PATCH /reports/:id` → `{ status: 'actioned', handledById, handledAt, resolutionNote }`
+5. `POST /auditLogs` — `report.action` (`report.dismiss` for the other outcome)
+
+**Laravel — `POST /reports/:id/action`** — one transaction, gated on
+`reports.manage`. The upsert in steps 2–3 must be a unique-constrained
+`INSERT … ON CONFLICT` rather than a read-then-write, or two admins triaging the
+same content produce two cases for it.
 
 ---
 

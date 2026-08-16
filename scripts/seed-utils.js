@@ -107,21 +107,10 @@ export {
   VISIBILITY,
 } from '../src/constants/statuses.js'
 
-/** What a member report is about. */
-export const REPORT_SUBJECT = Object.freeze({
-  PORTFOLIO_ITEM: 'portfolio_item',
-  CREATOR_PROFILE: 'creator_profile',
-  REQUEST: 'request',
-})
-
-/** Why a member reported it — the picker options in the report dialog. */
-export const REPORT_REASON = Object.freeze({
-  PROHIBITED_CONTENT: 'prohibited_content',
-  INTELLECTUAL_PROPERTY: 'intellectual_property',
-  MISLEADING_CLAIMS: 'misleading_claims',
-  SPAM: 'spam',
-  OTHER: 'other',
-})
+// REPORT_SUBJECT and REPORT_REASON took the same path in Prompt 30 (the report
+// dialog offers the reasons and the admin queue prints them), so they are
+// re-exported from `src/constants/reports.js` rather than declared here.
+export { REPORT_REASON, REPORT_SUBJECT } from '../src/constants/reports.js'
 
 /** Dummy payment provider + card metadata (00 §15: payments are mocked). */
 export const PAYMENT_PROVIDER = 'dummy'

@@ -1,7 +1,14 @@
+import { useState } from 'react'
+
 import { Icon } from '@iconify/react'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
+import IconButton from '@mui/material/IconButton'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import ListItemText from '@mui/material/ListItemText'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
@@ -76,9 +83,13 @@ function MetaItem({ icon, children }) {
  * @param {object} props
  * @param {object} props.cta the result of `useCreatorRequestCta`
  * @param {boolean} [props.fullWidth=false] stretch the buttons (mobile bar)
+ * @param {() => void} [props.onReport] opens the report dialog (Prompt 30). The
+ *   affordance lives in an overflow menu rather than beside "Share": reporting
+ *   is a thing a visitor should be able to find, not a thing the page suggests.
  */
-export function ProfileActions({ cta, fullWidth = false }) {
+export function ProfileActions({ cta, fullWidth = false, onReport }) {
   const toast = useToast()
+  const [menuAnchor, setMenuAnchor] = useState(null)
 
   // In the mobile bar two buttons share 360px, and the leading icons are what
   // push "Start a request" onto a second line. The label is the affordance;
@@ -143,6 +154,39 @@ export function ProfileActions({ cta, fullWidth = false }) {
       >
         Share
       </Button>
+
+      {onReport ? (
+        <>
+          <IconButton
+            aria-label="More options for this profile"
+            aria-haspopup="menu"
+            aria-expanded={menuAnchor ? true : undefined}
+            onClick={(event) => setMenuAnchor(event.currentTarget)}
+            sx={{ width: 44, height: 44, alignSelf: 'center', flexShrink: 0 }}
+          >
+            <Icon icon="tabler:dots-vertical" width={20} />
+          </IconButton>
+          <Menu
+            anchorEl={menuAnchor}
+            open={Boolean(menuAnchor)}
+            onClose={() => setMenuAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            <MenuItem
+              onClick={() => {
+                setMenuAnchor(null)
+                onReport()
+              }}
+            >
+              <ListItemIcon>
+                <Icon icon="solar:flag-linear" width={18} />
+              </ListItemIcon>
+              <ListItemText primary="Report this profile" />
+            </MenuItem>
+          </Menu>
+        </>
+      ) : null}
     </>
   )
 }
@@ -152,8 +196,9 @@ export function ProfileActions({ cta, fullWidth = false }) {
  * @param {object} props.profile the `creatorProfiles` record
  * @param {Object<string, string>} [props.categoryNames] category id → display name
  * @param {object} props.cta the result of `useCreatorRequestCta`
+ * @param {() => void} [props.onReport] opens the report dialog (Prompt 30)
  */
-export default function ProfileHeader({ profile, categoryNames = {}, cta }) {
+export default function ProfileHeader({ profile, categoryNames = {}, cta, onReport }) {
   const rating = Number(profile.ratingAvg) || 0
   const ratingCount = Number(profile.ratingCount) || 0
   const completedOrders = Number(profile.completedOrders) || 0
@@ -266,7 +311,7 @@ export default function ProfileHeader({ profile, categoryNames = {}, cta }) {
           spacing={1.5}
           sx={{ display: { xs: 'none', md: 'flex' }, flexShrink: 0, pb: 0.5 }}
         >
-          <ProfileActions cta={cta} />
+          <ProfileActions cta={cta} onReport={onReport} />
         </Stack>
       </Stack>
 

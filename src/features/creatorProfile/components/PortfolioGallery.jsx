@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 
 import { Icon } from '@iconify/react'
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import ButtonBase from '@mui/material/ButtonBase'
 import Skeleton from '@mui/material/Skeleton'
 import Typography from '@mui/material/Typography'
@@ -12,7 +13,9 @@ import EmptyState from '@/components/feedback/EmptyState'
 import ErrorState from '@/components/feedback/ErrorState'
 import Section from '@/components/layout/Section'
 import { imageUrl, IMAGE_SIZES } from '@/constants/images'
+import { REPORT_SUBJECT } from '@/constants/reports'
 import { CONTENT_TYPE, STATUS_META } from '@/constants/statuses'
+import ReportDialog from '@/features/reports/components/ReportDialog'
 import { durations } from '@/theme/motionTokens'
 
 import {
@@ -207,6 +210,10 @@ export default function PortfolioGallery({
 }) {
   const [filter, setFilter] = useState(DEFAULT_PORTFOLIO_FILTER)
   const [openIndex, setOpenIndex] = useState(null)
+  // Prompt 30: the report affordance rides on the viewer, not the tile. A
+  // flag icon on every thumbnail would be the loudest thing in the grid, and
+  // reporting is something a visitor does after *looking* at a piece of work.
+  const [reportedItem, setReportedItem] = useState(null)
 
   const published = useMemo(() => items ?? [], [items])
 
@@ -239,7 +246,23 @@ export default function PortfolioGallery({
         type: LIGHTBOX_MEDIA_TYPE,
         src: item.mediaUrl || imageUrl(item.id, IMAGE_SIZES.wide.width, IMAGE_SIZES.wide.height),
         alt: item.title,
-        caption: toCaption(item, categoryNames),
+        caption: (
+          // `MediaLightbox` renders the caption inside a `<p>`, so the action
+          // beside it has to be phrasing content — a `<button>` is, a `<div>`
+          // wrapper would not be.
+          <>
+            {toCaption(item, categoryNames)}
+            <Button
+              size="small"
+              color="inherit"
+              onClick={() => setReportedItem(item)}
+              startIcon={<Icon icon="solar:flag-linear" width={15} />}
+              sx={{ ml: 1, color: 'text.secondary', verticalAlign: 'baseline' }}
+            >
+              Report
+            </Button>
+          </>
+        ),
       })),
     [visible, categoryNames]
   )
@@ -328,6 +351,14 @@ export default function PortfolioGallery({
         onIndexChange={setOpenIndex}
         onClose={() => setOpenIndex(null)}
         title={activeTitle ?? 'Portfolio item'}
+      />
+
+      <ReportDialog
+        open={Boolean(reportedItem)}
+        onClose={() => setReportedItem(null)}
+        subjectType={REPORT_SUBJECT.PORTFOLIO_ITEM}
+        subjectId={reportedItem?.id}
+        subjectLabel={reportedItem?.title}
       />
     </Section>
   )

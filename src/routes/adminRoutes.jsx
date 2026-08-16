@@ -40,6 +40,16 @@ const AdminUsersPage = lazy(() => import('@/features/admin/users/pages/AdminUser
 const AdminUserDetailPage = lazy(
   () => import('@/features/admin/users/pages/AdminUserDetailPage')
 )
+// Prompt 30 — the Trust & Safety workspace. One page serves both entries: the
+// queue screen carries the reports tab, and `/admin/reports` is the same screen
+// opened on it (see `REPORTS_PARAMS`). Gated inside on `moderation.review`,
+// with the reports tab gated separately on `reports.manage`.
+const AdminModerationPage = lazy(
+  () => import('@/features/admin/moderation/pages/AdminModerationPage')
+)
+const AdminModerationDetailPage = lazy(
+  () => import('@/features/admin/moderation/pages/AdminModerationDetailPage')
+)
 const NotificationsPage = lazy(
   () => import('@/features/notifications/pages/NotificationsPage')
 )
@@ -49,6 +59,9 @@ export const adminRoutes = [
   { path: paths.ADMIN, element: <AdminOverviewPage /> },
   { path: paths.ADMIN_USERS, element: <AdminUsersPage /> },
   { path: paths.ADMIN_USER_DETAIL_PATTERN, element: <AdminUserDetailPage /> },
+  { path: paths.ADMIN_MODERATION, element: <AdminModerationPage /> },
+  { path: paths.ADMIN_MODERATION_DETAIL_PATTERN, element: <AdminModerationDetailPage /> },
+  { path: paths.ADMIN_REPORTS, element: <AdminModerationPage reportsFirst /> },
   { path: paths.ADMIN_NOTIFICATIONS, element: <NotificationsPage /> },
   // Keeps the whole `/admin` subtree guarded — see buyerRoutes.jsx.
   { path: paths.ADMIN_CATCH_ALL, element: <NotFoundPage /> },

@@ -208,7 +208,9 @@ const TARGETS_BY_ROLE = Object.freeze({
 const ADMIN_PENDING = Object.freeze([
   // Prompt 29 mounted `/admin/users` and `/admin/users/:userId`, so its line is
   // gone — an admin notification about an account now lands on the account.
-  paths.ADMIN_MODERATION, // Prompt 30
+  // Prompt 30 mounted `/admin/moderation`, its detail route, and `/admin/reports`,
+  // so its line is gone — an admin notification about a review case now lands on
+  // the case.
   paths.ADMIN_REQUESTS, // Prompt 31
   paths.ADMIN_ORDERS, // Prompt 31
   paths.ADMIN_PAYMENTS, // Prompt 32

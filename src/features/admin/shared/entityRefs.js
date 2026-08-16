@@ -79,9 +79,16 @@ export function resolveEntityPath(type, id) {
     // owner should pass `type="user"` with the `usr_…` instead.
     // case 'creator_profile':   return paths.adminUserDetail(ownerIdOf(id))
     // case 'buyer_profile':     return paths.adminUserDetail(ownerIdOf(id))
-    // case 'portfolio_item':                                              // Prompt 30
-    // case 'moderation_review': return paths.adminModerationDetail(id)    // Prompt 30
-    // case 'report':            return paths.ADMIN_REPORTS                // Prompt 30
+    case 'moderation_review':
+      return paths.adminModerationDetail(id)
+    // Prompt 30 mounted the reports **queue**, not a per-report route: a report
+    // is read in a side sheet on that screen, so the chip points at the list.
+    case 'report':
+      return paths.ADMIN_REPORTS
+    // `portfolio_item` stays unlinked for the reason `creator_profile` does: the
+    // console browses *cases*, not items, and `/admin/moderation/:id` takes a
+    // `mod_…`. A caller holding the case should pass `type="moderation_review"`.
+    // case 'portfolio_item':
     // case 'request':           return paths.ADMIN_REQUESTS               // Prompt 31
     // case 'order':             return paths.adminOrderDetail(id)         // Prompt 31
     // case 'support_ticket':    return paths.ADMIN_SUPPORT                // Prompt 31

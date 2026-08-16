@@ -60,8 +60,21 @@ export { payoutService } from './payoutService'
 
 /* Trust & safety ---------------------------------------------------------- */
 export { disputeService } from './disputeService'
-export { moderationService, OPEN_QUEUE_STATUSES } from './moderationService'
-export { reportService } from './reportService'
+export {
+  moderationService,
+  DECIDED_QUEUE_STATUSES,
+  MODERATION_DECISION,
+  MODERATION_DECISION_META,
+  MODERATION_NOTES_MAX,
+  MODERATION_NOTES_MIN,
+  OPEN_QUEUE_STATUSES,
+} from './moderationService'
+export {
+  reportService,
+  OPEN_REPORT_STATUSES,
+  REPORT_NOTE_MAX,
+  REPORT_RESOLUTIONS,
+} from './reportService'
 export { reviewService, RATING_SCALE, RATING_MIN, RATING_MAX } from './reviewService'
 
 /* Dashboards -------------------------------------------------------------- */
