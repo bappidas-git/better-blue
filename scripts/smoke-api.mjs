@@ -362,10 +362,25 @@ async function checkSeedFileClean() {
   const { dirname, resolve } = await import('node:path')
   const dbPath = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'server', 'db.json')
 
+  // lowdb persists *after* answering: the flushing PATCH in `removeScratch`
+  // returns roughly 60ms before the bytes land, so reading once here catches
+  // the pre-flush file and fails a run that actually cleaned up. Re-read until
+  // the write shows up, and only then judge the contents.
   let db
-  try {
-    db = JSON.parse(await readFile(dbPath, 'utf8'))
-  } catch {
+  const deadline = Date.now() + 3000
+  for (;;) {
+    try {
+      db = JSON.parse(await readFile(dbPath, 'utf8'))
+    } catch {
+      // Also covers reading mid-write, when the file is not yet valid JSON.
+      db = null
+    }
+    if (db && !JSON.stringify(db).includes(SCRATCH_ID)) break
+    if (Date.now() >= deadline) break
+    await sleep(100)
+  }
+
+  if (!db) {
     console.log('  · server/db.json not readable from here — skipped')
     return
   }

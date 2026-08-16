@@ -16,6 +16,35 @@ export const AUTH_STORAGE_KEY = 'auth'
 /** Request timeout. Long enough for `--delay 300`, short enough to fail fast. */
 export const REQUEST_TIMEOUT_MS = 15000
 
+/**
+ * MOCK-API: how many times a *read* is retried after a transport failure.
+ *
+ * `json-server --watch` reloads whenever `db.json` changes — including when it
+ * wrote the file itself — and for a few hundred milliseconds during that reload
+ * the port refuses connections. A composite operation that writes several
+ * records in a burst (resolving a dispute writes a payment, three ledger rows, a
+ * commission and three notifications) reliably lands a later request inside that
+ * window, and the whole operation fails halfway with the money already moved.
+ *
+ * That is a property of the dev server, not of the API, so it is absorbed here —
+ * the one module that is allowed to know about the provider (00 §10). Laravel
+ * does not restart between requests, and this loop simply never fires.
+ *
+ * **Reads only.** A GET can be repeated safely; a POST that died mid-flight may
+ * or may not have been applied, and a second attempt would risk a duplicate
+ * ledger row — worse than the failure it is papering over. Writes still surface
+ * as `ApiError` for the caller to report.
+ */
+const READ_RETRY_LIMIT = 3
+const READ_RETRY_DELAY_MS = 250
+
+const IDEMPOTENT_METHODS = new Set(['get', 'head', 'options'])
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/** True for a failure that never produced an HTTP response (contract §3.4). */
+const isTransportFailure = (error) => Boolean(error) && !error.response && error.code !== 'ECONNABORTED'
+
 export const apiClient = axios.create({
   baseURL: env.apiBaseUrl,
   timeout: REQUEST_TIMEOUT_MS,
@@ -48,7 +77,19 @@ apiClient.interceptors.response.use(
   (response) => response,
   // Every failure — transport, timeout, or HTTP — leaves as an `ApiError`.
   // Services below this line only ever catch `ApiError` (contract §3.4).
-  (error) => Promise.reject(toApiError(error))
+  async (error) => {
+    const config = error?.config
+
+    if (config && isTransportFailure(error) && IDEMPOTENT_METHODS.has((config.method ?? 'get').toLowerCase())) {
+      config.retryCount = (config.retryCount ?? 0) + 1
+      if (config.retryCount <= READ_RETRY_LIMIT) {
+        await sleep(READ_RETRY_DELAY_MS * config.retryCount)
+        return apiClient.request(config)
+      }
+    }
+
+    return Promise.reject(toApiError(error))
+  }
 )
 
 export default apiClient
