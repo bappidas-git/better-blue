@@ -249,3 +249,116 @@ const UNKNOWN_NOTIFICATION_META = Object.freeze({
 export function getNotificationMeta(type) {
   return NOTIFICATION_META[type] ?? UNKNOWN_NOTIFICATION_META
 }
+
+/* -------------------------------------------------------------------------- */
+/* Prompt 27 additions — the notification centre                              */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Reading order for the preference rows and the filter chips, so the settings
+ * screen and the notifications page list the categories the same way rather
+ * than in whatever order `Object.values` happens to produce.
+ */
+export const NOTIFICATION_CATEGORY_ORDER = Object.freeze([
+  NOTIFICATION_CATEGORY.MARKETPLACE,
+  NOTIFICATION_CATEGORY.ORDERS,
+  NOTIFICATION_CATEGORY.PAYMENTS,
+  NOTIFICATION_CATEGORY.DISPUTES,
+  NOTIFICATION_CATEGORY.MODERATION,
+  NOTIFICATION_CATEGORY.AFFILIATE,
+  NOTIFICATION_CATEGORY.SYSTEM,
+])
+
+/**
+ * Deep-link target types carried on `notification.entityType` (contract §6.19).
+ *
+ * Values match `scripts/seed-utils.js#ENTITY_TYPE` one for one — this is the
+ * subset a notification can actually point at, spelled here so the services and
+ * `features/notifications/notificationRoutes.js` stop passing string literals
+ * around (00 §2.5).
+ */
+export const NOTIFICATION_ENTITY = Object.freeze({
+  USER: 'user',
+  PORTFOLIO_ITEM: 'portfolio_item',
+  REQUEST: 'request',
+  PROPOSAL: 'proposal',
+  ORDER: 'order',
+  PAYMENT: 'payment',
+  PAYOUT: 'payout',
+  DISPUTE: 'dispute',
+  MODERATION_REVIEW: 'moderation_review',
+  AFFILIATE_EARNING: 'affiliate_earning',
+  PLATFORM_SETTINGS: 'platform_settings',
+})
+
+/**
+ * **Types that ignore `users.notificationPrefs`.**
+ *
+ * `notificationService.notify` skips creation when the recipient has the type's
+ * category switched off — except for these two, which are delivered whatever
+ * the preferences say:
+ *
+ * - `system_announcement` — how BetterBlue tells every member about a change to
+ *   the service itself. A member who has silenced it has silenced the only
+ *   channel the platform has.
+ * - `account_status_changed` — a suspension notice with its reason. Somebody who
+ *   cannot work out why their account stopped working is a support ticket at
+ *   best, and telling them is the fair thing regardless.
+ *
+ * Both belong to the `system` category, so that category's preference row is
+ * rendered locked rather than as a switch that quietly does nothing.
+ */
+export const MANDATORY_NOTIFICATION_TYPES = Object.freeze([
+  NOTIFICATION_TYPE.SYSTEM_ANNOUNCEMENT,
+  NOTIFICATION_TYPE.ACCOUNT_STATUS_CHANGED,
+])
+
+/** Is this type delivered regardless of the recipient's preferences? */
+export function isMandatoryNotification(type) {
+  return MANDATORY_NOTIFICATION_TYPES.includes(type)
+}
+
+/** Every type filed under `category`, in declaration order. */
+export function typesInCategory(category) {
+  return Object.values(NOTIFICATION_TYPE).filter(
+    (type) => NOTIFICATION_META[type]?.category === category
+  )
+}
+
+/**
+ * Categories whose every type is mandatory — **derived**, not listed, so adding
+ * an optional type to `system` unlocks the row on its own.
+ */
+export const LOCKED_NOTIFICATION_CATEGORIES = Object.freeze(
+  NOTIFICATION_CATEGORY_ORDER.filter((category) => {
+    const types = typesInCategory(category)
+    return types.length > 0 && types.every(isMandatoryNotification)
+  })
+)
+
+/** Is this category's in-app switch locked on (§4.4)? */
+export function isNotificationCategoryLocked(category) {
+  return LOCKED_NOTIFICATION_CATEGORIES.includes(category)
+}
+
+/**
+ * Preferences with every category switched on — the shape `users.notificationPrefs`
+ * carries (contract §6.2) and the fallback for an account seeded before a
+ * category existed.
+ */
+export function defaultNotificationPrefs() {
+  return Object.fromEntries(
+    NOTIFICATION_CATEGORY_ORDER.map((category) => [category, { inApp: true, email: false }])
+  )
+}
+
+/**
+ * Does `prefs` allow an in-app notification of this category?
+ *
+ * Fails **open**: an account missing the category entirely still hears about it.
+ * Only an explicit `inApp: false` silences anything.
+ */
+export function allowsInAppCategory(prefs, category) {
+  if (isNotificationCategoryLocked(category)) return true
+  return prefs?.[category]?.inApp !== false
+}

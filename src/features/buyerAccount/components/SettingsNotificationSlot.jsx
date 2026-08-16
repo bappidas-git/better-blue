@@ -1,46 +1,18 @@
-import { Icon } from '@iconify/react'
-import Box from '@mui/material/Box'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
+import NotificationPreferences from '@/features/notifications/components/NotificationPreferences'
 
-// PLACEHOLDER SLOT — replaced in Prompt 27 (the notification centre).
+// The Preferences card body on the buyer and creator settings screens.
 //
-// `users.notificationPrefs` already exists on every account (contract §6.2) and
-// `notificationService.notify` already honours it, but the screen that edits it
-// ships with the centre that consumes it. Rather than leave a hole in Settings,
-// the card says what is coming and where the current behaviour stands.
+// Prompt 15 created this as a placeholder card explaining that preferences were
+// coming; Prompt 27 filled it in. It stays as a one-line seam rather than being
+// deleted for two reasons: both settings screens already render it, so the swap
+// touched one file, and the notification feature keeps its own component
+// (`features/notifications/components/NotificationPreferences`) instead of
+// living inside `buyerAccount` where the creator's screen would have to reach
+// across to find it.
 //
-// Prompt 27: replace the body of this component with the per-category
-// switches — the Preferences card on every role's settings screen renders this
-// slot, so all of them light up from one change.
+// A future prompt that gives admins their own account screen renders
+// `NotificationPreferences` directly — there is nothing buyer-specific here.
 
 export default function SettingsNotificationSlot() {
-  return (
-    <Stack
-      direction="row"
-      spacing={2}
-      alignItems="flex-start"
-      sx={{
-        p: 2,
-        borderRadius: 2,
-        border: 1,
-        borderStyle: 'dashed',
-        borderColor: 'divider',
-        bgcolor: 'background.default',
-      }}
-    >
-      <Box aria-hidden="true" sx={{ display: 'flex', color: 'text.secondary', mt: 0.25 }}>
-        <Icon icon="solar:bell-linear" width={20} />
-      </Box>
-      <Box sx={{ minWidth: 0 }}>
-        <Typography variant="subtitle2" component="p">
-          Notification preferences arrive with the notification centre
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Until then, every category is switched on: you will hear about proposals, deliveries,
-          payments, and anything needing a decision in the bell menu.
-        </Typography>
-      </Box>
-    </Stack>
-  )
+  return <NotificationPreferences />
 }

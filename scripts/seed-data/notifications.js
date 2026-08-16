@@ -25,6 +25,23 @@ const itemNamed = (title) => portfolioItems.find((item) => item.title === title)
 const disputeOn = (key) =>
   disputes.find((dispute) => dispute.orderId === orderFor(key).id).id
 
+/**
+ * A payout by whose it is and what it is for, rather than by its index.
+ *
+ * Prompt 27 fix: two rows here linked to `payouts[0]` and `payouts[2]` by
+ * position, and the positions had moved — Ava's "$1,200 sent" pointed at her
+ * $500 *rejected* request, and Liam's "$1,500 processing" pointed at Ava's
+ * payout entirely. Both were invisible until the notification centre made the
+ * rows clickable. Looking them up by creator and amount cannot drift.
+ */
+const payoutOf = (creator, amount) => {
+  const match = payouts.find(
+    (payout) => payout.creatorId === creatorId(creator) && payout.amount === amount
+  )
+  if (!match) throw new Error(`No ${creator} payout of ${amount}`)
+  return match.id
+}
+
 const NOTIFICATION_SOURCE = [
   /* --- Buyer demo account: Nora at Verde Kitchen ------------------------- */
   {
@@ -133,7 +150,7 @@ const NOTIFICATION_SOURCE = [
     title: 'Payout sent to your bank',
     body: 'Your $1,200 payout has been processed and should arrive within three working days.',
     entityType: ENTITY_TYPE.PAYOUT,
-    entityId: payouts[0].id,
+    entityId: payoutOf('ava', 1200),
     read: true,
     daysAgo: 21,
   },
@@ -321,7 +338,7 @@ const NOTIFICATION_SOURCE = [
     title: 'Payout is being processed',
     body: 'Your $1,500 payout has moved to processing and will be marked paid once the transfer settles.',
     entityType: ENTITY_TYPE.PAYOUT,
-    entityId: payouts[2].id,
+    entityId: payoutOf('liam', 1500),
     read: false,
     daysAgo: 4,
   },
@@ -444,6 +461,349 @@ const NOTIFICATION_SOURCE = [
     entityId: order('h24'),
     read: true,
     daysAgo: 18,
+  },
+
+  /* --- Prompt 27: filling out the four demo feeds ------------------------- */
+  //
+  // The notification centre (§9) asks for at least twelve varied rows on each
+  // demo account, spread across categories and across days, so the day grouping,
+  // the category chips, the unread filter, and "Load more" all have something to
+  // work on the moment somebody signs in. Every row below still describes an
+  // event that exists in the seeded data — nothing is invented to pad a filter.
+  //
+  // One honest gap: the demo **buyer** has no Payments row, because a buyer only
+  // ever receives `payment_refunded` and Verde Kitchen has no refunded order.
+  // Inventing one would have made the chip lead to a receipt that is not in the
+  // ledger. The chip renders and correctly comes back empty.
+
+  /* Buyer demo account: Nora at Verde Kitchen — to 13 rows */
+  {
+    userId: buyerId('verde'),
+    type: NOTIFICATION_TYPE.PROPOSAL_DECLINED,
+    title: 'A proposal was withdrawn',
+    body: 'One of the creators on “20 seasonal menu photos for our autumn dinner service” has withdrawn their proposal. The others are unaffected.',
+    entityType: ENTITY_TYPE.REQUEST,
+    entityId: requestId('open_verde_menu'),
+    read: false,
+    daysAgo: 3,
+  },
+  {
+    userId: buyerId('verde'),
+    type: NOTIFICATION_TYPE.ORDER_PAID,
+    title: 'Payment held in escrow',
+    body: '$520 is held for “Pastry counter stills for the morning service page” and releases to Ava Martinez when you accept the delivery.',
+    entityType: ENTITY_TYPE.ORDER,
+    entityId: order('awarded_verde_pastry'),
+    read: true,
+    daysAgo: 6,
+  },
+  {
+    userId: buyerId('verde'),
+    type: NOTIFICATION_TYPE.DELIVERY_SUBMITTED,
+    title: 'Ava Martinez submitted a delivery',
+    body: 'Twelve finished images for the pastry counter page are ready to review, including both baker frames with releases on file.',
+    entityType: ENTITY_TYPE.ORDER,
+    entityId: order('awarded_verde_pastry'),
+    read: false,
+    daysAgo: 1,
+  },
+  {
+    userId: buyerId('verde'),
+    type: NOTIFICATION_TYPE.ORDER_COMPLETED,
+    title: 'Order completed',
+    body: '“Supper club coverage for the harvest series” has been completed and the payment released to Amara Osei from escrow.',
+    entityType: ENTITY_TYPE.ORDER,
+    entityId: order('h29'),
+    read: true,
+    daysAgo: 8,
+  },
+  {
+    userId: buyerId('verde'),
+    type: NOTIFICATION_TYPE.DISPUTE_OPENED,
+    title: 'Your dispute has been received',
+    body: 'A reviewer has been assigned to the winter chef’s table tasting menu case. You will hear from them in the case thread.',
+    entityType: ENTITY_TYPE.DISPUTE,
+    entityId: disputeOn('awarded_verde_tasting'),
+    read: true,
+    daysAgo: 12,
+  },
+  {
+    userId: buyerId('verde'),
+    type: NOTIFICATION_TYPE.DISPUTE_MESSAGE,
+    title: 'BetterBlue replied to your dispute',
+    body: 'A reviewer has asked whether the two missing courses are back on the Friday menu, and whether a return visit works for you.',
+    entityType: ENTITY_TYPE.DISPUTE,
+    entityId: disputeOn('awarded_verde_tasting'),
+    read: false,
+    daysAgo: 4,
+  },
+  {
+    userId: buyerId('verde'),
+    type: NOTIFICATION_TYPE.DISPUTE_MESSAGE,
+    title: 'New message on the courtyard films dispute',
+    body: 'A reviewer has watched both cuts against the brief and asked the creator whether a reshoot at dusk is possible.',
+    entityType: ENTITY_TYPE.DISPUTE,
+    entityId: disputeOn('awarded_verde_courtyard'),
+    read: true,
+    daysAgo: 5,
+  },
+  {
+    userId: buyerId('verde'),
+    type: NOTIFICATION_TYPE.SYSTEM_ANNOUNCEMENT,
+    title: 'Content Policy updated',
+    body: 'The Content Policy has been restated with clearer examples of what may and may not be commissioned. Nothing you have briefed is affected.',
+    read: true,
+    daysAgo: 31,
+  },
+
+  /* Creator demo account: Ava Martinez — to 15 rows */
+  {
+    userId: creatorId('ava'),
+    type: NOTIFICATION_TYPE.DELIVERY_ACCEPTED,
+    title: 'Delivery accepted',
+    body: 'Verde Kitchen accepted the ingredient sourcing stills. The escrow has been released to you.',
+    entityType: ENTITY_TYPE.ORDER,
+    entityId: order('h27'),
+    read: true,
+    daysAgo: 16,
+  },
+  {
+    userId: creatorId('ava'),
+    type: NOTIFICATION_TYPE.ORDER_COMPLETED,
+    title: 'Order completed',
+    body: '“Barista process films for the seasonal drinks menu” is complete and $576 has been added to your balance, after commission.',
+    entityType: ENTITY_TYPE.ORDER,
+    entityId: order('h26'),
+    read: true,
+    daysAgo: 19,
+  },
+  {
+    userId: creatorId('ava'),
+    type: NOTIFICATION_TYPE.PAYOUT_REQUESTED,
+    title: 'Payout requested',
+    body: 'Your $600 payout request has been received and is being processed. It is reserved out of your available balance until it settles.',
+    entityType: ENTITY_TYPE.PAYOUT,
+    entityId: payoutOf('ava', 600),
+    read: true,
+    daysAgo: 5,
+  },
+  {
+    userId: creatorId('ava'),
+    type: NOTIFICATION_TYPE.DISPUTE_OPENED,
+    title: 'A dispute was opened on your order',
+    body: 'Verde Kitchen raised a quality dispute about the courtyard films. Respond in the case thread — a reviewer has been assigned.',
+    entityType: ENTITY_TYPE.DISPUTE,
+    entityId: disputeOn('awarded_verde_courtyard'),
+    read: true,
+    daysAgo: 8,
+  },
+  {
+    userId: creatorId('ava'),
+    type: NOTIFICATION_TYPE.DISPUTE_MESSAGE,
+    title: 'A reviewer is waiting on you',
+    body: 'BetterBlue has asked whether a reshoot at dusk with the heaters lit is possible, and by when. The case is waiting on your reply.',
+    entityType: ENTITY_TYPE.DISPUTE,
+    entityId: disputeOn('awarded_verde_courtyard'),
+    read: false,
+    daysAgo: 3,
+  },
+  {
+    userId: creatorId('ava'),
+    type: NOTIFICATION_TYPE.MODERATION_APPROVED,
+    title: 'Portfolio item approved',
+    body: 'Your bakery counter lifestyle set was approved and is now live on your public profile.',
+    entityType: ENTITY_TYPE.PORTFOLIO_ITEM,
+    entityId: itemNamed('Bakery counter lifestyle set for a cafe group'),
+    read: true,
+    daysAgo: 11,
+  },
+  {
+    userId: creatorId('ava'),
+    type: NOTIFICATION_TYPE.SYSTEM_ANNOUNCEMENT,
+    title: 'Payout minimum lowered to $50',
+    body: 'You can now withdraw from a smaller balance. The processing time is unchanged at three working days.',
+    read: false,
+    daysAgo: 15,
+  },
+  {
+    userId: creatorId('ava'),
+    type: NOTIFICATION_TYPE.PROPOSAL_DECLINED,
+    title: 'A brief you proposed on was closed',
+    body: 'Cocoa & Co closed “Seasonal gift box photography for a limited spring range” without awarding it, so your proposal has ended.',
+    entityType: ENTITY_TYPE.REQUEST,
+    entityId: requestId('closed_cocoa_easter'),
+    read: true,
+    daysAgo: 34,
+  },
+
+  /* Admin demo account: Maya Chen — to 12 rows */
+  {
+    userId: ADMIN_ID.MAYA,
+    type: NOTIFICATION_TYPE.DISPUTE_OPENED,
+    title: 'New dispute: scope mismatch',
+    body: 'Verde Kitchen opened a scope dispute on the winter chef’s table tasting menu — six of eight courses covered. Assigned to you.',
+    entityType: ENTITY_TYPE.DISPUTE,
+    entityId: disputeOn('awarded_verde_tasting'),
+    read: true,
+    daysAgo: 12,
+  },
+  {
+    userId: ADMIN_ID.MAYA,
+    type: NOTIFICATION_TYPE.DISPUTE_OPENED,
+    title: 'New dispute: quality issue',
+    body: 'Verde Kitchen opened a quality dispute on the courtyard dining films. Two of three delivered, heaters unlit in both.',
+    entityType: ENTITY_TYPE.DISPUTE,
+    entityId: disputeOn('awarded_verde_courtyard'),
+    read: true,
+    daysAgo: 8,
+  },
+  {
+    userId: ADMIN_ID.MAYA,
+    type: NOTIFICATION_TYPE.DISPUTE_MESSAGE,
+    title: 'New message on an escalated case',
+    body: 'The buyer has replied on the marina resort non-delivery case. Still nothing submitted, and the print slot cannot be held.',
+    entityType: ENTITY_TYPE.DISPUTE,
+    entityId: disputeOn('awarded_atlas_marina'),
+    read: false,
+    daysAgo: 5,
+  },
+  {
+    userId: ADMIN_ID.MAYA,
+    type: NOTIFICATION_TYPE.DISPUTE_RESOLVED,
+    title: 'Dispute closed in the creator’s favour',
+    body: 'The loft showroom case was closed after the master files were confirmed sharp at full resolution. Payment released.',
+    entityType: ENTITY_TYPE.DISPUTE,
+    entityId: disputeOn('completed_urbannest_loft'),
+    read: true,
+    daysAgo: 14,
+  },
+  {
+    userId: ADMIN_ID.MAYA,
+    type: NOTIFICATION_TYPE.MODERATION_REJECTED,
+    title: 'Your review decision was recorded',
+    body: 'The new-build show home series was rejected for missing category, content type, and usage details. The creator has been told what to add.',
+    entityType: ENTITY_TYPE.PORTFOLIO_ITEM,
+    entityId: itemNamed('New-build show home series'),
+    read: true,
+    daysAgo: 6,
+  },
+  {
+    userId: ADMIN_ID.MAYA,
+    type: NOTIFICATION_TYPE.MODERATION_REVISION,
+    title: 'Your review decision was recorded',
+    body: 'The lakeside venue tour film was sent back for changes. It returns to the queue when the creator re-submits.',
+    entityType: ENTITY_TYPE.PORTFOLIO_ITEM,
+    entityId: itemNamed('Lakeside venue tour film'),
+    read: true,
+    daysAgo: 12,
+  },
+  {
+    userId: ADMIN_ID.MAYA,
+    type: NOTIFICATION_TYPE.ACCOUNT_STATUS_CHANGED,
+    title: 'Creator account suspended',
+    body: 'Chloe Dubois was suspended pending a licensing review. Payouts are on hold and the balance is untouched.',
+    entityType: ENTITY_TYPE.USER,
+    entityId: creatorId('chloe'),
+    read: true,
+    daysAgo: 29,
+  },
+  {
+    userId: ADMIN_ID.MAYA,
+    type: NOTIFICATION_TYPE.SYSTEM_ANNOUNCEMENT,
+    title: 'Content Policy examples expanded',
+    body: 'The policy now carries worked examples for each prohibited category, so review notes can cite one rather than paraphrase.',
+    read: false,
+    daysAgo: 31,
+  },
+
+  /* Super admin demo account: Elena Marsh — to 12 rows */
+  {
+    userId: ADMIN_ID.SUPER,
+    type: NOTIFICATION_TYPE.DISPUTE_MESSAGE,
+    title: 'Escalated case still open',
+    body: 'The marina resort non-delivery case has had a reply but no files. Nineteen days open, five since the last decision point.',
+    entityType: ENTITY_TYPE.DISPUTE,
+    entityId: disputeOn('awarded_atlas_marina'),
+    read: false,
+    daysAgo: 5,
+  },
+  {
+    userId: ADMIN_ID.SUPER,
+    type: NOTIFICATION_TYPE.DISPUTE_RESOLVED,
+    title: 'Partial refund issued',
+    body: 'The villa and terrace case closed with a quarter of the order value returned to Atlas Travel Co and the rest released.',
+    entityType: ENTITY_TYPE.DISPUTE,
+    entityId: disputeOn('completed_atlas_villa'),
+    read: true,
+    daysAgo: 18,
+  },
+  {
+    userId: ADMIN_ID.SUPER,
+    type: NOTIFICATION_TYPE.MODERATION_APPROVED,
+    title: 'Content approved',
+    body: 'The studio campaign film for the sustainable denim drop cleared review and is live on the creator’s profile.',
+    entityType: ENTITY_TYPE.PORTFOLIO_ITEM,
+    entityId: itemNamed('Studio campaign film for a sustainable denim drop'),
+    read: true,
+    daysAgo: 8,
+  },
+  {
+    userId: ADMIN_ID.SUPER,
+    type: NOTIFICATION_TYPE.MODERATION_REJECTED,
+    title: 'Submission rejected',
+    body: 'The new-build show home series was rejected for incomplete metadata. Second rejection for this creator this month.',
+    entityType: ENTITY_TYPE.PORTFOLIO_ITEM,
+    entityId: itemNamed('New-build show home series'),
+    read: false,
+    daysAgo: 6,
+  },
+  {
+    userId: ADMIN_ID.SUPER,
+    type: NOTIFICATION_TYPE.PAYOUT_REQUESTED,
+    title: 'Payout awaiting review',
+    body: 'Isla Bergstrom has requested $900. It is the oldest unprocessed settlement in the queue.',
+    entityType: ENTITY_TYPE.PAYOUT,
+    entityId: payoutOf('isla', 900),
+    read: false,
+    daysAgo: 2,
+  },
+  {
+    userId: ADMIN_ID.SUPER,
+    type: NOTIFICATION_TYPE.PAYOUT_PROCESSED,
+    title: 'Payout moved to processing',
+    body: 'Liam Chen’s $1,500 payout was approved and is with the bank. It settles to paid once the transfer clears.',
+    entityType: ENTITY_TYPE.PAYOUT,
+    entityId: payoutOf('liam', 1500),
+    read: true,
+    daysAgo: 4,
+  },
+  {
+    userId: ADMIN_ID.SUPER,
+    type: NOTIFICATION_TYPE.PAYMENT_REFUNDED,
+    title: 'Full refund issued',
+    body: '$610 was returned to Bloom Botanics after no deliverables were submitted on the serum packaging order.',
+    entityType: ENTITY_TYPE.ORDER,
+    entityId: order('cancelled_bloom_serum'),
+    read: true,
+    daysAgo: 33,
+  },
+  {
+    userId: ADMIN_ID.SUPER,
+    type: NOTIFICATION_TYPE.ORDER_CANCELLED,
+    title: 'Order cancelled before payment',
+    body: 'The winter travel showcase recap was cancelled before it was funded, so nothing was charged and nothing is owed.',
+    entityType: ENTITY_TYPE.ORDER,
+    entityId: order('cancelled_atlas_winter'),
+    read: true,
+    daysAgo: 21,
+  },
+  {
+    userId: ADMIN_ID.SUPER,
+    type: NOTIFICATION_TYPE.SYSTEM_ANNOUNCEMENT,
+    title: 'Weekly marketplace summary',
+    body: 'Twelve orders funded, nine completed, two disputes opened, and one account suspended in the last seven days.',
+    read: false,
+    daysAgo: 2,
   },
 ]
 

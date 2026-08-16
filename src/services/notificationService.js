@@ -4,7 +4,11 @@
 // Nothing else writes a notification, so the preference check and the record
 // shape live in exactly one place.
 
-import { NOTIFICATION_META } from '@/constants/notificationTypes'
+import {
+  NOTIFICATION_META,
+  allowsInAppCategory,
+  isMandatoryNotification,
+} from '@/constants/notificationTypes'
 import { hasPermission } from '@/constants/permissions'
 import { ADMIN_ROLES } from '@/constants/roles'
 import { ACCOUNT_STATUS } from '@/constants/statuses'
@@ -29,14 +33,21 @@ const ADMIN_FANOUT_LIMIT = 50
  * Fails **open**: if the account cannot be read, the notification is still
  * emitted. A duplicate bell item is a much smaller problem than a member never
  * hearing that their order was delivered.
+ *
+ * Prompt 27: two types are exempt outright —
+ * {@link isMandatoryNotification} — and `allowsInAppCategory` treats their
+ * whole category as locked, so this never has to fetch the account for a
+ * suspension notice or a platform announcement.
  */
 async function acceptsInApp(userId, type) {
+  if (isMandatoryNotification(type)) return true
+
   const category = NOTIFICATION_META[type]?.category
   if (!category) return true
 
   try {
     const user = await userService.getById(userId)
-    return user?.notificationPrefs?.[category]?.inApp !== false
+    return allowsInAppCategory(user?.notificationPrefs, category)
   } catch {
     return true
   }
@@ -89,6 +100,16 @@ export const notificationService = Object.freeze({
   markRead: (id) => notifications.update(id, { read: true }),
 
   /**
+   * Puts one back in the unread pile — the "Mark as unread" half of the row
+   * menu (Prompt 27 §4.3), for something read on the way past and meant to be
+   * dealt with later.
+   *
+   * @param {string} id `ntf_…`
+   * @returns {Promise<object>} the updated notification
+   */
+  markUnread: (id) => notifications.update(id, { read: false }),
+
+  /**
    * Marks a member's whole feed as read.
    *
    * MOCK-BULK: there is no bulk endpoint, so this is one `PATCH` per unread
@@ -123,6 +144,13 @@ export const notificationService = Object.freeze({
   /**
    * **The emit helper every workflow calls.** Writes one notification, after
    * checking the member's per-category preference.
+   *
+   * Suppression happens **here, at emit time**, not at read time: a category
+   * somebody has switched off produces no record at all, so it cannot show up
+   * later if they switch it back on. That is the honest reading of "do not
+   * notify me about this" — and it is also what the Laravel implementation will
+   * do inside the same transaction as the action that triggered it. The two
+   * exceptions are listed on `MANDATORY_NOTIFICATION_TYPES`.
    *
    * @param {object} notification
    * @param {string} notification.userId recipient, `usr_…`

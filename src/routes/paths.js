@@ -150,6 +150,16 @@ export const paths = Object.freeze({
 
   creatorOrderDetail: (orderId) => fill(paths.CREATOR_ORDER_DETAIL_PATTERN, { orderId }),
   creatorDisputeDetail: (disputeId) => fill(paths.CREATOR_DISPUTE_DETAIL_PATTERN, { disputeId }),
+  /**
+   * Earnings, opened on a specific tab — `/creator/earnings?tab=payouts`.
+   *
+   * The key is the `tab` member of `earningsFilters.js`'s `EARNINGS_PARAMS`,
+   * spelled here rather than imported for the same reason `buyerRequestDraft`
+   * spells its own: linking to a screen should not pull that screen's module in.
+   * Rename it in both places. Values come from `EARNINGS_TAB`.
+   */
+  creatorEarningsTab: (tab) =>
+    `${paths.CREATOR_EARNINGS}?tab=${encodeURIComponent(String(tab))}`,
 
   adminUserDetail: (userId) => fill(paths.ADMIN_USER_DETAIL_PATTERN, { userId }),
   adminModerationDetail: (moderationId) =>

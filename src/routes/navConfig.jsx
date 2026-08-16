@@ -93,6 +93,12 @@ export const BADGE_KEY = Object.freeze({
    * navs is ever on screen.
    */
   DISPUTES_AWAITING_RESPONSE: 'disputes.awaitingResponse',
+  /**
+   * Unread notifications (Prompt 27). One key for every role — the count comes
+   * from `useNotifications`, which is already per-member, and the layout fills
+   * it once for whichever nav is on screen.
+   */
+  NOTIFICATIONS_UNREAD: 'notifications.unread',
 })
 
 /* -------------------------------------------------------------------------- */
@@ -100,9 +106,8 @@ export const BADGE_KEY = Object.freeze({
 /* -------------------------------------------------------------------------- */
 
 /**
- * Prompts append: affiliate (34), notifications (27). Requests, Orders,
- * Payments, and Disputes belong between Overview and Profile — the account
- * entries stay last.
+ * Prompts append: affiliate (34). Requests, Orders, Payments, and Disputes
+ * belong between Overview and Profile — the account entries stay last.
  */
 export const buyerNav = Object.freeze([
   Object.freeze({
@@ -154,6 +159,17 @@ export const buyerNav = Object.freeze([
     badgeKey: BADGE_KEY.DISPUTES_AWAITING_RESPONSE,
   }),
   Object.freeze({
+    // Prompt 27. The last of the work entries and the first of the account
+    // ones — a feed of everything that happened is closer to "your account"
+    // than to any one workflow, and the bell in the top bar is the fast path
+    // anyway. The badge is the same unread count the bell carries.
+    key: NAV_KEY.NOTIFICATIONS,
+    label: 'Notifications',
+    icon: 'solar:bell-linear',
+    path: paths.BUYER_NOTIFICATIONS,
+    badgeKey: BADGE_KEY.NOTIFICATIONS_UNREAD,
+  }),
+  Object.freeze({
     key: NAV_KEY.PROFILE,
     label: 'Profile',
     icon: 'solar:buildings-3-linear',
@@ -173,9 +189,9 @@ export const buyerNav = Object.freeze([
 /* -------------------------------------------------------------------------- */
 
 /**
- * Prompts append: notifications (27), which belongs **between** Overview and
- * Profile — the account entries stay last, the same order the buyer's nav
- * keeps.
+ * Every entry this role needs is registered. Anything a later prompt adds
+ * belongs **between** Overview and Profile — the account entries stay last, the
+ * same order the buyer's nav keeps.
  */
 export const creatorNav = Object.freeze([
   Object.freeze({
@@ -246,6 +262,14 @@ export const creatorNav = Object.freeze([
     icon: 'solar:shield-warning-linear',
     path: paths.CREATOR_DISPUTES,
     badgeKey: BADGE_KEY.DISPUTES_AWAITING_RESPONSE,
+  }),
+  Object.freeze({
+    // Prompt 27. Same position as the buyer's, for the same reason.
+    key: NAV_KEY.NOTIFICATIONS,
+    label: 'Notifications',
+    icon: 'solar:bell-linear',
+    path: paths.CREATOR_NOTIFICATIONS,
+    badgeKey: BADGE_KEY.NOTIFICATIONS_UNREAD,
   }),
   Object.freeze({
     // Prompt 21. "Profile" here means the public storefront, not the account —
@@ -331,7 +355,10 @@ export const MORE_NAV_KEYS = Object.freeze({
   // Requests, Orders, and Payments, and `splitBottomNav` pushes Profile into
   // the sheet alongside Settings by overflow rather than by name. Prompt 26's
   // Disputes overflows the same way — and should: a dispute is read once every
-  // few days at most, and its badge still shows inside the sheet.
+  // few days at most, and its badge still shows inside the sheet. Prompt 27's
+  // Notifications overflows too, and should: the bell sits in the top bar on
+  // every mobile screen, so a second tile for the same feed would spend a thumb
+  // slot on something already one tap away.
   [ROLES.BUYER]: Object.freeze([NAV_KEY.SETTINGS]),
   // Prompt 23 is the one Prompt 21's note anticipated: Browse and Proposals
   // take the creator to six destinations, so the two account entries move into
@@ -340,9 +367,10 @@ export const MORE_NAV_KEYS = Object.freeze({
   // does not — so `splitBottomNav` overflows Portfolio into the sheet by
   // position. Prompt 25's Earnings makes eight and overflows the same way: a
   // balance is checked, not worked on, and it is one tap into the More sheet.
-  // Prompt 26's Disputes overflows for the same reason. The bar reads
+  // Prompt 26's Disputes overflows for the same reason, and so does Prompt 27's
+  // Notifications — the top-bar bell already covers it on a phone. The bar reads
   // Overview · Browse · Proposals · Orders, with More holding Earnings,
-  // Disputes, Portfolio, Profile, and Settings.
+  // Disputes, Portfolio, Notifications, Profile, and Settings.
   [ROLES.CREATOR]: Object.freeze([NAV_KEY.PROFILE, NAV_KEY.SETTINGS]),
   [ROLES.ADMIN]: Object.freeze([]),
   [ROLES.SUPER_ADMIN]: Object.freeze([]),

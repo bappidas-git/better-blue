@@ -20,8 +20,8 @@ import {
   isNavItemActive,
   splitBottomNav,
 } from '@/routes/navConfig'
+import useNotifications from '@/hooks/useNotifications'
 import { disputeService } from '@/services/disputeService'
-import { notificationService } from '@/services/notificationService'
 import { orderService } from '@/services/orderService'
 import { portfolioService } from '@/services/portfolioService'
 import { proposalService } from '@/services/proposalService'
@@ -132,14 +132,12 @@ export default function DashboardLayout() {
   const profilePath = findNavItem(entries, NAV_KEY.PROFILE)?.path
   const settingsPath = findNavItem(entries, NAV_KEY.SETTINGS)?.path
 
-  // The bell badge, refreshed on every navigation (§5). A failure is swallowed:
-  // `data` stays null, the badge shows nothing, and the layout still renders
-  // (§13 — an unread count is never worth blocking a dashboard for).
-  const { data: unreadCount } = useApiQuery(
-    () => notificationService.unreadCount(user?.id),
-    [user?.id, pathname],
-    { enabled: Boolean(user?.id) }
-  )
+  // Prompt 27: the unread count now comes from the shared `useNotifications`
+  // cache rather than a query of its own, so the nav badge, the bell in the top
+  // bar, and the notifications page all read one number refreshed by one poll.
+  // Failures are swallowed inside the hook (§13 — an unread count is never worth
+  // blocking a dashboard for).
+  const { unreadCount } = useNotifications()
 
   // Nav badges, keyed by `item.badgeKey`. Each prompt adds its own query here
   // and its key to `BADGE_KEY`; like the bell, a failure is swallowed rather
@@ -197,9 +195,11 @@ export default function DashboardLayout() {
       [BADGE_KEY.CREATOR_PROPOSALS_SHORTLISTED]: proposalsShortlisted ?? 0,
       [BADGE_KEY.CREATOR_ORDERS_AWAITING_DELIVERY]: ordersAwaitingDelivery ?? 0,
       [BADGE_KEY.DISPUTES_AWAITING_RESPONSE]: disputesAwaiting ?? 0,
+      [BADGE_KEY.NOTIFICATIONS_UNREAD]: unreadCount,
     }),
     [
       disputesAwaiting,
+      unreadCount,
       ordersAwaitingDelivery,
       ordersAwaitingReview,
       portfolioAttention,
@@ -236,7 +236,6 @@ export default function DashboardLayout() {
           <TopBar
             user={user}
             isDesktop={isDesktop}
-            unreadCount={unreadCount ?? 0}
             notificationsPath={notificationsPath}
             profilePath={profilePath}
             settingsPath={settingsPath}

@@ -20,7 +20,10 @@ import { paths } from './paths'
 //   const BuyerAffiliatePage = lazy(() => import('@/features/affiliate/pages/BuyerAffiliatePage'))
 //   export const buyerRoutes = [{ path: paths.BUYER_AFFILIATE, element: <BuyerAffiliatePage /> }]
 //
-// Paths still reserved in ./paths.js: BUYER_AFFILIATE, BUYER_NOTIFICATIONS.
+// Prompt 27 mounted the notification centre — another shared feature page,
+// mounted identically on all three dashboards and role-aware inside.
+//
+// Paths still reserved in ./paths.js: BUYER_AFFILIATE.
 
 const BuyerOverviewPage = lazy(() => import('@/features/dashboard/pages/BuyerOverviewPage'))
 const BuyerProfilePage = lazy(() => import('@/features/buyerAccount/pages/BuyerProfilePage'))
@@ -36,6 +39,9 @@ const BuyerOrdersPage = lazy(() => import('@/features/orders/pages/BuyerOrdersPa
 const BuyerOrderDetailPage = lazy(() => import('@/features/orders/pages/BuyerOrderDetailPage'))
 const DisputesListPage = lazy(() => import('@/features/disputes/pages/DisputesListPage'))
 const DisputeDetailPage = lazy(() => import('@/features/disputes/pages/DisputeDetailPage'))
+const NotificationsPage = lazy(
+  () => import('@/features/notifications/pages/NotificationsPage')
+)
 const NotFoundPage = lazy(() => import('@/features/staticPages/pages/NotFoundPage'))
 
 export const buyerRoutes = [
@@ -51,6 +57,7 @@ export const buyerRoutes = [
   { path: paths.BUYER_PAYMENTS, element: <BuyerPaymentsPage /> },
   { path: paths.BUYER_DISPUTES, element: <DisputesListPage /> },
   { path: paths.BUYER_DISPUTE_DETAIL_PATTERN, element: <DisputeDetailPage /> },
+  { path: paths.BUYER_NOTIFICATIONS, element: <NotificationsPage /> },
   { path: paths.BUYER_PROFILE, element: <BuyerProfilePage /> },
   { path: paths.BUYER_SETTINGS, element: <BuyerSettingsPage /> },
   // Keeps every `/buyer/...` URL inside the guarded branch, built or not, so a

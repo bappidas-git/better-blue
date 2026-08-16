@@ -2,7 +2,6 @@ import { useState } from 'react'
 
 import { Icon } from '@iconify/react'
 import AppBar from '@mui/material/AppBar'
-import Badge from '@mui/material/Badge'
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
@@ -12,7 +11,6 @@ import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import Stack from '@mui/material/Stack'
 import Toolbar from '@mui/material/Toolbar'
-import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { Link as RouterLink } from 'react-router-dom'
 
@@ -20,6 +18,7 @@ import Logo from '@/components/brand/Logo'
 import UserAvatar from '@/components/data-display/UserAvatar'
 import { appConfig } from '@/config/appConfig'
 import { ROLE_META } from '@/constants/roles'
+import NotificationBell from '@/features/notifications/components/NotificationBell'
 import { paths } from '@/routes/paths'
 
 import { useDashboardPageTitle } from './DashboardPageContext'
@@ -29,43 +28,12 @@ import { useDashboardPageTitle } from './DashboardPageContext'
 // the top — the brand mark comes back, because the sidebar that normally
 // carries it is not rendered.
 //
-// Presentation only. The unread count is fetched once by `DashboardLayout` and
-// passed down (00 §16.9 — layout components hold no business logic).
+// Presentation only (00 §16.9). Prompt 27 replaced the inert placeholder bell
+// with the real one from `features/notifications`, which owns its own count and
+// panel — this file only tells it where "View all" goes.
 
 const ACCOUNT_MENU_ID = 'dashboard-account-menu'
 const accountMenuItemSx = { minHeight: 44 }
-
-/**
- * The bell. Prompt 27 replaces the click behaviour with the notifications
- * dropdown; until the notifications screen is registered in `navConfig`, the
- * button is inert and says so, but it still carries the live badge.
- */
-function NotificationBell({ unreadCount, notificationsPath }) {
-  const hasUnread = unreadCount > 0
-  const label = hasUnread
-    ? `Notifications — ${unreadCount} unread`
-    : 'Notifications — none unread'
-
-  return (
-    <Tooltip title={notificationsPath ? 'Notifications' : 'Notifications — coming soon'}>
-      <IconButton
-        aria-label={label}
-        sx={{ width: 44, height: 44 }}
-        {...(notificationsPath ? { component: RouterLink, to: notificationsPath } : {})}
-      >
-        <Badge
-          badgeContent={unreadCount}
-          max={99}
-          color="error"
-          overlap="circular"
-          sx={{ '& .MuiBadge-badge': { fontSize: '0.625rem', height: 16, minWidth: 16 } }}
-        >
-          <Icon icon="solar:bell-linear" width={22} aria-hidden="true" />
-        </Badge>
-      </IconButton>
-    </Tooltip>
-  )
-}
 
 function AccountMenu({ user, profilePath, settingsPath, onLogout }) {
   const [anchorEl, setAnchorEl] = useState(null)
@@ -169,8 +137,8 @@ function AccountMenu({ user, profilePath, settingsPath, onLogout }) {
  * @param {object} props
  * @param {object} props.user the signed-in member
  * @param {boolean} props.isDesktop `true` at or above `md` — hides the brand mark
- * @param {number} [props.unreadCount=0] live bell badge count
- * @param {string} [props.notificationsPath] set once the notifications screen exists
+ * @param {string} [props.notificationsPath] the role's notifications page, from
+ *   `navConfig` — the bell's "View all" footer
  * @param {string} [props.profilePath] set once the role's profile screen exists
  * @param {string} [props.settingsPath] set once the role's settings screen exists
  * @param {() => void} props.onLogout sign-out handler
@@ -178,7 +146,6 @@ function AccountMenu({ user, profilePath, settingsPath, onLogout }) {
 export default function TopBar({
   user,
   isDesktop,
-  unreadCount = 0,
   notificationsPath,
   profilePath,
   settingsPath,
@@ -207,7 +174,7 @@ export default function TopBar({
         </Typography>
 
         <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
-          <NotificationBell unreadCount={unreadCount} notificationsPath={notificationsPath} />
+          <NotificationBell notificationsPath={notificationsPath} />
           <AccountMenu
             user={user}
             profilePath={profilePath}
