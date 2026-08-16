@@ -2,8 +2,10 @@ import { Icon } from '@iconify/react'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
+import Link from '@mui/material/Link'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import { Link as RouterLink } from 'react-router-dom'
 
 import EmptyState from '@/components/feedback/EmptyState'
 import ErrorState from '@/components/feedback/ErrorState'
@@ -11,6 +13,7 @@ import ListSkeleton from '@/components/feedback/skeletons/ListSkeleton'
 import StatusChip from '@/components/data-display/StatusChip'
 import { AgeBadge, EntityRefChip } from '@/features/admin/shared'
 import { categoryLabel } from '@/features/disputes/utils/disputeDisplay'
+import { paths } from '@/routes/paths'
 import { formatDate, formatNumber } from '@/utils/formatters'
 
 // "What has been waiting longest" — three queues, three rows each.
@@ -211,7 +214,20 @@ export default function AttentionQueues({ queues, loading = false, onRetry }) {
               />
             ))
           : null}
-        {/* TODO(Prompt 30): a "View all" link to `paths.ADMIN_MODERATION`. */}
+        {/* Prompt 30 built the console, so this link is live. The other two
+            stay comments until their screens land. */}
+        <Box sx={{ mt: 'auto', pt: 1.5 }}>
+          <Link
+            component={RouterLink}
+            to={paths.ADMIN_MODERATION}
+            variant="body2"
+            underline="hover"
+            sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+          >
+            Open the review queue
+            <Icon icon="tabler:arrow-right" width={16} aria-hidden="true" />
+          </Link>
+        </Box>
       </QueueCard>
 
       <QueueCard

@@ -15,9 +15,11 @@ import ProfileSkeleton from '@/components/feedback/skeletons/ProfileSkeleton'
 import Section from '@/components/layout/Section'
 import StickyActionBar from '@/components/layout/StickyActionBar'
 import FadeInView from '@/components/motion/FadeInView'
+import { REPORT_SUBJECT } from '@/constants/reports'
 import { ACCOUNT_STATUS } from '@/constants/statuses'
 import useApiQuery from '@/hooks/useApiQuery'
 import useDocumentTitle from '@/hooks/useDocumentTitle'
+import ReportDialog from '@/features/reports/components/ReportDialog'
 import NotFoundPage from '@/features/staticPages/pages/NotFoundPage'
 import { paths } from '@/routes/paths'
 import {
@@ -96,6 +98,9 @@ export default function CreatorProfilePage() {
   const location = useLocation()
 
   const [visibleReviews, setVisibleReviews] = useState(REVIEWS_PAGE_SIZE)
+  // Prompt 30: reporting the *storefront* — a portfolio item is reported from
+  // the gallery, which knows which one is open.
+  const [isReportOpen, setReportOpen] = useState(false)
 
   const {
     data: profile,
@@ -267,7 +272,12 @@ export default function CreatorProfilePage() {
           </Alert>
         ) : null}
 
-        <ProfileHeader profile={profile} categoryNames={categoryNames} cta={cta} />
+        <ProfileHeader
+          profile={profile}
+          categoryNames={categoryNames}
+          cta={cta}
+          onReport={() => setReportOpen(true)}
+        />
 
         {/* Each `Section` owns its own bottom rhythm, but wrapping one in a
             reveal makes it an only child — so the rhythm is set here instead,
@@ -302,8 +312,19 @@ export default function CreatorProfilePage() {
           Sticky also means the bar parks after the content at the end of the
           scroll rather than covering it, so nothing is permanently hidden. */}
       <StickyActionBar mobileOnly>
-        <ProfileActions cta={cta} fullWidth />
+        <ProfileActions cta={cta} fullWidth onReport={() => setReportOpen(true)} />
       </StickyActionBar>
+
+      <ReportDialog
+        open={isReportOpen}
+        onClose={() => setReportOpen(false)}
+        subjectType={REPORT_SUBJECT.CREATOR_PROFILE}
+        // A report against a storefront is filed against the `cpr_…`, not the
+        // account behind it (contract §6.21) — the admin console resolves the
+        // owner when it triages the report.
+        subjectId={profile.id}
+        subjectLabel={profile.displayName}
+      />
     </>
   )
 }

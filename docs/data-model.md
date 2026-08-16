@@ -706,11 +706,13 @@ The in-app bell feed, generated from events that exist in the data.
 the exact query the bell menu runs. `entity_type` + `entity_id` is a
 polymorphic pair (Laravel `morphTo`).
 
-### `moderationReviews` — 23
+### `moderationReviews` — 26
 
 One record per piece of content in the review pipeline: everything not a
 private draft or owner-archived, the most recently published items (decided
-history), and two deliverables pulled out of auto-approval.
+history), and five deliverables pulled out of auto-approval — three of them
+undecided, so Prompt 30's Deliverables tab has a queue to work rather than a
+single row.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -742,8 +744,39 @@ produces; `false` opens it at `submitted`, and it is worked like any other case.
 Either way there is a record, so a deliverable is never content nobody can
 account for. Full sequence: `docs/api-contract.md` §7 operation 5.
 
-The seeded delivery cases are the two pulled out of auto-approval by hand, which
-is what the flag's `false` branch looks like in the queue.
+The seeded delivery cases are the five pulled out of auto-approval by hand,
+which is what the flag's `false` branch looks like in the queue.
+
+#### Moderation decisions (Prompt 30)
+
+`moderationService.decide` is the only writer of a decision, and it propagates
+that decision differently per subject type — the asymmetry is deliberate and
+worth stating here rather than only in the service:
+
+- **Portfolio items mirror the case.** `approve` walks the item
+  `under_review → approved → published` and stamps `publishedAt` (an item that
+  has been live before keeps its original date — a re-review should not
+  re-order a storefront nobody re-arranged). `reject` and `request_changes`
+  mirror the status and write the reviewer's note to `rejectionReason`, which is
+  what the creator reads in their portfolio manager. `restrict` walks
+  `published → restricted`, and `portfolioService.listPublished` does the rest:
+  the item leaves the public profile and discovery at once.
+- **Deliveries are record-only.** `deliveries.status` belongs to the *buyer's*
+  review (`submitted → revision_requested → accepted`) and a content review
+  never touches it. A buyer who has been sent work does not lose it because
+  Trust & Safety is still reading, and a decision here never requests a revision
+  on the buyer's behalf. The decision lives on the case.
+- **A restricted deliverable is flagged, not withdrawn.** `restrict` on a
+  delivery sets `restricted: true` on each entry in `deliveries.files[]` and
+  stamps `restrictedAt`. The buyer who commissioned the work keeps it and the
+  order flow is unaffected; the flag is what keeps the file out of any *reuse*
+  surface — showcases, marketing, and the path a creator can take to republish a
+  delivery as portfolio work. Kept deliberately simple in v1: nothing reads the
+  flag yet, and a later prompt can act on it without revisiting this decision.
+
+**MySQL** — `files` becomes a `delivery_files` table with a `restricted_at`
+column, so the flag is a nullable timestamp rather than a boolean, and "when"
+survives alongside "whether".
 
 **MySQL** `moderation_reviews` — index `(status, submitted_at)` for the queue
 and `(subject_type, subject_id)`; `history` becomes
@@ -763,7 +796,15 @@ Member reports, covering every `REPORT_STATUS`.
 | `details` | string | |
 | `status` | enum | `REPORT_STATUS` |
 | `handledById` | FK? → `users.id` | |
+| `handledAt` | datetime? | when the outcome was recorded (Prompt 30) |
+| `resolutionNote` | string? | what the admin concluded — stored, never sent to the reporter (Prompt 30) |
 | `createdAt` | datetime | |
+
+`REPORT_SUBJECT` and `REPORT_REASON` moved from `scripts/seed-utils.js` into
+`src/constants/reports.js` in Prompt 30 — the same promotion `VISIBILITY` and
+`MODERATION_SUBJECT` made in Prompt 22, and for the same reason: the app now
+needs them (the public report dialog offers the reasons, the admin queue prints
+them). The seed re-exports from the constants module, so the two cannot drift.
 
 **MySQL** `reports` — index `(status, created_at)` and
 `(subject_type, subject_id)`.

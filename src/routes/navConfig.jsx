@@ -377,22 +377,25 @@ export const adminNav = Object.freeze([
     key: 'trust_safety',
     group: 'Trust & Safety',
     items: Object.freeze([
-      // Prompt 30
-      // Object.freeze({
-      //   key: 'moderation',
-      //   label: 'Moderation',
-      //   icon: 'tabler:shield-check',
-      //   path: paths.ADMIN_MODERATION,
-      //   permission: PERMISSIONS.MODERATION_REVIEW,
-      // }),
-      // Prompt 30
-      // Object.freeze({
-      //   key: 'reports',
-      //   label: 'Reports',
-      //   icon: 'solar:flag-linear',
-      //   path: paths.ADMIN_REPORTS,
-      //   permission: PERMISSIONS.REPORTS_MANAGE,
-      // }),
+      Object.freeze({
+        // Prompt 30. The queue screen; an admin without `moderation.review`
+        // never sees it, and `AdminPageGuard` refuses the typed URL too.
+        key: 'moderation',
+        label: 'Moderation',
+        icon: 'tabler:shield-check',
+        path: paths.ADMIN_MODERATION,
+        permission: PERMISSIONS.MODERATION_REVIEW,
+      }),
+      Object.freeze({
+        // Prompt 30. The same screen opened on its reports tab, with its own
+        // permission: triaging reports and reviewing content are different
+        // jobs, and an admin can hold either without the other.
+        key: 'reports',
+        label: 'Reports',
+        icon: 'solar:flag-linear',
+        path: paths.ADMIN_REPORTS,
+        permission: PERMISSIONS.REPORTS_MANAGE,
+      }),
     ]),
   }),
 

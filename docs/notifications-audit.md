@@ -108,9 +108,12 @@ the reason.
 
 | Event | Emitter | Recipient(s) | Type | Status |
 |---|---|---|---|---|
-| Portfolio item / deliverable approved | — | submitting creator | `moderation_approved` | 🕓 **Prompt 30** (the moderation console — the decision itself does not exist yet). |
-| Submission rejected | — | submitting creator | `moderation_rejected` | 🕓 **Prompt 30.** |
-| Changes requested on a submission | — | submitting creator | `moderation_revision` | 🕓 **Prompt 30.** |
+| Portfolio item / deliverable approved | `moderationService.decide` | submitting creator | `moderation_approved` | ✅ **Prompt 30.** One function emits all four decisions; the type comes from `MODERATION_DECISION_META`, and the body carries the reason label and the reviewer's note. |
+| Submission rejected | `moderationService.decide` | submitting creator | `moderation_rejected` | ✅ **Prompt 30.** |
+| Changes requested on a submission | `moderationService.decide` | submitting creator | `moderation_revision` | ✅ **Prompt 30.** |
+| Published content restricted | `moderationService.decide` | submitting creator | `moderation_rejected` | ✅ **Prompt 30**, with the caveat in §3.4 below: there is no `moderation_restricted` type, so the restriction reuses the rejection type and carries its own title. |
+| Report filed against a member's content | `reportService.fileReport` | — | — | ➖ Deliberately silent. A report is a queue item for Trust & Safety, not an accusation the subject answers before anyone has looked. The creator hears from us only if a decision goes against them, and then it is one of the rows above. |
+| Report dismissed or actioned | `reportService.resolveReport` | — | — | ➖ The reporter is not written back to. Confirming what happened to somebody else's content would tell a reporter more about another member than they are entitled to know; the confirmation they get is at submit time ("our Trust & Safety team will review this"). |
 | Item enters the review queue | `deliveryService.openModerationCase`, `portfolioService.submitForReview` | — | — | ➖ The creator already knows: they pressed submit, and the item shows `under_review`. |
 
 ### Account and platform — `system`
@@ -175,6 +178,24 @@ the indexes had drifted. Ava's "$1,200 sent to your bank" pointed at her $500
 payouts entirely. Harmless while notifications were not clickable; wrong the
 moment Prompt 27 made them so. Both now resolve through a `payoutOf(creator,
 amount)` helper that cannot drift.
+
+### 3.4 Deferred with a reason — a restriction borrows the rejection type
+
+Prompt 30 gave the moderation console four decisions, and
+`constants/notificationTypes.js` has three moderation types. `restrict` — the
+one taken on content that is already **live** — therefore emits
+`moderation_rejected`, whose tone (`error`), icon, and `moderation` category are
+all right for it, with a title of its own ("Content restricted") and a body that
+explains what happened.
+
+A fourth type was **not** added: the type list belongs to Prompt 03 (00 §9), and
+every surface that groups notifications — the preference rows, the category
+chips, `notificationRoutes.js` — reads that list. The cost of the borrow is one
+row in the bell feed labelled by a type that does not quite name the event; the
+member reads the title, not the type. **If a future prompt adds
+`moderation_restricted`**, it needs an entry in `NOTIFICATION_META`, a
+destination in `TYPE_TARGET` (the same `CONTENT` target the other three use),
+and one line in `MODERATION_DECISION_META` — nothing else changes.
 
 ---
 

@@ -225,6 +225,10 @@ recentlyPublished.forEach((item, index) => {
 
 // Deliveries normally auto-approve (platformSettings.moderation
 // .autoApproveDeliveries), so only flagged ones reach the queue.
+//
+// Prompt 30 widened this from two to five so the console's Deliverables tab has
+// a queue to work rather than a single row: three undecided cases across both
+// open statuses, plus the decided pair that gives the tab some history.
 const flaggedDeliveries = [
   {
     requestKey: 'awarded_craftware_demo',
@@ -233,6 +237,18 @@ const flaggedDeliveries = [
   {
     requestKey: 'completed_bloom_campaign',
     outcome: CONTENT_STATUS.APPROVED,
+  },
+  {
+    requestKey: 'awarded_bloom_texture',
+    outcome: CONTENT_STATUS.SUBMITTED,
+  },
+  {
+    requestKey: 'awarded_atlas_hotel',
+    outcome: CONTENT_STATUS.SUBMITTED,
+  },
+  {
+    requestKey: 'awarded_verde_supper',
+    outcome: CONTENT_STATUS.UNDER_REVIEW,
   },
 ]
 

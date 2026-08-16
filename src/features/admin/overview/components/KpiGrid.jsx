@@ -208,7 +208,8 @@ export default function KpiGrid({ stats, loading = false, onRetry }) {
       format: statCount,
       icon: withIcon('tabler:shield-check'),
       iconTone: stats?.moderationQueueSize > 0 ? 'warning' : 'success',
-      // TODO(Prompt 30): `to: paths.ADMIN_MODERATION`.
+      // Prompt 30 built the console, so the tile leads to it.
+      to: paths.ADMIN_MODERATION,
     }),
   ]
 
