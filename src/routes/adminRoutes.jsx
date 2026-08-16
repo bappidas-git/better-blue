@@ -82,6 +82,12 @@ const AdminDisputesPage = lazy(() => import('@/features/admin/disputes/pages/Adm
 const AdminDisputeDetailPage = lazy(
   () => import('@/features/admin/disputes/pages/AdminDisputeDetailPage')
 )
+// Prompt 34 — the referral program console. Gated on `affiliates.manage`, and
+// wrapped in `FeatureGate` inside: with the program switched off there is
+// nothing to work, and the screen says so rather than showing empty queues.
+const AdminAffiliatesPage = lazy(
+  () => import('@/features/admin/affiliates/pages/AdminAffiliatesPage')
+)
 const NotificationsPage = lazy(
   () => import('@/features/notifications/pages/NotificationsPage')
 )
@@ -104,6 +110,7 @@ export const adminRoutes = [
   { path: paths.ADMIN_PAYMENTS, element: <AdminPaymentsPage /> },
   { path: paths.ADMIN_SETTLEMENTS, element: <AdminSettlementsPage /> },
   { path: paths.ADMIN_COMMISSIONS, element: <AdminCommissionsPage /> },
+  { path: paths.ADMIN_AFFILIATES, element: <AdminAffiliatesPage /> },
   { path: paths.ADMIN_NOTIFICATIONS, element: <NotificationsPage /> },
   // Keeps the whole `/admin` subtree guarded — see buyerRoutes.jsx.
   { path: paths.ADMIN_CATCH_ALL, element: <NotFoundPage /> },

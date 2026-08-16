@@ -23,7 +23,10 @@ import { paths } from './paths'
 // Prompt 27 mounted the notification centre — another shared feature page,
 // mounted identically on all three dashboards and role-aware inside.
 //
-// Paths still reserved in ./paths.js: BUYER_AFFILIATE.
+// Prompt 34 mounted the last reserved path, BUYER_AFFILIATE. The page gates
+// itself on `features.affiliateProgram` with `FeatureGate` rather than being
+// conditionally routed: a member who bookmarked it while the program was on
+// should read why it is gone, not land on the dashboard 404.
 
 const BuyerOverviewPage = lazy(() => import('@/features/dashboard/pages/BuyerOverviewPage'))
 const BuyerProfilePage = lazy(() => import('@/features/buyerAccount/pages/BuyerProfilePage'))
@@ -42,6 +45,8 @@ const DisputeDetailPage = lazy(() => import('@/features/disputes/pages/DisputeDe
 const NotificationsPage = lazy(
   () => import('@/features/notifications/pages/NotificationsPage')
 )
+// Prompt 34 — the referral program. Feature-flagged inside the page.
+const BuyerAffiliatePage = lazy(() => import('@/features/affiliate/pages/BuyerAffiliatePage'))
 const NotFoundPage = lazy(() => import('@/features/staticPages/pages/NotFoundPage'))
 
 export const buyerRoutes = [
@@ -57,6 +62,7 @@ export const buyerRoutes = [
   { path: paths.BUYER_PAYMENTS, element: <BuyerPaymentsPage /> },
   { path: paths.BUYER_DISPUTES, element: <DisputesListPage /> },
   { path: paths.BUYER_DISPUTE_DETAIL_PATTERN, element: <DisputeDetailPage /> },
+  { path: paths.BUYER_AFFILIATE, element: <BuyerAffiliatePage /> },
   { path: paths.BUYER_NOTIFICATIONS, element: <NotificationsPage /> },
   { path: paths.BUYER_PROFILE, element: <BuyerProfilePage /> },
   { path: paths.BUYER_SETTINGS, element: <BuyerSettingsPage /> },

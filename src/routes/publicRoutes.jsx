@@ -37,6 +37,14 @@ const RequestBoardDetailPage = lazy(
   () => import('@/features/requests/pages/RequestBoardDetailPage')
 )
 
+// Referral capture (Prompt 34) — `/r/:code` stores the code and redirects. It
+// renders nothing a visitor reads, so it is public and lives here rather than
+// behind any guard: the whole point is that it works for somebody who has never
+// signed in.
+const ReferralRedirectPage = lazy(
+  () => import('@/features/affiliate/pages/ReferralRedirectPage')
+)
+
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
 const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage'))
 const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage'))
@@ -53,8 +61,8 @@ const DevDesignPage = import.meta.env.DEV
  * Rendered inside PublicLayout (top nav + footer). The home route is the index
  * route of `paths.HOME`; everything else registers an absolute path.
  *
- * Waiting to be appended here:
- * - Prompt 32 — REFERRAL_PATTERN
+ * Every reserved path now has a page behind it — Prompt 34 mounted the last one,
+ * `REFERRAL_PATTERN`.
  */
 export const publicRoutes = [
   { index: true, element: <HomePage /> },
@@ -74,6 +82,9 @@ export const publicRoutes = [
   { path: paths.CREATOR_PROFILE_PATTERN, element: <CreatorProfilePage /> },
   { path: paths.REQUESTS, element: <RequestBoardPage /> },
   { path: paths.REQUEST_DETAIL_PATTERN, element: <RequestBoardDetailPage /> },
+
+  /* Referral capture (Prompt 34) — stores the code, then redirects. */
+  { path: paths.REFERRAL_PATTERN, element: <ReferralRedirectPage /> },
 ]
 
 /**

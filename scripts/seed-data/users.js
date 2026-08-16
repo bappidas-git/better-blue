@@ -212,6 +212,30 @@ const BUYER_SOURCE = [
     lastLoginDaysAgo: 0.1,
   },
   {
+    // The **convertible referral** demo account (Prompt 34 §9): a business that
+    // arrived through Ava's referral link twelve days ago — inside the 30-day
+    // attribution window — and has exactly one order, sitting `delivered` and
+    // waiting on their review.
+    //
+    // It exists so the affiliate pipeline can be run end to end on a freshly
+    // seeded database: sign in here, accept the delivery, and the release fires
+    // `processConversion`, which turns `ref_005` into a conversion and accrues
+    // commission for `aff_001`. Every other seeded buyer already has completed
+    // orders, so none of them can demonstrate the **first**-completed-order
+    // guard that the whole conversion rule turns on.
+    //
+    // Nothing downstream may give this account a second completed order — that
+    // would quietly disarm the fixture.
+    key: 'fernwood',
+    id: 'usr_buyer_fernwood',
+    name: 'Priya Raman',
+    email: 'priya.raman@fernwoodbakery.test',
+    phone: '+1 503 555 0192',
+    createdDaysAgo: 12,
+    lastLoginDaysAgo: 0.4,
+    referredByCode: AFFILIATE_CODE.AVA,
+  },
+  {
     // **Blacklisted buyer** (Prompt 29 §9): the account-closure state the admin
     // users console has to be able to show and the login screen has to be able
     // to refuse. Deliberately given no orders, requests, or payments downstream

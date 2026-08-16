@@ -27,6 +27,13 @@ import { ROLES } from '@/constants/roles'
 import { ACCOUNT_STATUS, STATUS_META } from '@/constants/statuses'
 import { getItem, removeItem, setItem } from '@/utils/storage'
 
+import {
+  affiliateService,
+  clearCapturedReferral,
+  getProgramSettings,
+  readCapturedReferral,
+  REFERRAL_STORAGE_KEY,
+} from './affiliateService'
 import { apiClient, AUTH_STORAGE_KEY } from './api/apiClient'
 import { API_ERROR_CODE, createApiError } from './api/apiError'
 import { buildListParams, parseListResponse } from './api/listAdapter'
@@ -36,10 +43,15 @@ import { userService } from './userService'
 
 /**
  * Storage key holding the affiliate code captured by the `/r/:code` landing
- * route — `bb.referralCode`. Prompt 32 writes it; registration reads it once
- * and records it on the account as `referredByCode` (contract §2.1).
+ * route — `bb.referralCode`. The `/r/:code` page writes it; registration reads
+ * it once and records it on the account as `referredByCode` (contract §2.1).
+ *
+ * Prompt 34 moved the definition into `affiliateService`, which now owns the
+ * whole of attribution — capture, the expiry window, and clearing. Re-exported
+ * here unchanged so the name this module has published since Prompt 09 keeps
+ * resolving (it is part of the `services/index.js` barrel).
  */
-export const REFERRAL_STORAGE_KEY = 'referralCode'
+export { REFERRAL_STORAGE_KEY }
 
 /** Roles a visitor may create for themselves (contract §2.1). */
 export const SELF_REGISTERABLE_ROLES = Object.freeze([ROLES.BUYER, ROLES.CREATOR])
@@ -321,9 +333,13 @@ export const authService = Object.freeze({
       )
     }
 
-    // The affiliate code captured by the `/r/:code` landing route (Prompt 32).
-    // Recording it on the account is the whole of attribution for now.
-    const referredByCode = getItem(REFERRAL_STORAGE_KEY) || undefined
+    // The affiliate code captured by the `/r/:code` landing route. Prompt 34
+    // gave the capture an expiry: a code stored outside the attribution window
+    // is dropped here rather than credited, and `readCapturedReferral` clears
+    // it on the way past (contract §6.24).
+    const { attributionDays } = await getProgramSettings()
+    const captured = readCapturedReferral(attributionDays)
+    const referredByCode = captured && !captured.expired ? captured.code : undefined
 
     const created = await userService.create({
       email: normalizedEmail,
@@ -342,10 +358,25 @@ export const authService = Object.freeze({
 
     await createProfileFor(created, { companyName, displayName })
 
-    // TODO(Prompt 34): when `referredByCode` matches an active affiliate, the
-    // backend also writes a `pending` affiliateReferrals row (contract §2.1,
-    // §7 `processConversion`). The code is recorded on the account today so no
-    // attribution is lost before that lands.
+    // Prompt 34, replacing this line's TODO: a captured code that matches an
+    // **active** affiliate also writes the `pending` affiliateReferrals row the
+    // conversion hook later looks for, and counts the signup (contract §2.1,
+    // §7 operation 10). Every rule behind that — the flag, the profile status,
+    // buyers only, no self-referral, one referral per account — lives in
+    // `affiliateService.recordReferral`, which resolves to `null` rather than
+    // throwing: an account has already been created by this point, and a
+    // referral must never be able to fail the registration that earned it.
+    if (referredByCode) {
+      await affiliateService.recordReferral({
+        code: referredByCode,
+        referredUserId: created.id,
+        role: created.role,
+        capturedAt: captured?.at ?? undefined,
+      })
+      // Attribution is spent: the code is on the account now, and leaving it in
+      // storage would re-attribute the next person to sign up in this browser.
+      clearCapturedReferral()
+    }
 
     const user = withoutPassword(created)
     return storeSession({ token: mintToken(user), user })

@@ -132,8 +132,10 @@ the reason.
 
 | Event | Emitter | Recipient(s) | Type | Status |
 |---|---|---|---|---|
-| A referral converts on a completed order | — | referring member | `affiliate_conversion` | 🕓 **Prompt 34.** The hook point is already marked `AFFILIATE-HOOK` in `paymentService.settleEscrow`. |
-| Affiliate commission paid out | — | referring member | `affiliate_payout` | 🕓 **Prompt 34.** |
+| A referral converts on a completed order | — | referring member | `affiliate_conversion` | ✅ **Prompt 34.** Emitted by `affiliateService.processConversion`, from the `AFFILIATE-HOOK` line in `paymentService.settleEscrow`. |
+| Commission approved, voided, or an account suspended | — | referring member | `affiliate_conversion` | ✅ **Prompt 34.** The same type carries every change to accrued commission and to the account behind it, so one preference switch governs the whole program rather than three. |
+| Affiliate payout requested | — | referring member | `affiliate_payout` | ✅ **Prompt 34.** `affiliateService.requestAffiliatePayout`. |
+| Affiliate payout sent | — | referring member | `payout_processed` | ✅ **Prompt 34.** `markPayoutPaid` sends one "Payout sent" message per confirmed settlement whatever its source — a second, affiliate-specific bell item for one transfer would read as two payments. |
 
 ### Not notified, on purpose
 

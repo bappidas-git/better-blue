@@ -116,6 +116,19 @@ const BUYER_SOURCE = [
     createdDaysAgo: 2,
   },
   {
+    // The convertible-referral account (Prompt 34) — see `users.js`. A complete
+    // profile: this business came through a referral link and traded normally,
+    // which is the whole point of the fixture.
+    key: 'fernwood',
+    id: 'bpr_fernwood',
+    companyName: 'Fernwood Bakery',
+    industry: 'Food & Beverage',
+    website: 'https://fernwoodbakery.test',
+    bio: 'A neighbourhood bakery and coffee bar with two sites in Portland. We commission seasonal product photography for our menu boards, delivery listings, and social feed.',
+    location: 'Portland, OR, United States',
+    createdDaysAgo: 12,
+  },
+  {
     // The blacklisted account (Prompt 29). It has a full profile because it
     // traded normally before the closure — an account that was never used would
     // not be an interesting one to show a closure on.

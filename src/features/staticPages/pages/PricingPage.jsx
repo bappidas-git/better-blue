@@ -12,6 +12,8 @@ import { Link as RouterLink } from 'react-router-dom'
 
 import StatCard from '@/components/data-display/StatCard'
 import StaggerList from '@/components/motion/StaggerList'
+import { ROLES } from '@/constants/roles'
+import { useAuth } from '@/context/AuthContext'
 import useApiQuery from '@/hooks/useApiQuery'
 import { paths } from '@/routes/paths'
 import { SETTINGS_FALLBACK, settingsService } from '@/services'
@@ -74,6 +76,7 @@ function ExampleRow({ label, value, hint, emphasis = false }) {
 }
 
 export default function PricingPage() {
+  const { user } = useAuth()
   const { data, isLoading, error } = useApiQuery(() => settingsService.getSettings(), [])
 
   // One resolved shape for the whole page: live settings when we have them, the
@@ -91,6 +94,9 @@ export default function PricingPage() {
   const affiliate = settings?.affiliate ?? SETTINGS_FALLBACK.affiliate
   const affiliateEnabled =
     Boolean(affiliate?.enabled) && settings?.features?.affiliateProgram !== false
+  // Prompt 34: the teaser's CTA is auth-aware — a signed-in buyer has a
+  // referral dashboard already and should be taken to it, not to sign-up.
+  const isBuyer = user?.role === ROLES.BUYER
 
   const commissionAmount = EXAMPLE_ORDER_AMOUNT * commissionRate
   const creatorAmount = EXAMPLE_ORDER_AMOUNT - commissionAmount
@@ -273,20 +279,26 @@ export default function PricingPage() {
                   {formatCurrency(affiliate.payoutMinAmount, currency, { hideDecimals: true })}.
                 </Typography>
 
+                {/* Prompt 34 resolved this teaser to the real screen. A buyer
+                    already has one, so the link opens it; anybody else needs an
+                    account first, and `GuestRoute` sends a signed-in member who
+                    lands on sign-up onward to their own dashboard rather than
+                    showing them a form they cannot use. */}
                 <Box>
                   <Button
                     component={RouterLink}
-                    to={paths.REGISTER}
+                    to={isBuyer ? paths.BUYER_AFFILIATE : paths.REGISTER}
                     variant="outlined"
-                    startIcon={<Icon icon="tabler:share" width={20} />}
+                    startIcon={<Icon icon="tabler:share" width={20} aria-hidden="true" />}
                   >
-                    Join and get your link
+                    {isBuyer ? 'Open your referral dashboard' : 'Join and get your link'}
                   </Button>
                 </Box>
 
                 <Typography variant="caption" color="text.secondary">
-                  Your referral link and its earnings live in your dashboard once you have an
-                  account.
+                  {isBuyer
+                    ? 'Your referral link, its stats, and your commission all live on that screen.'
+                    : 'Your referral link and its earnings live in your dashboard once you have an account.'}
                 </Typography>
               </Stack>
             </CardContent>

@@ -85,6 +85,28 @@ const SCENARIO_ORDERS = [
     ],
   },
   {
+    // Prompt 34 §9: the **convertible referral** order. `delivered` and waiting
+    // on the buyer, and the only order this buyer has — so accepting it is the
+    // referred account's first completed order, which is exactly what
+    // `affiliateService.processConversion` converts on. Sign in as
+    // priya.raman@fernwoodbakery.test, accept, and the whole affiliate pipeline
+    // runs for real.
+    requestKey: 'awarded_fernwood_pastry',
+    buyer: 'fernwood',
+    creator: 'yuki',
+    status: ORDER_STATUS.DELIVERED,
+    fundedAfterHours: 3,
+    deliveries: [
+      {
+        submittedDaysAgo: 1,
+        status: DELIVERY_STATUS.SUBMITTED,
+        fileCount: 3,
+        message:
+          'All twelve items delivered, overhead and 45 degrees on each, plus three wider counter frames I shot while the light held. Square crops are safe for the delivery listings and there is headroom on the menu-board versions.',
+      },
+    ],
+  },
+  {
     requestKey: 'awarded_atlas_hotel',
     buyer: 'atlas',
     creator: 'isla',

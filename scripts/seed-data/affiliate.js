@@ -50,6 +50,23 @@ const AFFILIATE_SOURCE = [
         status: REFERRAL_STATUS.PENDING,
         earnings: [],
       },
+      {
+        // Prompt 34 §9 — the **convertible** referral. A referred *buyer*,
+        // signed up twelve days ago (inside the 30-day attribution window), with
+        // exactly one order: `delivered`, waiting on their review. Accepting it
+        // releases the payment, which fires the AFFILIATE-HOOK, which converts
+        // this row and accrues commission — the whole pipeline, live, on a
+        // freshly seeded database.
+        //
+        // It is a buyer rather than a creator because commission comes out of
+        // the platform commission on a *purchase*: `ref_002` above can never
+        // convert, and a fixture that cannot convert cannot demonstrate the
+        // thing this program is for.
+        id: 'ref_005',
+        referredUserId: buyerId('fernwood'),
+        status: REFERRAL_STATUS.PENDING,
+        earnings: [],
+      },
     ],
   },
   {

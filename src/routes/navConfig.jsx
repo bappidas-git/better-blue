@@ -24,7 +24,7 @@
 //
 // Entry shapes
 // ------------
-//   item   { key, label, icon, path, exact?, roles?, permission?, badgeKey? }
+//   item   { key, label, icon, path, exact?, roles?, permission?, featureFlag?, badgeKey? }
 //   group  { key, group: 'Marketplace', items: [ …items ] }   // admin only
 //
 //   key         stable identifier, unique within the role
@@ -38,6 +38,9 @@
 //               Omit on buyer/creator entries; the role already picked the array.
 //   permission  a `PERMISSIONS` key (or an array — any one is enough). Filtered
 //               through `hasPermission`, so a limited admin sees a shorter nav.
+//   featureFlag a `platformSettings.features` key (Prompt 34). The entry is
+//               dropped when the flag is off, so a switched-off feature has no
+//               door as well as no room behind it.
 //   badgeKey    key into the `badges` map the layout passes down, e.g.
 //               `'proposals.pending'`. Later prompts supply the counts; an
 //               unknown key simply renders no badge.
@@ -47,6 +50,7 @@
 
 import { hasAnyPermission, hasPermission, PERMISSIONS } from '@/constants/permissions'
 import { ROLES } from '@/constants/roles'
+import { SETTINGS_FALLBACK } from '@/services/settingsService'
 
 import { paths } from './paths'
 
@@ -157,6 +161,18 @@ export const buyerNav = Object.freeze([
     icon: 'solar:shield-warning-linear',
     path: paths.BUYER_DISPUTES,
     badgeKey: BADGE_KEY.DISPUTES_AWAITING_RESPONSE,
+  }),
+  Object.freeze({
+    // Prompt 34. After Disputes and before the account entries: referring
+    // somebody is the last thing on the list of what a buyer comes here to do,
+    // and the first thing that is about them rather than about an order. The
+    // only flagged entry in any nav — with `features.affiliateProgram` off it
+    // is filtered out entirely, and the page behind it says why.
+    key: 'affiliate',
+    label: 'Affiliate',
+    icon: 'solar:users-group-two-rounded-linear',
+    path: paths.BUYER_AFFILIATE,
+    featureFlag: 'affiliateProgram',
   }),
   Object.freeze({
     // Prompt 27. The last of the work entries and the first of the account
@@ -445,14 +461,17 @@ export const adminNav = Object.freeze([
     key: 'affiliates',
     group: 'Affiliates',
     items: Object.freeze([
-      // Prompt 34
-      // Object.freeze({
-      //   key: 'affiliates',
-      //   label: 'Affiliates',
-      //   icon: 'solar:users-group-two-rounded-linear',
-      //   path: paths.ADMIN_AFFILIATES,
-      //   permission: PERMISSIONS.AFFILIATES_MANAGE,
-      // }),
+      Object.freeze({
+        // Prompt 34. Its own permission and its own feature flag: the referral
+        // program is the one part of the console that can be switched off
+        // wholesale, and when it is there is nothing here to work.
+        key: 'affiliates',
+        label: 'Affiliates',
+        icon: 'solar:users-group-two-rounded-linear',
+        path: paths.ADMIN_AFFILIATES,
+        permission: PERMISSIONS.AFFILIATES_MANAGE,
+        featureFlag: 'affiliateProgram',
+      }),
     ]),
   }),
 
@@ -616,17 +635,41 @@ export function isNavGroup(entry) {
 }
 
 /**
- * May `user` see this item? Role restriction first, then permission.
+ * Is the feature behind an entry switched on?
+ *
+ * An unresolved `features` object falls back to the bundled defaults rather
+ * than to "off" — the same rule `settingsService.getFeature` follows, and for
+ * the same reason: the settings land a beat after first paint, and a nav that
+ * treated "not known yet" as "off" would rebuild itself on every boot.
+ *
+ * @param {object} item a nav item
+ * @param {object} [features] `platformSettings.features`
+ */
+function isNavFeatureEnabled(item, features) {
+  if (!item?.featureFlag) return true
+  const value = features?.[item.featureFlag]
+  return value === undefined
+    ? Boolean(SETTINGS_FALLBACK.features[item.featureFlag])
+    : Boolean(value)
+}
+
+/**
+ * May `user` see this item? Role restriction first, then permission, then the
+ * feature flag.
  *
  * @param {object} item a nav item
  * @param {object|null} user the signed-in member
+ * @param {object} [features] `platformSettings.features` — omit when nothing
+ *   in `entries` carries a `featureFlag`
  */
-export function isNavItemVisible(item, user) {
+export function isNavItemVisible(item, user, features) {
   if (!item?.path) return false
 
   if (Array.isArray(item.roles) && item.roles.length > 0 && !item.roles.includes(user?.role)) {
     return false
   }
+
+  if (!isNavFeatureEnabled(item, features)) return false
 
   if (item.permission) {
     return Array.isArray(item.permission)
@@ -642,18 +685,19 @@ export function isNavItemVisible(item, user) {
  *
  * @param {Array} entries items and/or groups
  * @param {object|null} user the signed-in member
+ * @param {object} [features] `platformSettings.features`
  * @returns {Array} the same shape, filtered
  */
-export function filterNavEntries(entries = [], user) {
+export function filterNavEntries(entries = [], user, features) {
   const kept = []
 
   for (const entry of entries) {
     if (isNavGroup(entry)) {
-      const items = entry.items.filter((item) => isNavItemVisible(item, user))
+      const items = entry.items.filter((item) => isNavItemVisible(item, user, features))
       if (items.length > 0) kept.push({ ...entry, items })
       continue
     }
-    if (isNavItemVisible(entry, user)) kept.push(entry)
+    if (isNavItemVisible(entry, user, features)) kept.push(entry)
   }
 
   return kept
@@ -664,9 +708,15 @@ export function flattenNavEntries(entries = []) {
   return entries.flatMap((entry) => (isNavGroup(entry) ? entry.items : [entry]))
 }
 
-/** The nav a member should see: resolved by role, then filtered. */
-export function getNavForUser(user) {
-  return filterNavEntries(NAV_BY_ROLE[user?.role] ?? [], user)
+/**
+ * The nav a member should see: resolved by role, then filtered.
+ *
+ * @param {object|null} user the signed-in member
+ * @param {object} [features] `platformSettings.features` — the layout passes
+ *   these so a flagged entry (Prompt 34's Affiliate) disappears with its feature
+ */
+export function getNavForUser(user, features) {
+  return filterNavEntries(NAV_BY_ROLE[user?.role] ?? [], user, features)
 }
 
 /** Keys deferred to the "More" sheet for a role (`[]` for unknown roles). */

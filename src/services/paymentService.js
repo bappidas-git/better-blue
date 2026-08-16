@@ -34,7 +34,9 @@ import {
 import {
   ORDER_STATUS,
   PAYMENT_STATUS,
+  PAYOUT_SOURCE,
   PAYOUT_STATUS,
+  payoutSourceOf,
   TRANSACTION_TYPE,
 } from '@/constants/statuses'
 import {
@@ -52,6 +54,12 @@ import {
 } from '@/utils/money'
 import { assertTransition } from '@/utils/stateMachine'
 
+// Prompt 34: the AFFILIATE-HOOK in `settleEscrow` and the settlement of an
+// affiliate-sourced payout in `markPayoutPaid`. `affiliateService` imports
+// `payoutService` but never this module, so the graph stays acyclic — and both
+// entry points are documented to resolve rather than throw, which is what lets
+// them sit inside a money path at all.
+import { affiliateService } from './affiliateService'
 import { API_ERROR_CODE, createApiError } from './api/apiError'
 import { createCrudService } from './api/crudFactory'
 import { SORT_ORDER } from './api/listAdapter'
@@ -427,10 +435,15 @@ async function settleEscrow({ order, payment, baseAmount, rate, settledAt }) {
     entityId: order.id,
   })
 
-  // AFFILIATE-HOOK (Prompt 34): processConversion(order) — a completed order is
-  // what converts a referral, and the referrer's share comes out of the
-  // commission written just above (contract §7 operation 10). It belongs here,
-  // after the money is settled, and must not be able to fail the settlement.
+  // AFFILIATE-HOOK (Prompt 34): a completed order is what converts a referral,
+  // and the referrer's share comes out of the commission written just above
+  // (contract §7 operation 10). One line, deliberately: the feature flag, every
+  // eligibility guard, and all of the failure handling live inside
+  // `processConversion`, which is documented to **never throw** — it resolves to
+  // `null` and logs a warning instead. Money has already moved by the time this
+  // runs, so a referral problem must not be able to fail the settlement, and
+  // there is nothing here that could grow a way to.
+  await affiliateService.processConversion(settledOrder, { commissionAmount })
 
   return {
     commission,
@@ -574,6 +587,21 @@ async function namesByIdFor(ids) {
   if (unique.length === 0) return new Map()
   const people = await userService.listByIds(unique).catch(() => [])
   return new Map(people.map((person) => [person.id, person]))
+}
+
+/**
+ * **Who a settlement pays.** Prompt 34 put a second kind of row in `payouts`:
+ * an affiliate commission settlement, which carries `userId` + `affiliateId`
+ * instead of `creatorId` (`payouts.source`, contract §6.15). Everything below
+ * that notifies, audits, or writes a ledger row asks this rather than reading
+ * `creatorId` directly, so the queue Prompt 32 built settles both kinds without
+ * either one having to know about the other.
+ *
+ * @param {object} payout
+ * @returns {string|undefined} the recipient's `usr_…`
+ */
+function payoutRecipientId(payout) {
+  return payout?.creatorId ?? payout?.userId ?? undefined
 }
 
 export const paymentService = Object.freeze({
@@ -1459,6 +1487,10 @@ export const paymentService = Object.freeze({
     }
 
     const payout = await payoutService.create({
+      // Prompt 34: `payouts` now carries both creator earnings and affiliate
+      // commission, so every row says which it is rather than being identified
+      // by which field happens to be filled in (contract §6.15).
+      source: PAYOUT_SOURCE.CREATOR,
       creatorId,
       amount: requested,
       currency: summary.currency,
@@ -1801,12 +1833,20 @@ export const paymentService = Object.freeze({
   },
 
   /**
-   * **The settlement queue**, with the creator behind each request
+   * **The settlement queue**, with the member behind each request
    * (Prompt 32 §4.3). Oldest first by default: a payout is somebody waiting for
    * their own money, and the person kept waiting longest is the one to serve.
    *
+   * Prompt 34 gave the queue a second kind of row — affiliate commission
+   * settlements (`payouts.source`) — so `creator` here is "the person being
+   * paid", resolved through {@link payoutRecipientId}. The finance console
+   * takes the whole queue and labels each row with a source chip; the affiliate
+   * console passes `source` to see only its own.
+   *
    * @param {object} [params]
    * @param {string|string[]} [params.status] a `PAYOUT_STATUS` value, or several
+   * @param {string} [params.source] a `PAYOUT_SOURCE` value — omit for both
+   * @param {string} [params.affiliateId] narrow to one affiliate's settlements
    * @param {number} [params.page=1]
    * @param {number} [params.limit=20]
    * @param {'asc'|'desc'} [params.order='asc'] on `requestedAt`
@@ -1814,23 +1854,34 @@ export const paymentService = Object.freeze({
    *
    * **Future endpoint:** `GET /admin/payouts` — one query with its join.
    */
-  async adminListSettlements({ status, page = 1, limit = 20, order = SORT_ORDER.ASC } = {}) {
+  async adminListSettlements({
+    status,
+    source,
+    affiliateId,
+    page = 1,
+    limit = 20,
+    order = SORT_ORDER.ASC,
+  } = {}) {
     const result = await payoutService.list({
       page,
       limit,
       sort: 'requestedAt',
       order,
-      filters: status ? { status } : {},
+      filters: {
+        ...(status ? { status } : null),
+        ...(source ? { source } : null),
+        ...(affiliateId ? { affiliateId } : null),
+      },
     })
     if (result.items.length === 0) return { ...result, items: [] }
 
-    const people = await namesByIdFor(result.items.map((payout) => payout.creatorId))
+    const people = await namesByIdFor(result.items.map(payoutRecipientId))
 
     return {
       ...result,
       items: result.items.map((payout) => ({
         ...payout,
-        creator: people.get(payout.creatorId) ?? null,
+        creator: people.get(payoutRecipientId(payout)) ?? null,
       })),
     }
   },
@@ -1938,7 +1989,7 @@ export const paymentService = Object.freeze({
     })
 
     await notifyQuietly({
-      userId: payout.creatorId,
+      userId: payoutRecipientId(payout),
       type: NOTIFICATION_TYPE.PAYOUT_PROCESSED,
       title: isApproval ? 'Payout approved' : 'Payout rejected',
       body: isApproval
@@ -1961,7 +2012,8 @@ export const paymentService = Object.freeze({
       entityType: 'payout',
       entityId: payout.id,
       meta: {
-        creatorId: payout.creatorId,
+        source: payoutSourceOf(payout),
+        creatorId: payoutRecipientId(payout),
         amount: payout.amount,
         fromStatus: payout.status,
         toStatus: next,
@@ -2012,16 +2064,24 @@ export const paymentService = Object.freeze({
     try {
       const transaction = await writeTransaction({
         type: TRANSACTION_TYPE.PAYOUT,
-        userId: payout.creatorId,
-        // Signed from the creator's perspective: the money leaves their
+        userId: payoutRecipientId(payout),
+        // Signed from the recipient's perspective: the money leaves their
         // BetterBlue balance for their bank (`docs/payments.md` §7).
         amount: -round2(payout.amount),
         payoutId: payout.id,
         context: { accountMasked: payout.method?.accountMasked },
       })
 
+      // AFFILIATE-HOOK (Prompt 34): an affiliate settlement also closes the
+      // approved commission behind it — the earnings become `paid` and each
+      // writes its `affiliate_commission` credit, so the member's ledger nets
+      // to zero against the row just written. Same contract as the conversion
+      // hook: `settleAffiliatePayout` resolves rather than throwing, and does
+      // nothing at all for a creator payout.
+      await affiliateService.settleAffiliatePayout(updated)
+
       await notifyQuietly({
-        userId: payout.creatorId,
+        userId: payoutRecipientId(payout),
         type: NOTIFICATION_TYPE.PAYOUT_PROCESSED,
         title: 'Payout sent',
         body:
@@ -2037,7 +2097,8 @@ export const paymentService = Object.freeze({
         entityType: 'payout',
         entityId: payout.id,
         meta: {
-          creatorId: payout.creatorId,
+          source: payoutSourceOf(payout),
+          creatorId: payoutRecipientId(payout),
           amount: payout.amount,
           toStatus: PAYOUT_STATUS.PAID,
           transactionId: transaction.id,
