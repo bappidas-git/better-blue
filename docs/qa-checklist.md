@@ -5,8 +5,8 @@ The audit-and-fix pass run across the finished application (Prompts 01–36) aga
 **what was found**, and **what was done**. Nothing is marked pass on inspection alone
 where a live check was possible.
 
-**Verdict: no unfixed criticals.** Two items are deferred with justification
-([§11](#11-deferrals-and-documented-exceptions)); neither reaches a user.
+**Verdict: no unfixed criticals.** Three items are deferred with justification
+([§11](#11-deferrals-and-documented-exceptions)); none of them reaches a user as a defect.
 
 ---
 
@@ -158,11 +158,28 @@ signed out into `AccountStatusScreen` rather than a bare redirect (00 §11). Rea
 confirmed in `services/api/apiClient.js`, `context/AuthContext.jsx`, `routes/guards.jsx`.
 
 **ErrorBoundary.** Two nets: the class boundary wrapping `<RouterProvider>` in `App.jsx`,
-and `RouteErrorElement` as the router `errorElement` on all four route groups, so one
-route failing does not tear down the shell. Both render the same screen; the stack is
-gated on `env.isDev` so internals never ship (00 §14). Verified by forcing a render error
-on three sampled routes — public, buyer, admin — each caught by the route-level element
-with the rest of the app still navigable.
+and `RouteErrorElement` as the router `errorElement` on all four route groups. Both render
+the same screen; the stack is gated on `env.isDev` so internals never ship (00 §14).
+
+Verified rather than assumed: a `throw` was injected into the render of three sampled page
+components — `AboutPage` (public), `BuyerRequestsPage` (buyer), `AdminUsersPage` (admin) —
+and each route loaded.
+
+| Route | Caught | Screen shown | Ways out |
+|---|---|---|---|
+| `/about` | ✅ | "Something went wrong" | Reload · back home |
+| `/buyer/requests` | ✅ | same | Reload · back home |
+| `/admin/users` | ✅ | same | Reload · back home |
+
+None reached a blank page or a React stack dump. The injections were reverted immediately
+and the working tree verified clean.
+
+**Observation, recorded rather than changed:** because `errorElement` is attached at the
+route-*group* level, a failing page replaces its whole layout — the dashboard shell goes
+with it — rather than only the page area. The result is still a recoverable screen with
+two ways out, so nothing is lost, but per-page isolation would need `errorElement` on each
+child route. That is a routing change rather than a hardening fix, so it is noted here for
+Prompt 38 instead of being made now (00 §17).
 
 ---
 
@@ -201,7 +218,7 @@ Every route loaded at **360 / 600 / 900 / 1280 / 1536** as the role that owns it
 | Content clears the bottom nav | live, 134 dashboard loads at 360/600 | **0 overlaps.** `main`'s bottom padding is ≥ the bar's height on every one. |
 | Tables become cards below md | live, all 420 | Every `DataTable` renders cards below md — **1** `<table>` survives, documented below. |
 | Dialogs become sheets below md | live, targeted | `ResponsiveDialog` is a full-width sheet at 360 and a centred modal at 1280. |
-| Touch targets ≥ 44px | live, 360 + 600 | 3 real defects found and fixed — see below. |
+| Touch targets ≥ 44px | live, 360 + 600, re-run after fixes | **61 distinct sub-44px targets → 2**, both links inside sentences (WCAG 2.5.8 exempt). See below. |
 | Text truncates gracefully | live, all 420 | 3 clipped strings found; assessed below. |
 
 ### The one table that stays a table
@@ -256,9 +273,9 @@ both skip links (42px → 44px, via `minHeight` + `inline-flex`).
 | Icon-buttons carry `aria-label` | grep, all 35 `IconButton` uses | **35/35 labelled.** |
 | Images have `alt` | live, 84 + grep | **0 images without `alt`.** Decorative images correctly use `alt=""`. |
 | Dialog: focus moves in, Escape closes, focus returns | live, sampled ×6 | Pass — `ResponsiveDialog` traps focus, is `aria-labelledby` its title, closes on Escape, and returns focus to its opener. |
-| Keyboard journeys | live | Buyer *register → request → accept → pay → review* and creator *propose → deliver* both completable with keyboard only. |
+| Keyboard journeys | live, Tab-ring walk at every step | Both completable. Buyer *register → request → accept → pay → review*: every advancing control reached by Tab (register submit at tab 2, wizard next at 4, proposal action at 3, pay at 6, accept/review at 21) with `:focus-visible` on each. Creator *propose → deliver*: browse card at 35, proposal CTA at 10, delivery composer at 1, send at 19. |
 | `:focus-visible` ring | read + live | Restored on `MuiButtonBase` in the theme (MUI zeroes it) and applied through `focusRing()`; visible on sampled buttons, links, chips and inputs. |
-| `aria-live` regions | live | Toasts, result counts, upload queues and the notification badge all announce. |
+| Live regions | grep + read | 23 sites. Toasts announce through `role="status"` (success, info) and `role="alert"` (warning, error) — implicit live regions with the right politeness per severity. Result counts on discovery and the board are `role="status" aria-live="polite"`; the upload and evidence queues announce progress and failures; the moderation, settlement and announcement screens announce batch outcomes. |
 | Colour contrast (AA) | computed over the token palette | 3 token failures found and fixed in the theme — see below. |
 | Reduced motion | live, `prefers-reduced-motion: reduce`, 10 routes scrolled end to end | **Nothing on screen is stuck at opacity 0 or parked off-position.** |
 
@@ -378,20 +395,259 @@ motion settings — the first reading had caught a reveal mid-flight. **No regre
 
 ## 8. Security-minded frontend
 
+### Grep sweeps
+
+| Sweep | Pattern | Result |
+|---|---|---|
+| Secrets / credentials | `api[_-]?key`, `secret`, `token =`, `private[_-]?key`, `sk_live`, `pk_live`, `AKIA`, bearer literals | **0 hits.** No credential is committed anywhere in `src/`. |
+| Demo passwords | `Password123!` and friends | Only in `README.md` (documented demo accounts) and the seed data that creates them. None hard-coded in application code. Temporary admin passwords are generated at runtime by `adminTeamService.generateTempPassword()`, never fixed. |
+| `dangerouslySetInnerHTML` | literal | **0.** |
+| `innerHTML` | literal | **0.** |
+| `eval` / `new Function` | literal | **0.** |
+| Raw `fetch` / `axios` outside the API layer | `\b(fetch\|axios)\s*\(` | **0.** `axios` is imported in exactly one file, `services/api/apiClient.js`. |
+| `XMLHttpRequest` / `sendBeacon` / `WebSocket` / `EventSource` | literal | **0.** |
+| Route literals outside `paths.js` | `'/buyer…'`, `'/creator…'`, `'/admin…'`, `'/login'`, … | **0.** One dev-only fixture nav still held literal `/admin/*` paths; it now builds them from `paths.js`. |
+| Status / role literals outside `constants/` | the prompt's spot greps `"pending"`, `"approved"`, `'/buyer/'` plus the full enum set | **0 domain literals.** Remaining matches are React list keys (`key: 'pending'`), per-module UI tab enums that own their own values, and the mock gateway's protocol vocabulary — see below. |
+| External hosts | `https?://…` in `src/` | `picsum.photos` (only inside `constants/images.js`), `betterblue.test` (seed/demo addresses), `w3.org` (SVG namespaces), the footer's two social links, `localhost` (dev API default). No third-party script or beacon. |
+
+Two deliberate exceptions, both documented in the code that holds them:
+
+- **`services/payments/dummyPaymentProvider.js`** returns `'processing'` / `'succeeded'` /
+  `'failed'`. That is the *gateway's* vocabulary, not the domain's `PAYMENT_STATUS`, and
+  keeping them separate is what lets a real provider drop in behind the same interface
+  (00 §15). The service translates.
+- **`orderService.ORDER_EVENT_TYPE`** is its own enum for timeline events. Some values
+  coincide by name with `ORDER_STATUS`; they are different things and correctly separate.
+
+### Destructive-action confirmation
+
+Every remove / cancel / suspend / blacklist / refund / resolve / withdraw / void / archive
+path was traced from its control to its service call. **All are confirmed** through
+`useConfirm()` with explicit consequence copy, and carry a reason field where the domain
+needs one (21 modules use it). The single control a sweep flagged as unconfirmed —
+`ProposalListCard`'s "Withdraw" — is presentational; its parent, `CreatorProposalsPage`,
+runs the confirmation. Admin interventions state what happens to the money *before* the
+button, and record the reason in the audit trail.
+
+### Role-guard matrix
+
+Each role signed in and sent to both foreign area roots plus two deep URLs in each — **24
+checks, 24 correct redirects, 0 leaks**.
+
+| Signed in as | Sent to | Landed on |
+|---|---|---|
+| buyer | `/creator`, `/creator/orders`, `/creator/earnings` | `/buyer` ×3 |
+| buyer | `/admin`, `/admin/users`, `/admin/settings` | `/buyer` ×3 |
+| creator | `/buyer`, `/buyer/orders`, `/buyer/payments` | `/creator` ×3 |
+| creator | `/admin`, `/admin/users`, `/admin/settings` | `/creator` ×3 |
+| admin | `/buyer`, `/buyer/orders`, `/buyer/requests` | `/admin` ×3 |
+| admin | `/creator`, `/creator/orders`, `/creator/earnings` | `/admin` ×3 |
+| super admin | the same six buyer/creator URLs | `/admin` ×6 |
+
+**`PermissionGate` on a scoped admin** — `admin@betterblue.test` holds a subset of
+permissions. All six restricted screens refuse: `/admin/settings`, `/admin/admins`,
+`/admin/roles` and `/admin/audit-logs` render "Super admin only"; `/admin/payments` and
+`/admin/settlements` render the "you do not have access" screen naming the permission
+required and where to ask for it. Nothing renders the underlying data.
+
+**Deep-link return** — a signed-out visitor requesting `/buyer/orders/ord_007` is sent to
+`/login` and, after signing in, lands on `/buyer/orders/ord_007` rather than the dashboard
+root.
+
+### Uploaded-file metadata
+
+Filenames reach the DOM only as React text children, which escape by construction — there
+is no `dangerouslySetInnerHTML` anywhere to bypass that. `uploadService` sanitises the
+metadata it stores, size and type are validated before upload, and long names are truncated
+for display with the full value kept in the accessible name rather than dropped.
+
+### Frontend guards are UX only
+
+Stated again here because it is the single most important line in this document:
+
+> **Every guard, gate, disabled button and hidden control in this application is a
+> convenience, not a security boundary.** The client decides what to *show*; it cannot
+> decide what a caller is *allowed to do*. `RoleRoute`, `PermissionGate`, `hasPermission`,
+> the mock `authService` and every `assertTransition` in the services layer run in a
+> browser the user controls and can be bypassed with the developer tools.
+>
+> **The Laravel API must independently enforce authentication, role authorisation,
+> per-permission authorisation, ownership checks, and every state-machine transition on
+> every endpoint**, and must never trust an id, a role, a status or a price sent by the
+> client. `docs/api-contract.md` defines the endpoints; this is the rule that governs all
+> of them.
+
 ---
 
 ## 9. Copy & content
+
+| Check | Method | Result |
+|---|---|---|
+| No lorem ipsum | grep | **0.** |
+| No placeholder or dev copy user-visible | grep for `TODO`/`TBD`/`FIXME` in JSX text, `"test"`, `"foo"`, `"asdf"`, `"debug"` | **0.** |
+| No "coming soon" for things that exist | grep + read | The two remaining are honest: `PortfolioGallery`'s empty state ("Portfolio coming soon" — a creator who has not published yet) and email notifications, which are genuinely not built and are shown disabled with a tag rather than pretending to work. |
+| Glossary terms used consistently (00 §18) | grep | Creator 1,146 · Buyer 687 · Proposal 600 · Payout 416 · Commission 299 · Escrow 199 · Deliverable 38 · Content Request 13. No competing vocabulary ("freelancer", "gig", "client", "job") in user-facing copy. |
+| Business-safe content (00 §1) | grep + seed guard | **Clean.** `scripts/seed-db.js` carries a `PROHIBITED_TERMS` sweep that fails the seed if any prohibited term appears in any string of any collection — re-run and passing. The only matches for those terms in the whole repository are that guard itself and the Content Policy copy that prohibits them, which is correct. |
+| Imagery through one helper | grep | Every `picsum.photos` URL is inside `src/constants/images.js`. **0** hotlinks elsewhere, so the client can swap the source in one place. |
+| Seed subject matter | read | Restaurants, fashion, fitness, travel, SaaS, beauty, food, e-commerce, education, real estate, events — commercial UGC throughout. |
 
 ---
 
 ## 10. TEMP / TODO sweep
 
+Every marker in `src/`, and what happened to it.
+
+| Marker | Location | Disposition |
+|---|---|---|
+| `TEMP:` role-home placeholder | `dashboard/components/RoleHomePlaceholder.jsx` | **Removed.** Superseded by the real overviews in Prompts 15, 21 and 28; nothing imported it. |
+| `TODO(Prompt 31)` — link the Active-orders tile | `admin/overview/components/KpiGrid.jsx` | **Resolved.** Prompt 31 built the orders console; the tile links to it. |
+| `TODO(Prompt 27)` — activity rows become links | `dashboard/pages/BuyerOverviewPage.jsx` | **Resolved.** Rows resolve through `getNotificationPath` to the record they are about. |
+| `TODO(Prompt 27)` — activity rows become links | `dashboard/pages/CreatorOverviewPage.jsx` | **Resolved.** Same. |
+| `ADMIN_PENDING` gate (comment-gated, not a `TODO` string) | `notifications/notificationRoutes.js` | **Resolved.** Still listed `/admin/requests`, `/admin/orders` and `/admin/affiliates`, all mounted by Prompts 31 and 34, so those admin notifications were landing on the dashboard home. List and guard removed after verifying each path against `adminRoutes.jsx`. |
+| Buyer affiliate target returning `null` | `notifications/notificationRoutes.js` | **Resolved.** Prompt 34 mounted `/buyer/affiliate`. |
+| Creator affiliate target returning `null` | `notifications/notificationRoutes.js` | **Kept, comment corrected.** Referrals shipped as a buyer programme — `affiliateService` only converts referred sign-ups whose role is `buyer`, and the only nav entry is the buyer's. There is no creator screen to point at; the comment no longer claims one is coming. |
+| `TODO(laravel)` ×4 | `services/api/listAdapter.js` | **Kept by design.** They mark the exact lines the Laravel adapter must revisit, which is what 00 §15 asks that file to carry. Not stubs — the JSON-Server path they annotate is complete and working. |
+| Prompt-narrative mentions of a former TODO | `authService.js`, `AdminOverviewPage.jsx` | Prose recording that a gate *was* removed. No action. |
+| The word "stub" in comments | `routes/*.jsx`, `HowItWorksPage.jsx` | History — "Prompt 19 replaced that stub". No stub remains. |
+
+**No stubs, no placeholder screens and no comment-gated links survive.**
+
 ---
 
 ## 11. Deferrals and documented exceptions
+
+Two items are not fixed. Neither reaches a user, and both are recorded rather than quietly
+passed.
+
+**D1 — React Router future-flag warning in the dev console.**
+Every page logs one warning: *"React Router will begin wrapping state updates in
+`React.startTransition` in v7… use the `v7_startTransition` future flag to opt in early."*
+
+- It is **dev-only**: the string does not appear anywhere in `npm run build` output, so no
+  user or production console ever sees it.
+- Opting in is not cosmetic. `v7_startTransition` changes how navigation interacts with
+  Suspense: with lazy routes, the previous screen is held instead of the route's fallback
+  being shown. That would alter the skeleton and loading behaviour audited in §3 — the one
+  thing a hardening pass must not quietly change (00 §17), and it is a v7 migration
+  decision rather than a hardening one (00 §3 freezes the dependency set).
+
+Deferred to the v7 migration, where the loading behaviour can be re-verified as part of the
+change. It is the only warning in the console across all 84 route/role loads.
+
+**D2 — `secondary.main` against white is 3.53:1.**
+`#EC4899` is the pink end of the locked brand gradient (00 §6) and cannot change without
+changing the brand. The only white text over it is the hero CTA label, which is large bold
+text and therefore governed by the 3:1 AA-large threshold, which it passes. Recorded so
+that anyone adding **body-sized** white text on secondary knows not to.
+
+**D3 — `errorElement` sits at the route-group level, not per page.**
+A page that throws is caught and shown a recoverable screen with two ways out (verified in
+§2), but it replaces its whole layout — the dashboard shell included — rather than only the
+page area. Giving each child route its own `errorElement` would keep the shell up.
+
+That is a change to the router's shape, not a hardening fix, and this pass is explicitly
+barred from altering routing behaviour (00 §17). Nothing is lost today: the screen is
+friendly, the stack is dev-only, and "back home" always works. Raised for Prompt 38, where
+the router is in scope.
+
+### Not deferrals — findings re-checked and dismissed
+
+Recorded so the numbers in this document can be trusted:
+
+- **`net::ERR_ABORTED` on ~70 route loads** — the sweep's own navigation cancelling
+  in-flight requests, not application failures. Zero real console errors remain.
+- **Skeletons "stuck" on heavy admin screens** — json-server's `--delay 300` plus chained
+  service calls. Every one resolved when re-checked with a generous wait.
+- **Two pages reading as zero-`h1`** — probed mid-load. Both have exactly one.
+- **An element at opacity 0 under reduced motion on `/about`** — caught mid-reveal by a
+  stepped scroll. Fully scrolled, it renders at `opacity: 1` under both motion settings.
+- **`/admin/payments` blank under a dead API** — `PermissionGate` correctly refusing a
+  scoped admin. Re-run as super admin, it shows its error state and retry.
+- **Register submit "not keyboard reachable"** — the first step is a role chooser whose
+  button reads "Continue"; it is reachable at Tab 2 with a visible focus ring.
 
 ---
 
 ## 12. Files changed
 
+34 files, grouped by the audit that called for the change. No feature behaviour, service
+signature, seed or visual token was altered (00 §17); `prompts/` is untouched.
+
+**Audit 1 — forms & validation (6)**
+`src/hooks/useForm.js` (extracted `focusFieldById`) ·
+`features/disputes/components/RaiseDisputeDialog.jsx` ·
+`features/earnings/components/WithdrawDialog.jsx` ·
+`features/admin/disputes/components/EscalateDialog.jsx` ·
+`features/admin/disputes/components/RequestInfoDialog.jsx` ·
+`features/admin/finance/components/RefundDialog.jsx`
+
+**Audit 4 — responsive / touch targets (7)**
+`components/inputs/FilterChipGroup.jsx` · `components/brand/Logo.jsx` ·
+`features/dashboard/components/WelcomeBanner.jsx` · `layouts/PublicLayout.jsx` ·
+`layouts/dashboard/DashboardLayout.jsx` · `features/auth/pages/LoginPage.jsx` ·
+`features/staticPages/pages/HowItWorksPage.jsx`
+
+**Audit 5 — accessibility (12)**
+`theme/components.js` (`variantMapping`) · `theme/palette.js` (AA `dark` shades) ·
+`features/discovery/components/FilterRail.jsx` · `features/discovery/pages/CreatorsPage.jsx` ·
+`features/requests/components/BoardFilters.jsx` · `features/requests/components/RequestBoard.jsx` ·
+`features/requests/pages/BuyerRequestsPage.jsx` · `features/portfolio/pages/CreatorPortfolioPage.jsx` ·
+`features/earnings/components/PayoutExplainer.jsx` ·
+`features/admin/roles/components/EditPermissionsDialog.jsx` ·
+`features/disputes/components/MessageComposer.jsx` ·
+`features/admin/disputes/components/AdminThreadComposer.jsx`
+
+**Audit 6 — performance / dead code (2)**
+`components/data-display/MediaLightbox.jsx` (thumbnail strip lazy-loads) ·
+`features/dashboard/components/RoleHomePlaceholder.jsx` (**deleted**)
+
+**Audit 8 — security sweeps (1)**
+`features/dashboard/components/devGallery/WidgetsGallery.jsx` (fixture nav now builds from
+`paths.js`)
+
+**Audit 10 — TEMP / TODO (5)**
+`features/notifications/notificationRoutes.js` ·
+`features/admin/overview/components/KpiGrid.jsx` ·
+`features/admin/overview/pages/AdminOverviewPage.jsx` ·
+`features/dashboard/pages/BuyerOverviewPage.jsx` ·
+`features/dashboard/pages/CreatorOverviewPage.jsx`
+
+**Created** — `docs/qa-checklist.md` (this file).
+
 ---
+
+## 13. Final verification
+
+Run after every fix above, on a freshly seeded database.
+
+| Gate | Result |
+|---|---|
+| `npm run lint` (`--max-warnings 0`) | **pass**, 0 errors, 0 warnings |
+| `npm run build` | **pass** — 166 chunks; GSAP and Recharts both outside the entry chunk |
+| `npm run smoke:api` | **pass** — 59/59 checks |
+| `npm run smoke:workflow` | **pass** — 37/37 checks |
+| `npm run seed` | **pass** — integrity + content-policy checks green, before and after |
+| Console click-through, 84 route/role loads | **0 errors**, 1 warning class (D1, dev-only) |
+| Kill-API resilience | **19/19** routes |
+| Responsive matrix | **420/420** checks, 0 horizontal scroll |
+| Role-guard matrix | **24/24** redirects, 6/6 permission gates |
+| Dialog focus behaviour | **6/6** dialogs |
+| Keyboard journeys | both completable |
+| Reduced-motion sweep | clean across 10 routes |
+
+### Cross-role flows re-run end to end after the fixes
+
+| Flow | What was actually done | Result |
+|---|---|---|
+| **Marketplace loop** | Creator opened a live brief, submitted without the deliverability declaration, then completed it | Validation refused and said why; the 160 characters already typed were kept; ticking the declaration persisted the proposal (3 → 4); the dialog became a "Proposal sent" panel with a route to *My proposals*; the buyer received a `proposal_received` notification. |
+| **Disputes** | Super admin opened a live case and posted to the thread | Message persisted (4 → 5 messages); no page errors. |
+| **Settlements** | Super admin approved a requested payout | Confirmed first — *"Approve this payout? $700.00 to Yuki Tanaka… The request moves to Processing"* — then the payout advanced past `requested`. |
+| **Affiliate pipeline** | Super admin approved a pending commission on the Earnings-approval queue | Confirmed first — *"Approve this commission? $10.00 to Ava Martinez becomes payable…"* — then `pending → approved`. Buyer referral screen renders. |
+| **Escrow / payments** | `npm run smoke:workflow` | 37/37 — hold, release, commission split, declined card, partial refund, and the ledger rows behind each. |
+
+`npm run seed` was re-run afterwards, so `server/db.json` is back to its seeded state.
+
+---
+
+*Produced by the Prompt 37 hardening pass. Every count in this document comes from a sweep
+that was re-run after the fixes it describes.*
