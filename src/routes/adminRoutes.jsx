@@ -75,6 +75,13 @@ const AdminSettlementsPage = lazy(
 const AdminCommissionsPage = lazy(
   () => import('@/features/admin/finance/pages/AdminCommissionsPage')
 )
+// Prompt 33 — the dispute console. Both gate themselves on `disputes.resolve`
+// inside their `DashboardPage`: resolving a case moves held money, and it is
+// the one admin permission an operations or finance admin can be without.
+const AdminDisputesPage = lazy(() => import('@/features/admin/disputes/pages/AdminDisputesPage'))
+const AdminDisputeDetailPage = lazy(
+  () => import('@/features/admin/disputes/pages/AdminDisputeDetailPage')
+)
 const NotificationsPage = lazy(
   () => import('@/features/notifications/pages/NotificationsPage')
 )
@@ -90,6 +97,8 @@ export const adminRoutes = [
   { path: paths.ADMIN_REQUESTS, element: <AdminRequestsPage /> },
   { path: paths.ADMIN_ORDERS, element: <AdminOrdersPage /> },
   { path: paths.ADMIN_ORDER_DETAIL_PATTERN, element: <AdminOrderDetailPage /> },
+  { path: paths.ADMIN_DISPUTES, element: <AdminDisputesPage /> },
+  { path: paths.ADMIN_DISPUTE_DETAIL_PATTERN, element: <AdminDisputeDetailPage /> },
   { path: paths.ADMIN_SUPPORT, element: <AdminSupportPage /> },
   { path: paths.ADMIN_ANNOUNCEMENTS, element: <AdminAnnouncementsPage /> },
   { path: paths.ADMIN_PAYMENTS, element: <AdminPaymentsPage /> },

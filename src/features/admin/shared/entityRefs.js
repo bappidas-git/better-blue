@@ -108,7 +108,10 @@ export function resolveEntityPath(type, id) {
       return paths.ADMIN_PAYMENTS
     case 'payout':
       return paths.ADMIN_SETTLEMENTS
-    // case 'dispute':           return paths.adminDisputeDetail(id)       // Prompt 33
+    // Prompt 33. A case does have a route of its own — the workspace where it
+    // is decided — so this chip deep-links rather than landing on the queue.
+    case 'dispute':
+      return paths.adminDisputeDetail(id)
     // case 'affiliate_profile':                                           // Prompt 34
     // case 'affiliate_earning': return paths.ADMIN_AFFILIATES             // Prompt 34
     // case 'category':          return paths.ADMIN_CATEGORIES             // Prompt 35

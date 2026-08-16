@@ -217,7 +217,8 @@ const ADMIN_PENDING = Object.freeze([
   // `/admin/commissions`, so their lines are gone — an admin notification about
   // money now lands on the finance console, and the `payout_requested` emit
   // `requestPayout` gained in the same prompt has somewhere real to go.
-  paths.ADMIN_DISPUTES, // Prompt 33
+  // Prompt 33 mounted `/admin/disputes` and its detail route, so its line is
+  // gone too — "new dispute to triage" now lands on the case itself.
   paths.ADMIN_AFFILIATES, // Prompt 34
 ])
 

@@ -6,11 +6,13 @@ import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import { Link as RouterLink } from 'react-router-dom'
 
 import StatusChip from '@/components/data-display/StatusChip'
 import DataTable from '@/components/table/DataTable'
 import { AgeBadge, EntityRefChip } from '@/features/admin/shared'
 import { ESCROW_SLA } from '@/features/admin/finance/utils/financeFilters'
+import { paths } from '@/routes/paths'
 import { EMPTY_PLACEHOLDER, formatCurrency, formatDate } from '@/utils/formatters'
 
 // Every payment BetterBlue is currently holding — Prompt 32 §4.2.
@@ -29,7 +31,13 @@ import { EMPTY_PLACEHOLDER, formatCurrency, formatDate } from '@/utils/formatter
 /** Money is set in tabular numerals so a column of it lines up digit for digit. */
 const MONEY_SX = { fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }
 
-/** The dispute chip, when the engagement behind held money is contested. */
+/**
+ * The dispute chip, when the engagement behind held money is contested.
+ *
+ * Prompt 33 made it a link: this money is frozen *because* of that case, and
+ * the case is where it gets unfrozen — a refund from this table would settle
+ * one side of an argument nobody has finished hearing.
+ */
 function DisputeFlag({ dispute }) {
   if (!dispute) return null
 
@@ -38,9 +46,12 @@ function DisputeFlag({ dispute }) {
       size="small"
       color="warning"
       variant="outlined"
+      clickable
+      component={RouterLink}
+      to={paths.adminDisputeDetail(dispute.id)}
       icon={<Icon icon="solar:shield-warning-linear" width={15} aria-hidden="true" />}
       label="Disputed"
-      aria-label={`This order is under dispute, case ${dispute.id}`}
+      aria-label={`Open dispute ${dispute.id} on this order`}
       sx={{ fontSize: '0.6875rem', fontWeight: 600 }}
     />
   )

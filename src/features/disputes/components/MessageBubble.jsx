@@ -23,9 +23,15 @@ import { formatDateTime, formatRelativeTime } from '@/utils/formatters'
 // 2 days ago" before the text rather than a wall of unattributed paragraphs
 // (§12).
 //
-// **Internal notes never reach this component.** They are filtered in
-// `disputeService.listMessages` and, in production, server-side (contract
-// §6.17) — there is deliberately no `internal` branch here to get wrong.
+// **Internal notes never reach a party's copy of this component.** They are
+// filtered in `disputeService.listMessages` and, in production, server-side
+// (contract §6.17) — nothing here can un-filter one.
+//
+// Prompt 33 gave the bubble the fourth treatment an admin needs: an internal
+// note, amber-tinted and labelled **in words**, not by colour alone (§12). It
+// renders off `message.internal` rather than off a viewer flag on purpose — a
+// note that somehow reached a screen it should not have reaches it *marked*,
+// which is strictly better than reaching it disguised as an ordinary reply.
 
 /**
  * @param {object} props
@@ -35,6 +41,7 @@ import { formatDateTime, formatRelativeTime } from '@/utils/formatters'
  */
 export default function MessageBubble({ message, author, isOwn }) {
   const fromSupport = isAdminRole(message?.authorRole)
+  const internal = message?.internal === true
   const name = fromSupport ? 'BetterBlue Support' : (author?.companyName ?? author?.name ?? 'Member')
   const roleLabel = authorRoleLabel(message?.authorRole)
   const sent = formatRelativeTime(message?.createdAt)
@@ -43,7 +50,7 @@ export default function MessageBubble({ message, author, isOwn }) {
   return (
     <Box
       component="li"
-      aria-label={`${isOwn ? 'You' : name}, ${roleLabel}, ${sent}`}
+      aria-label={`${internal ? 'Internal note. ' : ''}${isOwn ? 'You' : name}, ${roleLabel}, ${sent}`}
       sx={{
         listStyle: 'none',
         display: 'flex',
@@ -96,6 +103,15 @@ export default function MessageBubble({ message, author, isOwn }) {
             {fromSupport ? null : (
               <Chip size="small" variant="outlined" label={roleLabel} sx={{ height: 22 }} />
             )}
+            {internal ? (
+              <Chip
+                size="small"
+                color="warning"
+                label="Internal"
+                icon={<Icon icon="solar:lock-keyhole-minimalistic-linear" width={13} aria-hidden="true" />}
+                sx={{ height: 22, fontWeight: 700 }}
+              />
+            ) : null}
             <Typography variant="caption" color="text.secondary" title={formatDateTime(message?.createdAt)}>
               {sent}
             </Typography>
@@ -107,15 +123,33 @@ export default function MessageBubble({ message, author, isOwn }) {
               py: 1.5,
               borderRadius: 2,
               border: 1,
-              borderColor: fromSupport ? 'primary.light' : 'divider',
+              borderColor: internal
+                ? 'warning.main'
+                : fromSupport
+                  ? 'primary.light'
+                  : 'divider',
+              // Amber, and only for a note the parties cannot see. Nothing else
+              // in the thread may borrow the tint (§6).
               bgcolor: (theme) =>
-                isOwn
-                  ? alpha(theme.palette.primary.main, 0.06)
-                  : fromSupport
-                    ? alpha(theme.palette.primary.main, 0.03)
-                    : 'background.paper',
+                internal
+                  ? alpha(theme.palette.warning.main, 0.1)
+                  : isOwn
+                    ? alpha(theme.palette.primary.main, 0.06)
+                    : fromSupport
+                      ? alpha(theme.palette.primary.main, 0.03)
+                      : 'background.paper',
             }}
           >
+            {internal ? (
+              <Typography
+                variant="caption"
+                component="p"
+                sx={{ fontWeight: 700, color: 'warning.dark', mb: 0.5 }}
+              >
+                Internal note — not visible to the buyer or the creator
+              </Typography>
+            ) : null}
+
             <Typography variant="body2" sx={{ whiteSpace: 'pre-line', wordBreak: 'break-word' }}>
               {message?.body}
             </Typography>

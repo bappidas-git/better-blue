@@ -59,7 +59,25 @@ export { paymentService, DUMMY_TEST_CARDS, PAYMENT_FAILURE_CODE } from './paymen
 export { payoutService } from './payoutService'
 
 /* Trust & safety ---------------------------------------------------------- */
-export { disputeService } from './disputeService'
+export {
+  disputeService,
+  ACTIVE_DISPUTE_STATUSES,
+  DISPUTABLE_ORDER_STATUSES,
+  INFO_REQUEST_ROLES,
+  RESOLUTION_NOTE_MAX,
+  RESOLUTION_NOTE_MIN,
+  RESOLVABLE_DISPUTE_STATUSES,
+  SETTLED_DISPUTE_STATUSES,
+  awaitingRoleFor,
+  awaitingStatusFor,
+  canAssignDispute,
+  canCloseDispute,
+  canEscalateDispute,
+  canRequestInfo,
+  canResolveDispute,
+  isAwaitingRole,
+  resolutionSummary,
+} from './disputeService'
 export {
   moderationService,
   DECIDED_QUEUE_STATUSES,

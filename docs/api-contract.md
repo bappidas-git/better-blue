@@ -2085,7 +2085,12 @@ Trust & Safety casework on an order.
 | `GET` | `/disputes/:id` | Party · Admin | Case detail |
 | `POST` | `/disputes` | Party | Open a case |
 | `PATCH` | `/disputes/:id` | Admin `disputes.resolve` | Assign, move status, close |
-| `POST` | `/disputes/:id/resolve` | Admin `disputes.resolve` | **Composite** — §7 |
+| `POST` | `/disputes/:id/resolve` | Admin `disputes.resolve` | **Composite** — §7 operation 8 |
+| `POST` | `/disputes/:id/request-info` | Admin `disputes.resolve` | **Composite** — §7 operation 40 |
+| `POST` | `/disputes/:id/escalate` | Admin `disputes.resolve` | **Composite** — §7 operation 41 |
+| `GET` | `/admin/disputes` | Admin `disputes.resolve` | The queue, joined — §7 operation 36 |
+| `GET` | `/admin/disputes/summary` | Admin `disputes.resolve` | Per-tab counts — §7 operation 37 |
+| `GET` | `/admin/disputes/:id` | Admin `disputes.resolve` | The workspace — §7 operation 38 |
 
 **Filters** — `orderId` · `raisedById` · `againstId` · `assignedAdminId` ·
 `status` (repeatable) · `category` · `createdAt_gte` / `createdAt_lte` ·
@@ -2138,10 +2143,25 @@ Opening a dispute moves the order to `disputed` and holds the payment.
 resolved**. `resolution.amountRefunded` always matches the payment's
 `refundedAmount` and is omitted for a `release_payment` outcome.
 
-Status follows `DISPUTE_STATUS_MACHINE` (§8).
+Status follows `DISPUTE_STATUS_MACHINE` (§8). Two consequences the admin console
+depends on, and which the API must enforce independently of it:
 
-Errors: `403` (not a party) · `404` · `409` (a second open dispute on one order;
-illegal transition) · `422`.
+- **`open` has no `resolved` edge.** A case must be picked up before it can be
+  decided, so `POST /disputes/:id/resolve` on an untriaged case is `409` even
+  from an admin who holds `disputes.resolve`.
+- **There is no `awaiting_buyer → awaiting_creator` edge.** A case can be owed
+  by one party at a time; operation 40 is `409` on a case already parked on the
+  other.
+
+> **Authorization is server-side.** Every write above moves held money or
+> changes what two members are told about their money. The console hides the
+> actions an admin cannot take and refuses the typed URL with an explanation
+> (§9.1), and neither of those is access control: Laravel must check
+> `disputes.resolve` on each endpoint and scope reads to a case the caller is a
+> party to or cleared for.
+
+Errors: `403` (not a party; missing `disputes.resolve`) · `404` · `409` (a
+second open dispute on one order; illegal transition; no escrow held) · `422`.
 
 ---
 
@@ -2806,13 +2826,31 @@ do not rename it:
 admin.create · admin.permissions.update · affiliate.earning.approve
 affiliate.earning.void · affiliate.suspend · announcement.send
 category.update · content.restrict · creator.feature · dispute.assign
-dispute.close · dispute.resolve · moderation.approve · moderation.reject
+dispute.close · dispute.escalate · dispute.open · dispute.request_info
+dispute.resolve · moderation.approve · moderation.reject
 moderation.request_changes · order.cancel · order.note · payment.refund
 payout.mark_paid · payout.process · payout.reject · report.action
 report.dismiss · report.review · request.close · settings.update
 ticket.close · ticket.reopen · ticket.reply · ticket.resolve · user.blacklist
 user.deactivate · user.reactivate · user.suspend · user.verify
 ```
+
+Prompt 33 completed the `dispute.*` family. `dispute.assign`, `dispute.close`,
+and `dispute.resolve` were seeded and are now written by the console;
+`dispute.escalate` and `dispute.request_info` are new, and `dispute.open` is the
+second verb a **member** writes about their own action (see `user.deactivate`
+below) — a frozen order and held money have to be accountable whoever caused it.
+
+`dispute.resolve` carries the fullest `meta` in the vocabulary, because it is
+the entry somebody reconstructs a money decision from months later:
+`{ orderId, paymentId, outcome, amountRefunded, heldAmount, settledAmount,
+commissionRate, commissionAmount, creatorEarnings, currency, fromStatus,
+toStatus, orderFromStatus, orderToStatus, note }`. Like `order.note`, it stores
+the *content* of the decision (`meta.note`) rather than a description of it —
+here because the note is also what both parties were shown, and the trail is
+where the two are reconciled. `dispute.escalate` stores its internal note the
+same way, and **that one is admin-only**: it is the reason the workspace
+timeline marks audit-derived rows `Internal`.
 
 Prompt 31 added `order.note`, `ticket.resolve`, and `ticket.reopen`, and made
 `request.close` and `announcement.send` reachable from the console rather than
@@ -2986,6 +3024,14 @@ are the reason these belong on the server:
 | 33 | `markPayoutPaid` | `paymentService` | 5 | `POST /payouts/:id/paid` |
 | 34 | `getEscrowOverview` | `paymentService` | 4+ | `GET /admin/escrow` |
 | 35 | `getFinanceSummary` | `paymentService` | 3+ | `GET /admin/finance/summary` |
+| 36 | `adminListQueue` | `disputeService` | 4 | `GET /admin/disputes` |
+| 37 | `getQueueCounts` | `disputeService` | 5 | `GET /admin/disputes/summary` |
+| 38 | `getAdminCaseContext` | `disputeService` | 12 | `GET /admin/disputes/:id` |
+| 39 | `assign` | `disputeService` | 3 | `PATCH /disputes/:id` |
+| 40 | `requestInfo` | `disputeService` | 5 | `POST /disputes/:id/request-info` |
+| 41 | `escalate` | `disputeService` | 5 + N | `POST /disputes/:id/escalate` |
+| 42 | `close` | `disputeService` | 3 | `PATCH /disputes/:id` |
+| 43 | `previewSettlement` | `paymentService` | 3 | `GET /orders/:id/settlement-preview` |
 
 Operations 16 and 17 were added by Prompt 20 (the buyer's order workspace), and
 operation 18 by Prompt 21 (the creator's) — the mirror of operation 14, section
@@ -3032,6 +3078,22 @@ from the finance console is deliberately not a new operation** —
 `adminRefundOrder` is a named wrapper over operation 4 that supplies the
 `intervention` refund context and requires a reason; a second implementation of
 a refund is the last thing this product needs.
+
+Operations 36–43 arrived with Prompt 33 (the admin dispute console) and finish
+the lifecycle operations 22 and 23 began: 22 opens a case, 23 carries the
+conversation on it, and **operation 8 ends it**. 36–38 are reads in the shape of
+30 and 34 — one composite per screen, so no component is left holding a query.
+39–42 are the casework around the decision, and each is a *different fact* about
+a case rather than a variation on one: picked up, waiting on a party, escalated,
+filed away. They are separate operations for the same reason 32 and 33 are —
+collapsing "we accept this" into "the bank has sent it" would have the platform
+assert something it does not know. **Resolving is deliberately not a new money
+operation:** operation 8 branches onto operations 3 and 4 and adds nothing of
+its own, which is what makes a dispute resolved in the creator's favour settle
+byte-for-byte like a buyer accepting a delivery, commission record included.
+Operation 43 is the read behind that: it prices a settlement *before* it happens
+using the same rate resolution and rounding, so the figures on the resolve
+dialog and the ledger rows it predicts cannot drift.
 
 ### 7.2 The sequences
 
@@ -3339,25 +3401,63 @@ atomically, not read-modify-written.
 
 ---
 
-#### 8. `resolveDispute(disputeId, { outcome, amountRefunded, note })`
+#### 8. `resolve(disputeId, { outcome, amountRefunded, note, actor })`
 
-An admin issues a binding decision. Branches on `DISPUTE_RESOLUTION`.
+An admin issues a binding decision. Branches on `DISPUTE_RESOLUTION`. Implemented
+by Prompt 33 (named `disputeService.resolve`).
+
+**Guards, all of them before a cent moves:**
+
+- `outcome` is a `DISPUTE_RESOLUTION` value — else `422`
+- `note` is 30–1000 characters — else `422` with `details.note`. Both parties
+  read it verbatim, so it is required rather than optional
+- `dispute.status ∈ RESOLVABLE_DISPUTE_STATUSES` — the states with a `resolved`
+  edge in `DISPUTE_STATUS_MACHINE` (§8.1), which excludes `open`
+- the case is **assigned**, or `escalated` — an untriaged case is one nobody has
+  read, and deciding it is `409`
+- the order can still reach its ending (`disputed → completed | refunded`)
+- a payment is actually `held` on the order — else `409`
+- for `partial_refund`, `0 < amountRefunded < held`. Returning the *whole*
+  escrow is a full refund, which ends the order differently, so it is `422`
+  rather than silently reinterpreted
 
 **Mock:**
 
-1. `GET /disputes/:id`, `GET /orders/:orderId`, `GET /payments?orderId=…`
+1. `GET /disputes/:id`, `GET /orders/:orderId`, then operation 43 for the escrow
+   and the split that will settle
 2. Branch:
-   - `release_payment` → the whole of operation 3
-   - `full_refund` → operation 4 for the full amount
-   - `partial_refund` → operation 4 for `amountRefunded`, **then** operation 3
-     with `commissions.baseAmount = price − amountRefunded`
+   - `release_payment` → operation 6a with `release: true` — the whole of
+     operation 3, then `orders → completed`
+   - `full_refund` → operation 4 for the full amount, then `PATCH /orders/:id` →
+     `{ status: 'refunded', cancelledAt }`
+   - `partial_refund` → operation 4 for `amountRefunded`, which settles the
+     remainder in the same call with `commissions.baseAmount = price −
+     amountRefunded`, then operation 6a with `release: false`
 3. `PATCH /disputes/:id` →
    `{ status: 'resolved', resolution: { outcome, amountRefunded?, note, resolvedById, resolvedAt }, updatedAt }`
-4. `POST /auditLogs` — `dispute.resolve`
-5. `POST /notifications` × 2 — `dispute_resolved` to both parties
+4. `POST /disputes/:id/messages` — the decision as a **real message from the
+   reviewer**, public, opening `BetterBlue resolved this dispute: …` and
+   carrying the note. The thread is the record of the case, and the decision is
+   the last thing said on it
+5. `POST /notifications` × 2 — `dispute_resolved` to both parties, sequentially
+6. `POST /auditLogs` — `dispute.resolve`, with `meta` carrying the outcome, the
+   amount refunded, the escrow, what settled, the rate, the commission, the
+   creator's net, and both status transitions
 
-That is up to fifteen requests for one admin click, any of which can fail
-independently.
+That is up to twenty requests for one admin click, any of which can fail
+independently. Ordering is the safest available: everything is validated, the
+order's own transition is checked, then the money moves, then the case is
+written. **A failure after step 2 throws `server_error` naming the step** and
+what was already written (§3.2) — an escrow released against a case still
+reading `under_review` is exactly the state somebody has to reconcile by hand,
+and swallowing the error is how it goes unnoticed. Steps 4–6 are best effort.
+
+**Why a partial refund completes the order.** It is the one outcome where both
+sides got something: the buyer keeps deliverables and gets money back, the
+creator is paid for what they did, and commission is charged only on what they
+kept (`docs/payments.md` §6). `refunded` would assert the engagement never
+happened and `cancelled` that it was called off — neither is true of work that
+was delivered, kept, and partly paid for.
 
 **Laravel — `POST /disputes/:id/resolve` → `{ dispute, order, payment }`**
 
@@ -3366,9 +3466,147 @@ independently.
 ```
 
 One transaction covering the refund, the release, the commission, the ledger,
-the dispute, the audit entry, and both notifications. `amountRefunded` is
+the dispute, the thread message, the audit entry, and both notifications, with
+`SELECT … FOR UPDATE` on the order for its duration. `amountRefunded` is
 required for `partial_refund`, rejected for `release_payment`, and validated
-against the payment.
+against the payment — never trusted from the client (§9.3). Authorization is
+`disputes.resolve`, enforced server-side: the frontend hides the button, which
+is not the same thing (§9.1).
+
+---
+
+#### 36–38. The admin console's reads
+
+| # | Function | Mock sequence | Laravel |
+|---|---|---|---|
+| 36 | `adminListQueue(params)` | `GET /disputes` + `GET /orders?id=…` + `GET /users?id=…` + `GET /payments?orderId=…`, joined client-side | `GET /admin/disputes` with four eager loads |
+| 37 | `getQueueCounts({ adminId })` | five `GET /disputes?…&_limit=1`, read for `X-Total-Count` | `GET /admin/disputes/summary` — one grouped count |
+| 38 | `getAdminCaseContext(id)` | the case, its order, the payment, the ledger, both parties, both parties' case histories, both order counts, and the timeline | `GET /admin/disputes/:id` |
+
+All three are **reads that never write**, in the shape of operations 24, 30 and
+34. Every aggregate is its own failure boundary: a count that cannot be read
+comes back `null`, never `0`, because "no prior disputes" and "we could not
+count them" are different sentences and a screen must not say the first when it
+means the second.
+
+Operation 38's timeline is folded from `auditLogs` (§6.26) rather than from a
+`disputeEvents` collection, for the reason `orderService.listAdminNotes` reads
+notes off the trail: the record already exists, and a second copy of it is a
+second thing to keep in step. **It is admin-only** — audit meta carries internal
+notes.
+
+Errors: `403` · `404`.
+
+---
+
+#### 39. `assign(disputeId, { adminId, actor })`
+
+Triage. `PATCH /disputes/:id` → `{ assignedAdminId, updatedAt }`, plus
+`status: 'under_review'` **only when the case is `open`** — reassigning one
+already parked on a party must not clear the ball it is waiting on. Then
+`POST /auditLogs` — `dispute.assign`, with `previousAdminId` so a hand-off is
+legible.
+
+Errors: `409` (the case is already decided) · `422` (no assignee) · `404`.
+
+**Laravel — `PATCH /disputes/:id`**, one transaction with the audit entry, the
+actor from the session, gated on `disputes.resolve`.
+
+---
+
+#### 40. `requestInfo(disputeId, { from, message, actor })`
+
+The team asks one party for something.
+
+**Mock:**
+
+1. `GET /disputes/:id`, `GET /orders/:orderId`
+2. `POST /disputeMessages` — **public**, `internal: false`
+3. `PATCH /disputes/:id` → `{ status: 'awaiting_buyer' | 'awaiting_creator' }`
+4. `POST /notifications` — `dispute_message` to **that party only**, worded as
+   an action needed
+5. `POST /auditLogs` — `dispute.request_info`
+
+The message is public by design: a request made privately is a request the other
+side cannot see was made, and in casework that is how an impartial decision
+stops looking impartial. Only the party being asked is notified — a bell item
+saying "we asked them something" is noise on a case they cannot act on. Their
+reply moves the case back to `under_review` through operation 23, which is what
+makes the ping-pong self-clearing.
+
+`DISPUTE_STATUS_MACHINE` has **no** `awaiting_buyer → awaiting_creator` edge, so
+a case already parked on one party cannot be handed to the other; the console
+hides the action rather than offering one that fails.
+
+Errors: `409` (no such transition from here) · `422` · `404`.
+
+**Laravel — `POST /disputes/:id/request-info` → `{ dispute, message }`.**
+
+---
+
+#### 41. `escalate(disputeId, { note, actor })`
+
+**Mock:**
+
+1. `GET /disputes/:id`, `GET /orders/:orderId`
+2. `POST /disputeMessages` — **`internal: true`**
+3. `PATCH /disputes/:id` → `{ status: 'escalated' }`
+4. `notifyAdmins('disputes.resolve')` — one notification per eligible admin,
+   sequentially (see operation 22)
+5. `POST /auditLogs` — `dispute.escalate`
+
+The note is internal because escalation is a conversation between reviewers
+about a decision neither party should be pre-empting. Both parties see the
+*status* — Prompt 26's banner tells them a senior reviewer has it — and neither
+sees a word of why.
+
+Errors: `409` (only a case `under_review` can be escalated) · `422` · `404`.
+
+**Laravel — `POST /disputes/:id/escalate` → `{ dispute }`.**
+
+---
+
+#### 42. `close(disputeId, { actor })`
+
+`resolved → closed`, and nothing else: the money moved when the decision was
+issued, and closing is bookkeeping. `PATCH /disputes/:id` plus
+`POST /auditLogs` — `dispute.close`.
+
+It is separate from operation 8 because the two are different facts — "we
+decided this" and "nobody came back on it" — and collapsing them would file a
+case away before either party had read the outcome.
+
+AUTO-CLOSE-HOOK: the natural extension is a scheduled job closing resolved cases
+after N days. That is server-side work and cannot live in a browser, so the
+console offers the manual door and Prompt 26's party screens already read
+`closed` exactly as they read `resolved`.
+
+Errors: `409` (only a decided case can be closed) · `404`.
+
+---
+
+#### 43. `previewSettlement(orderId, { refundAmount, refundAll })`
+
+What a settlement *would* do to an order's escrow. Writes nothing.
+
+**Mock:** `GET /orders/:id`, `GET /payments?orderId=…&status=held`, and the
+commission rate — the order's frozen `commissionRate` first, settings only for
+an order that predates the field.
+
+Returns `{ held, refundedAmount, baseAmount, rate, commissionAmount,
+creatorEarnings, currency, payment }`. One `refundAmount` drives all three
+dispute outcomes: `0` is a release, the whole held amount (`refundAll: true`) is
+a full refund, and anything between is the partial split. An out-of-range amount
+is **clamped, not rejected** — this prices a number somebody is still typing,
+and operation 4 is where an impossible one is refused.
+
+It exists so that nothing above the services layer performs money arithmetic
+(the rule `getEarningsBreakdown` follows for the same reason): the figures on
+the resolve dialog and the ledger rows they predict are two folds of one
+calculation rather than two calculations.
+
+**Laravel — `GET /orders/:id/settlement-preview?refundAmount=…`**, gated the same
+way the operation it previews is, computed from the server's own records.
 
 ---
 
@@ -4447,11 +4685,21 @@ The console's list screens call **service functions**, never a raw collection
 | `adminListTransactions` | `paymentService` | `type[]`, `userId`, `orderId`, `search` (an order id), `from`, `to` | `createdAt` |
 | `adminListSettlements` | `paymentService` | `status[]` | `requestedAt` |
 | `adminListCommissions` | `paymentService` | `month` (`YYYY-MM`) | `createdAt` |
+| `adminListQueue` | `disputeService` | `search`, `status[]`, `category[]`, `assignedAdminId`, `createdAt_gte`, `createdAt_lte` | `createdAt` (default **ascending**), `updatedAt` |
 
 The three Prompt 32 rows join too: ledger rows carry `user` and `order`,
 settlements carry `creator`, commissions carry `order`. `adminListSettlements`
 defaults to **ascending** `requestedAt` — a payout queue is somebody waiting for
 their own money, and the person kept waiting longest is the one to serve.
+
+Prompt 33's `adminListQueue` joins `order`, `payment` (the `held` row, not
+whichever came back first), `buyer`, `creator`, and `assignee`, and defaults to
+ascending `createdAt` for the same reason settlements do: two people and their
+money are frozen behind the oldest case, and a newest-first queue buries it. Its
+"Unassigned" tab filters on `status: 'open'` rather than on an empty
+`assignedAdminId` — `open` **is** the untriaged state, and JSON Server has no
+reliable "field is empty" filter (a seeded case with the key absent and a
+created one with it explicitly `null` would answer differently, §4.3).
 
 `adminListTransactions({ search })` is an **exact order id**, not free text. The
 ledger's `description` is copy the platform generated itself

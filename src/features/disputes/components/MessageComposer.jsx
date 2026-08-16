@@ -98,7 +98,22 @@ export default function MessageComposer({ onSend, disabled, disabledReason, awai
           onRetry={queue.retryFile}
           label="Files attached to this message"
         />
-        <Box sx={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
+        {/* Visually hidden, and hidden **without stretching the layout**. The
+            units are explicit because MUI's `sx` reads a bare `width: 1` as
+            `100%`, not `1px` — which made this absolutely-positioned box as
+            wide as the composer and put a 1px horizontal scrollbar on the
+            dispute screen at 360px (00 §13). Found and corrected in Prompt 33;
+            nothing about what this renders has changed. */}
+        <Box
+          sx={{
+            position: 'absolute',
+            width: '1px',
+            height: '1px',
+            overflow: 'hidden',
+            clip: 'rect(0 0 0 0)',
+            whiteSpace: 'nowrap',
+          }}
+        >
           {queue.status}
         </Box>
       </Box>

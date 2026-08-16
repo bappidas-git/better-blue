@@ -7,7 +7,7 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
 import StatusChip from '@/components/data-display/StatusChip'
-import { ROLES } from '@/constants/roles'
+import { isAdminRole, ROLES } from '@/constants/roles'
 import { DISPUTE_RESOLUTION, getStatusMeta } from '@/constants/statuses'
 import { formatCurrency, formatDate } from '@/utils/formatters'
 
@@ -24,26 +24,38 @@ import { formatCurrency, formatDate } from '@/utils/formatters'
 // what that operation (and, today, the seeds) recorded.
 
 /**
- * What each outcome meant for the two people reading it. The sentence says what
+ * What each outcome meant for the person reading it. The sentence says what
  * happened and the figure below says how much — deliberately not both, since a
  * number stated twice is a number somebody reads twice to check it agrees.
+ *
+ * Three voices, not two (Prompt 33): the buyer's, the creator's, and — for the
+ * admin workspace, which renders this same card — a third-person one. "Released
+ * to you" on a reviewer's screen would be plainly wrong, and forking the card
+ * to avoid it would leave two descriptions of one decision to keep in step.
  */
 function describeOutcome(resolution, role) {
   const isBuyer = role === ROLES.BUYER
+  const isTeam = isAdminRole(role)
 
   switch (resolution?.outcome) {
     case DISPUTE_RESOLUTION.RELEASE_PAYMENT:
-      return isBuyer
-        ? 'The escrow was released to the creator in full. Nothing was returned to your payment method.'
-        : 'The escrow was released to you in full, minus the usual commission.'
+      return isTeam
+        ? 'The escrow was released to the creator in full, minus the usual commission, and the order was completed.'
+        : isBuyer
+          ? 'The escrow was released to the creator in full. Nothing was returned to your payment method.'
+          : 'The escrow was released to you in full, minus the usual commission.'
     case DISPUTE_RESOLUTION.FULL_REFUND:
-      return isBuyer
-        ? 'The full order amount was returned to your payment method. Card refunds usually settle within a few working days.'
-        : 'The full order amount was returned to the buyer, so nothing was released for this order.'
+      return isTeam
+        ? 'The full order amount was returned to the buyer and the order was marked refunded. The creator was paid nothing for it.'
+        : isBuyer
+          ? 'The full order amount was returned to your payment method. Card refunds usually settle within a few working days.'
+          : 'The full order amount was returned to the buyer, so nothing was released for this order.'
     case DISPUTE_RESOLUTION.PARTIAL_REFUND:
-      return isBuyer
-        ? 'Part of the order amount was returned to your payment method and the balance was released to the creator.'
-        : 'Part of the order amount was returned to the buyer and the balance was released to you.'
+      return isTeam
+        ? 'Part of the order amount was returned to the buyer, the balance was released to the creator, and the order was completed.'
+        : isBuyer
+          ? 'Part of the order amount was returned to your payment method and the balance was released to the creator.'
+          : 'Part of the order amount was returned to the buyer and the balance was released to you.'
     default:
       return 'The order was settled according to the decision below.'
   }

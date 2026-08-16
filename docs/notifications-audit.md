@@ -103,8 +103,11 @@ the reason.
 | Dispute opened | `disputeService.createDispute` | the other party | `dispute_opened` | ✅ |
 | Dispute opened — team queue | `disputeService.createDispute` → `notifyAdmins('disputes.resolve')` | every active admin who can resolve disputes | `dispute_opened` | ✅ |
 | Message posted on a dispute | `disputeService.postMessage` | the other party (internal notes excluded) | `dispute_message` | ✅ |
-| Message posted — assigned reviewer | — | assigned admin | `dispute_message` | 🕓 **Prompt 33** (the admin dispute workspace, where "assigned to me" becomes a screen). |
-| Dispute resolved | — | both parties | `dispute_resolved` | 🕓 **Prompt 33.** `resolveDispute` is the admin action and arrives with the console. |
+| Message posted — assigned reviewer | `disputeService.postMessage` | assigned admin | `dispute_message` | ✅ **Prompt 26 already emitted this** (a party's reply adds `dispute.assignedAdminId` to the recipients); Prompt 33 gave it somewhere to land — the notification deep-links to `/admin/disputes/:id`, which is the "assigned to me" screen this row was waiting on. |
+| Information requested from a party | `disputeService.requestInfo` | **only** the party being asked | `dispute_message` | ✅ **Prompt 33.** Worded as an action needed ("Our team needs something from you"), and pointedly *not* sent to the other party: a bell item saying "we asked them something" is noise on a case they cannot act on. They read the request on the thread, where it is public. |
+| Dispute escalated | `disputeService.escalate` → `notifyAdmins('disputes.resolve')` | every active admin who can resolve disputes | `dispute_opened` | ✅ **Prompt 33.** The queue only works if somebody is told there is something in it — the same argument `createDispute` makes. Reuses `dispute_opened` because there is no `dispute_escalated` type and inventing one is a `notificationTypes.js` change (00 §9); the title carries the difference. **Neither party is told**, and the internal note behind the escalation never leaves the team. |
+| Dispute resolved | `disputeService.resolve` | both parties | `dispute_resolved` | ✅ **Prompt 33.** Sequential, not parallel — JSON Server drops one of two concurrent POSTs, and a party who is never told is a party who finds out from their bank statement. The body carries the outcome in the same sentence the thread message and the confirmation step use (`resolutionSummary`). |
+| Case closed | `disputeService.close` | — | — | ➖ Deliberately silent. Closing is bookkeeping on a decision both parties were already told about; a second bell item saying "that thing we told you about is now filed" is noise. |
 
 ### Content review — `moderation`
 

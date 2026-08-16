@@ -201,7 +201,47 @@ the mock call sequences are `docs/api-contract.md` §7.2 operations 1–4 and 11
 | Release escrow | `paymentService.releasePayment` | `POST /orders/:id/release` |
 | Refund | `paymentService.refundPayment` | `POST /payments/:id/refund` |
 | Cancel an order | `orderService.cancelOrder` | `POST /orders/:id/cancel` |
+| Resolve a dispute | `disputeService.resolve` | `POST /disputes/:id/resolve` |
 | Request a payout | `paymentService.requestPayout` | `POST /payouts` |
+
+### Resolving a dispute (Prompt 33)
+
+`disputeService.resolve` is the third and last caller that moves escrow, and it
+**writes no money of its own**. It decides *what* should happen and asks the two
+functions above to do it — which is what makes a dispute resolved in the
+creator's favour settle byte-for-byte like a buyer accepting a delivery,
+commission record included. `grep -n "transactions\|commissions" src/services/disputeService.js`
+returns nothing, and that is the invariant.
+
+| Outcome | Money | Order |
+|---|---|---|
+| `release_payment` | `releasePayment` — escrow to the creator, less commission | `completed` |
+| `full_refund` | `refundPayment` for the whole held amount | `refunded` |
+| `partial_refund` | `refundPayment` for the part; the remainder settles in the same call | `completed` |
+
+**A partial refund completes the order**, and that is a deliberate reading of
+§6's policy rather than a shortcut. It is the one outcome where both sides got
+something: the buyer keeps deliverables and gets money back, the creator is paid
+for what they did, and BetterBlue earns only on what the creator kept.
+`refunded` would assert the engagement never happened; `cancelled` would assert
+it was called off. Neither is true of work that was delivered, kept, and partly
+paid for.
+
+**Previewing before deciding.** `paymentService.previewSettlement(orderId,
+{ refundAmount, refundAll })` returns the same split the settlement will write,
+priced through `rateForOrder` and `applyRate` — the order's frozen rate first.
+It exists because the resolve dialog shows exact figures before a binding
+action, and a preview computed on screen could quote a rate the release would
+not charge. Nothing above the services layer multiplies money; the dialog and
+the ledger rows it predicts are two folds of one calculation (§8 makes the same
+argument for `getEarningsBreakdown`).
+
+One asymmetry worth stating, because it looks like a bug and is not: after a
+partial refund, `orders.creatorEarnings` still holds its **award-time** figure
+while the ledger nets to the settled one. `settleEscrow` backfills those fields
+only when they are missing, so an agreed price is not rewritten by a later
+dispute — and the seeded partial-refund order (`ord_012`/`ord_013`) carries the
+same pair. The balance of record is the ledger (§7).
 
 ---
 
