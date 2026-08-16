@@ -6,9 +6,19 @@
 // behind `useFeatureFlag` — so they are cached briefly and read through
 // accessors that always have an answer.
 
+import { REJECTION_REASONS } from '@/constants/policy'
+import { ROLES } from '@/constants/roles'
+
 import { apiClient } from './api/apiClient'
+import { auditService } from './auditService'
 
 const SETTINGS_PATH = '/platformSettings'
+
+/** `entityType` every `settings.*` audit entry points at (contract §6.26). */
+export const SETTINGS_ENTITY_TYPE = 'platform_settings'
+
+/** `entityId` for the singleton — it has no id of its own (seed validator §425). */
+export const SETTINGS_ENTITY_ID = 'platformSettings'
 
 /** Cache lifetime. Short enough that an admin edit shows up on the next page. */
 export const SETTINGS_CACHE_MS = 60_000
@@ -26,13 +36,18 @@ export const SETTINGS_FALLBACK = Object.freeze({
     payoutMinAmount: 50,
   }),
   commission: Object.freeze({ defaultRate: 0.2, categoryOverrides: Object.freeze({}) }),
+  // No `enabled` here: Prompt 35 made `features.affiliateProgram` the program's
+  // only switch (see the seed's migration note and contract §6.27).
   affiliate: Object.freeze({
-    enabled: true,
     commissionRate: 0.1,
     attributionDays: 30,
     payoutMinAmount: 25,
   }),
-  moderation: Object.freeze({ autoApproveDeliveries: true, reviewSlaDays: 2 }),
+  moderation: Object.freeze({
+    autoApproveDeliveries: true,
+    reviewSlaDays: 2,
+    customRejectionReasons: Object.freeze([]),
+  }),
   features: Object.freeze({
     affiliateProgram: true,
     publicRequestBoard: true,
@@ -149,9 +164,105 @@ export const settingsService = Object.freeze({
     return cache
   },
 
-  // —— workflow operations (added by later prompts) ——
-  // saveSettings — Prompt 35 (admin settings): wraps `updateSettings` with the
-  // `settings.update` audit entry carrying the before/after in `meta`.
+  /**
+   * The rejection reasons a reviewer may pick from (Prompt 30's decision
+   * dialog): the canonical codes in `src/constants/policy.js` first, then any
+   * `{ code, label }` a super admin has appended in platform settings.
+   *
+   * **Constants stay canonical.** Prompt 03 owns the built-in codes — the
+   * moderation service, the creator-facing banners, and the seed all read them
+   * from there. Settings can only *add*, never rename or remove, so a stored
+   * `reasonCode` always resolves to the same meaning it had when it was written
+   * (contract §6.27).
+   *
+   * Never throws: an unreachable API resolves to the canonical list alone.
+   *
+   * @returns {Promise<Array<{code: string, label: string, description?: string,
+   *   isCustom?: boolean}>>}
+   */
+  async getRejectionReasons() {
+    let custom = []
+    try {
+      const settings = await loadSettings(false)
+      custom = settings?.moderation?.customRejectionReasons ?? []
+    } catch {
+      custom = []
+    }
+
+    const canonical = REJECTION_REASONS.map((reason) => ({ ...reason, isCustom: false }))
+    const known = new Set(canonical.map((reason) => reason.code))
+
+    return [
+      ...canonical,
+      ...custom
+        .filter((reason) => reason?.code && reason?.label && !known.has(reason.code))
+        .map((reason) => ({ code: reason.code, label: reason.label, isCustom: true })),
+    ]
+  },
+
+  /**
+   * **Saves configuration and records who changed what** — the write behind
+   * Prompt 35's settings screen, and the only one product code should call.
+   *
+   * Three things happen that `updateSettings` alone does not do:
+   *
+   *   1. `updatedAt` / `updatedById` are stamped, so the singleton says when it
+   *      last moved and who moved it (contract §6.27).
+   *   2. The cache is **invalidated** rather than refreshed. Every consumer —
+   *      the commission calculator, the payout gate, the nav's feature flags —
+   *      re-reads on its next call, so a saved rate is in effect immediately
+   *      rather than up to {@link SETTINGS_CACHE_MS} later.
+   *   3. A `settings.update` audit entry carries the field-level diff in
+   *      `meta.changes`, which is what makes a configuration change reviewable
+   *      after the fact (00 §14).
+   *
+   * The audit write is best-effort: a saved setting must not be rolled back
+   * because the trail entry failed, and a missing entry is visible in the log.
+   *
+   * @param {object} patch complete sub-objects for every section being changed
+   *   (see {@link updateSettings} for why they must be complete)
+   * @param {object} [options]
+   * @param {object} [options.actor] the signed-in super admin, `{ id, role }`
+   * @param {Array<{key: string, label?: string, from: *, to: *}>} [options.changes]
+   *   the diff the screen computed and showed in its confirmation dialog —
+   *   stored verbatim so the audit entry says exactly what the reader approved
+   * @returns {Promise<object>} the updated settings
+   * @throws {ApiError} when the `PATCH` fails — nothing is invalidated or logged
+   */
+  async saveSettings(patch, { actor, changes } = {}) {
+    const updated = await this.updateSettings({
+      ...patch,
+      updatedAt: new Date().toISOString(),
+      ...(actor?.id ? { updatedById: actor.id } : {}),
+    })
+
+    this.invalidate()
+
+    if (actor?.id) {
+      try {
+        await auditService.log({
+          actorId: actor.id,
+          actorRole: actor.role ?? ROLES.SUPER_ADMIN,
+          action: 'settings.update',
+          entityType: SETTINGS_ENTITY_TYPE,
+          entityId: SETTINGS_ENTITY_ID,
+          meta: {
+            sections: Object.keys(patch ?? {}),
+            changes: (changes ?? []).map(({ key, label, from, to }) => ({
+              key,
+              ...(label ? { label } : {}),
+              from,
+              to,
+            })),
+          },
+        })
+      } catch {
+        // The setting is saved; the trail entry is not worth undoing it for.
+      }
+    }
+
+    return updated
+  },
 })
 
 export default settingsService

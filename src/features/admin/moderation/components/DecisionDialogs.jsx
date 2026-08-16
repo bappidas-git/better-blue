@@ -11,12 +11,14 @@ import FormSelect from '@/components/inputs/FormSelect'
 import FormTextField from '@/components/inputs/FormTextField'
 import ResponsiveDialog from '@/components/layout/ResponsiveDialog'
 import { REJECTION_REASONS } from '@/constants/policy'
+import useApiQuery from '@/hooks/useApiQuery'
 import useForm from '@/hooks/useForm'
 import {
   MODERATION_DECISION,
   MODERATION_NOTES_MAX,
   MODERATION_NOTES_MIN,
 } from '@/services/moderationService'
+import { settingsService } from '@/services/settingsService'
 import { compose, maxLength, minLength, required } from '@/utils/validators'
 
 // The four decision dialogs — Prompt 30 §4.3.
@@ -40,7 +42,15 @@ import { compose, maxLength, minLength, required } from '@/utils/validators'
 // mistaken approval can be restricted an hour later — and making a reviewer
 // justify good news in writing is how a queue of forty stops moving.
 
-/** Reason options, straight from the policy constants (§7 — single-sourced). */
+/**
+ * Reason options, straight from the policy constants (§7 — single-sourced).
+ *
+ * Prompt 35 lets a super admin **append** to this list in platform settings, so
+ * the live options come from `settingsService.getRejectionReasons()` below —
+ * canonical six first, additions after. These stay as the fallback: a settings
+ * read that has not landed (or failed) still offers every built-in reason
+ * rather than an empty select.
+ */
 const REASON_OPTIONS = REJECTION_REASONS.map((reason) => ({
   value: reason.code,
   label: reason.label,
@@ -149,6 +159,18 @@ export default function DecisionDialogs({
 }) {
   const config = decision ? DIALOG[decision] : null
 
+  // The reasons a super admin has configured, read only while a dialog that
+  // needs them is open. `settingsService` caches the singleton, so this is a
+  // local lookup rather than a request per decision.
+  const { data: reasons } = useApiQuery(
+    () => settingsService.getRejectionReasons(),
+    [],
+    { enabled: Boolean(config?.needsReason) }
+  )
+  const reasonOptions = reasons
+    ? reasons.map((reason) => ({ value: reason.code, label: reason.label }))
+    : REASON_OPTIONS
+
   const form = useForm({
     initialValues: { notes: '', reasonCode: '' },
     validators: {
@@ -243,7 +265,7 @@ export default function DecisionDialogs({
             <FormSelect
               label="Reason"
               required
-              options={REASON_OPTIONS}
+              options={reasonOptions}
               placeholder="Choose a reason"
               helperText="From the Content Policy. The creator sees this label."
               {...form.fieldProps('reasonCode')}

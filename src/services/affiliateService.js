@@ -18,8 +18,8 @@
 //                   approved earnings behind it become `paid`
 //
 // GUARDS: enrolment, capture, and conversion are all gated on the program being
-// switched on (`platformSettings.affiliate.enabled` **and**
-// `features.affiliateProgram`) and on the affiliate profile being `active`. A
+// switched on (`platformSettings.features.affiliateProgram` — the single switch
+// since Prompt 35) and on the affiliate profile being `active`. A
 // suspended affiliate stops capturing and stops accruing; nothing already
 // earned is taken away by the suspension itself (that is what voiding is for).
 //
@@ -118,10 +118,14 @@ export async function getProgramSettings() {
   const numberOr = (value, fallback) => (Number.isFinite(Number(value)) ? Number(value) : fallback)
 
   return {
-    // Two switches, both of which must be on: `affiliate.enabled` is the
-    // program's own, `features.affiliateProgram` is the platform flag every
-    // affiliate surface is gated behind (contract §6.23).
-    enabled: affiliate?.enabled !== false && flagged !== false,
+    // **One switch.** Prompt 35 retired `affiliate.enabled`: the program used to
+    // have its own boolean *and* a platform feature flag, which meant two places
+    // to look when it was off and two ways for them to disagree.
+    // `features.affiliateProgram` is now the only control — the same flag
+    // `useFeatureFlag`, `FeatureGate`, and the nav read — so `affiliate` holds
+    // only the program's *numbers* (contract §6.23/§6.27). A legacy
+    // `affiliate.enabled` left in an old db.json is ignored, deliberately.
+    enabled: flagged !== false,
     commissionRate: numberOr(affiliate?.commissionRate, SETTINGS_FALLBACK.affiliate.commissionRate),
     attributionDays: numberOr(affiliate?.attributionDays, SETTINGS_FALLBACK.affiliate.attributionDays),
     payoutMinAmount: numberOr(affiliate?.payoutMinAmount, SETTINGS_FALLBACK.affiliate.payoutMinAmount),

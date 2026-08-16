@@ -1342,7 +1342,38 @@ The full set of 12 ids is generated from
 API, the offline fallback, and `CATEGORY_ID` can never drift.
 
 Categories are **deactivated, never deleted** (`active: false`): existing
-requests, orders, and portfolio items keep pointing at them.
+requests, orders, and portfolio items keep pointing at them. There is no
+`DELETE` in this table and there is not going to be one — a removed row would
+leave every record carrying its id rendering a blank where a category name
+belongs.
+
+**Admin operations (Prompt 35).** `/admin/categories` drives all of these
+through `categoryService`, which invalidates the session cache after every write
+so a new or renamed category reaches every select on the site immediately:
+
+| Operation | Requests | Audit action |
+|---|---|---|
+| Add | `GET /categories?slug=…` (uniqueness) → `POST /categories` | `category.create` |
+| Rename / re-icon / re-slug | `GET /categories?slug=…` → `PATCH /categories/:id` | `category.update` |
+| Deactivate / reactivate | `PATCH /categories/:id` `{ active }` | `category.deactivate` / `category.activate` |
+| Reorder | two `PATCH /categories/:id` `{ sortOrder }` — a **swap** with the neighbour, not a renumber | `category.reorder` |
+
+Slugs are normalised before the uniqueness check (`Food & Beverage` →
+`food-beverage`) and must match `^[a-z0-9]+(?:-[a-z0-9]+)*$`.
+
+**Usage counts** — the numbers behind the deactivation warning, computed live:
+
+```
+GET /creatorProfiles?categories_like=:id&_page=1&_limit=1   → X-Total-Count
+GET /contentRequests?categoryId=:id&_page=1&_limit=1        → X-Total-Count
+```
+
+MOCK-COUNT: two counted reads per category, because JSON Server has no
+aggregate. Laravel answers this with one `GET /categories?withCounts=1` backed by
+a pair of `COUNT(*) … GROUP BY category_id` queries; `categoryService.getUsageCounts`
+becomes a single request and no call site changes. A failed count resolves to
+`null` rather than to zero — "we could not count" and "nothing uses it" are
+different answers, and only one of them is safe to deactivate on.
 
 Errors: `403` · `404` · `409` `conflict` (duplicate `slug`) · `422`.
 
@@ -2746,10 +2777,21 @@ a refresh counts twice. No decision anywhere in the product is taken on it.
 Laravel replaces it with an atomic `increment('clicks')`, or a `referral_clicks`
 table once the program needs real analytics.
 
-The program is gated by `platformSettings.affiliate.enabled` **and**
-`platformSettings.features.affiliateProgram` — both must be on. With either off,
-capture, enrolment, and conversion are all inert, and the nav entries and
-screens behind them say so rather than disappearing into a 404.
+The program is gated by `platformSettings.features.affiliateProgram` — **one
+switch, and only one** (Prompt 35). With it off, capture, enrolment, and
+conversion are all inert, and the nav entries and screens behind them say so
+rather than disappearing into a 404.
+
+> **Changed in Prompt 35 — `affiliate.enabled` is gone.** The program used to
+> carry its own boolean *and* sit behind the feature flag, so "is the referral
+> program on?" had two answers that could disagree, and the admin screen would
+> have needed two controls for one decision. `features.affiliateProgram` is now
+> the single source: `useFeatureFlag`, `FeatureGate`, `navConfig`, the pricing
+> teaser, and `affiliateService.getProgramSettings` all read that key and
+> nothing else. `platformSettings.affiliate` keeps only the program's **numbers**
+> (`commissionRate`, `attributionDays`, `payoutMinAmount`). A legacy
+> `affiliate.enabled` left in an old `db.json` is **ignored**, not honoured —
+> re-run `npm run seed` to drop it.
 
 > **Laravel** — `user_id UNIQUE`, `code UNIQUE`. Generate the code server-side;
 > a client-generated code cannot be made unique without a race (§7).
@@ -2900,6 +2942,7 @@ do not rename it:
 ```
 admin.create · admin.permissions.update · affiliate.earning.approve
 affiliate.earning.void · affiliate.reactivate · affiliate.suspend · announcement.send
+category.activate · category.create · category.deactivate · category.reorder
 category.update · content.restrict · creator.feature · dispute.assign
 dispute.close · dispute.escalate · dispute.open · dispute.request_info
 dispute.resolve · moderation.approve · moderation.reject
@@ -2909,6 +2952,14 @@ report.dismiss · report.review · request.close · settings.update
 ticket.close · ticket.reopen · ticket.reply · ticket.resolve · user.blacklist
 user.deactivate · user.reactivate · user.suspend · user.verify
 ```
+
+Prompt 35 completed the `category.*` family. `category.update` was seeded;
+`category.create`, `category.activate`, `category.deactivate`, and
+`category.reorder` are new, all written by `/admin/categories`. A
+`category.deactivate` entry carries the usage counts the admin was shown
+(`meta.usage`), so the trail records what was known at the time, not just what
+was decided. `settings.update` is now written by `settingsService.saveSettings`
+with the field-level diff in `meta.changes` (§6.27).
 
 Prompt 33 completed the `dispute.*` family. `dispute.assign`, `dispute.close`,
 and `dispute.resolve` were seeded and are now written by the console;
@@ -2979,11 +3030,12 @@ A **singleton**, not a collection: no id, no list, no pagination.
     "payoutMinAmount": 50
   },
   "commission": { "defaultRate": 0.2, "categoryOverrides": {} },
-  "affiliate": { "enabled": true, "commissionRate": 0.1, "attributionDays": 30, "payoutMinAmount": 25 },
+  "affiliate": { "commissionRate": 0.1, "attributionDays": 30, "payoutMinAmount": 25 },
   "moderation": {
     "autoApproveDeliveries": true,
     "reviewSlaDays": 2,
-    "rejectionReasons": ["policy_prohibited_content", "low_production_quality", "mismatch_with_brief", "ip_violation", "metadata_incomplete", "other"]
+    "rejectionReasons": ["policy_prohibited_content", "low_production_quality", "mismatch_with_brief", "ip_violation", "metadata_incomplete", "other"],
+    "customRejectionReasons": []
   },
   "features": { "affiliateProgram": true, "publicRequestBoard": true, "reviews": true, "disputes": true },
   "updatedAt": "2026-08-02T09:45:00.000Z",
@@ -3012,7 +3064,53 @@ rest of the non-public settings.
 ```
 
 Every update also writes a `settings.update` audit entry with the before/after
-in `meta`, and sets `updatedAt` / `updatedById`.
+in `meta`, and sets `updatedAt` / `updatedById`. `settingsService.saveSettings`
+is the only sanctioned caller (Prompt 35): it stamps those two fields,
+**invalidates** the settings cache so every consumer re-reads on its next call,
+and stores the field-level diff the admin approved:
+
+```json
+{
+  "action": "settings.update",
+  "entityType": "platform_settings",
+  "entityId": "platformSettings",
+  "meta": {
+    "sections": ["commission"],
+    "changes": [{ "key": "commission.defaultRate", "label": "Default rate", "from": "20%", "to": "25%" }]
+  }
+}
+```
+
+`from` / `to` are the **display** strings the reader confirmed (`"20%"`,
+`"$50.00"`, `"On"`), not the raw values — the trail is read by a person asking
+what somebody changed, and `0.2 → 0.25` is not that answer. The raw values are
+recoverable from the record's own history.
+
+#### Single-sourced switches (Prompt 35)
+
+Two things a settings screen must not have are two controls for one decision and
+two names for one value:
+
+- **`features.affiliateProgram` is the referral program's only switch.**
+  `affiliate.enabled` was removed — see §6.23 for the full note. The Affiliate
+  section's toggle and the Features section's toggle write this same key.
+- **Rejection reasons: constants are canonical, settings may only add.** The six
+  built-in codes live in `src/constants/policy.js` and are neither editable nor
+  removable through the API — a `reasonCode` stored on a decided case has to keep
+  meaning what it meant when a reviewer chose it. `moderation.customRejectionReasons`
+  is an **append-only-in-spirit** array of `{ code, label }` offered *after* the
+  canonical six in the moderation decision dialog. Codes are generated from the
+  label with a `custom_` prefix (`"Client logo not cleared"` →
+  `custom_client_logo_not_cleared`), which is what makes a collision with a
+  built-in code impossible. `moderation.rejectionReasons` remains the seeded
+  mirror of the canonical codes and is not edited by the admin screen.
+  Removing an addition stops offering it; cases already decided with it keep
+  their code and their reviewer's note.
+
+`settingsService.getRejectionReasons()` is the merged read — canonical first,
+additions after — and `moderationService.decide` validates against it, so a
+custom code is accepted, named in the creator's notification, and written into
+the case history exactly as a built-in one is.
 
 > **Mock reality — a real trap.** JSON Server merges a singular-route `PATCH`
 > at the **top level only**: sending `{ "commission": { "defaultRate": 0.18 } }`
@@ -3696,8 +3794,9 @@ A member joins the referral program. Implemented by Prompt 34.
 
 **Mock:**
 
-1. `GET /platformSettings` → refuse with `403` unless **both**
-   `affiliate.enabled` and `features.affiliateProgram` are on
+1. `GET /platformSettings` → refuse with `403` unless
+   `features.affiliateProgram` is on (the program's only switch since Prompt 35
+   — see §6.23)
 2. `GET /affiliateProfiles?userId=:id` — guard "not already enrolled" (`409`)
 3. Generate a readable code from the display name — `Verde Kitchen` →
    `VERDE-K7` — then `GET /affiliateProfiles?code=:code`, up to six candidates:

@@ -324,8 +324,9 @@ export const creatorNav = Object.freeze([
  * ║                                                                          ║
  * ║ Enabled now: Overview, Requests and Orders (Prompt 31), Disputes (33),    ║
  * ║ Users (29), Moderation and Reports (30), Payments, Settlements and        ║
- * ║ Commissions (32), Announcements and Support (31), and Notifications       ║
- * ║ (Prompt 27's shared page, at `paths.ADMIN_NOTIFICATIONS`).                 ║
+ * ║ Commissions (32), Announcements and Support (31), Notifications           ║
+ * ║ (Prompt 27's shared page, at `paths.ADMIN_NOTIFICATIONS`), and Platform's ║
+ * ║ Settings and Categories (35).                                             ║
  * ╚══════════════════════════════════════════════════════════════════════════╝
  *
  * Order is deliberate — it follows what an admin does with their day: check the
@@ -522,24 +523,28 @@ export const adminNav = Object.freeze([
     // item — so the restriction is written where it is enforced, and an admin
     // granted `settings.manage` by mistake still would not see the section.
     items: Object.freeze([
-      // Prompt 35
-      // Object.freeze({
-      //   key: 'settings',
-      //   label: 'Settings',
-      //   icon: 'solar:settings-linear',
-      //   path: paths.ADMIN_SETTINGS,
-      //   roles: [ROLES.SUPER_ADMIN],
-      //   permission: PERMISSIONS.SETTINGS_MANAGE,
-      // }),
-      // Prompt 35
-      // Object.freeze({
-      //   key: 'categories',
-      //   label: 'Categories',
-      //   icon: 'solar:widget-4-linear',
-      //   path: paths.ADMIN_CATEGORIES,
-      //   roles: [ROLES.SUPER_ADMIN],
-      //   permission: PERMISSIONS.CATEGORIES_MANAGE,
-      // }),
+      Object.freeze({
+        // Prompt 35. The first entry in any nav carrying `roles` — an admin
+        // never sees it, whatever permissions they hold, and `SuperAdminRoute`
+        // refuses the typed URL with the console's "super admin only" card.
+        key: 'settings',
+        label: 'Settings',
+        icon: 'solar:settings-linear',
+        path: paths.ADMIN_SETTINGS,
+        roles: [ROLES.SUPER_ADMIN],
+        permission: PERMISSIONS.SETTINGS_MANAGE,
+      }),
+      Object.freeze({
+        // Prompt 35. Below Settings because the taxonomy is edited far less
+        // often than a rate or a flag, and because a category change is a
+        // marketplace-shaping decision rather than a configuration one.
+        key: 'categories',
+        label: 'Categories',
+        icon: 'solar:widget-4-linear',
+        path: paths.ADMIN_CATEGORIES,
+        roles: [ROLES.SUPER_ADMIN],
+        permission: PERMISSIONS.CATEGORIES_MANAGE,
+      }),
       // Prompt 36
       // Object.freeze({
       //   key: 'admins',
@@ -616,8 +621,11 @@ export const MORE_NAV_KEYS = Object.freeze({
   // Overview · Browse · Proposals · Orders, with More holding Earnings,
   // Disputes, Portfolio, Notifications, Profile, and Settings.
   [ROLES.CREATOR]: Object.freeze([NAV_KEY.PROFILE, NAV_KEY.SETTINGS]),
-  // Prompt 28 left this empty and Prompt 31 keeps it that way. The console now
-  // has nine live destinations, so `splitBottomNav` overflows by position:
+  // Prompt 28 left this empty and Prompts 31 and 35 keep it that way. Prompt
+  // 35's two Platform entries sit last in the sidebar and are super-admin only,
+  // so they overflow into the sheet by position without being named — exactly
+  // the case the note below describes. The console now has eleven live
+  // destinations, so `splitBottomNav` overflows by position:
   // Overview, Requests, Orders, and Users take the four thumb slots, and
   // Moderation, Reports, Announcements, Support, and Notifications go into the
   // sheet. That is the right split without naming anything — the heavier

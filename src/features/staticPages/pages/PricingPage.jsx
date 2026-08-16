@@ -92,8 +92,9 @@ export default function PricingPage() {
     settings?.general?.autoAcceptDays ?? SETTINGS_FALLBACK.general.autoAcceptDays
 
   const affiliate = settings?.affiliate ?? SETTINGS_FALLBACK.affiliate
-  const affiliateEnabled =
-    Boolean(affiliate?.enabled) && settings?.features?.affiliateProgram !== false
+  // One switch since Prompt 35: `features.affiliateProgram` is the only control
+  // over the referral program, and `affiliate` carries only its numbers.
+  const affiliateEnabled = settings?.features?.affiliateProgram !== false
   // Prompt 34: the teaser's CTA is auth-aware — a signed-in buyer has a
   // referral dashboard already and should be taken to it, not to sign-up.
   const isBuyer = user?.role === ROLES.BUYER

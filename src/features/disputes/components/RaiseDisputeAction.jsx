@@ -13,6 +13,7 @@ import { useToast } from '@/components/feedback/ToastProvider'
 import { useAuth } from '@/context/AuthContext'
 import RaiseDisputeDialog from '@/features/disputes/components/RaiseDisputeDialog'
 import { disputeRoutesFor } from '@/features/disputes/utils/disputeDisplay'
+import useFeatureFlag from '@/hooks/useFeatureFlag'
 import { API_ERROR_CODE } from '@/services/api/apiError'
 import { DISPUTABLE_ORDER_STATUSES, disputeService } from '@/services/disputeService'
 
@@ -28,6 +29,14 @@ import { DISPUTABLE_ORDER_STATUSES, disputeService } from '@/services/disputeSer
 // pending, cancelled, or completed order has no issue to report *here*: there
 // is nothing to freeze, or nothing left to decide. `createDispute` refuses it
 // again regardless (00 §11).
+//
+// Prompt 35 put the same entry point behind `features.disputes`. This component
+// is the *only* way into a new case from either side of an order, so gating it
+// here is the whole switch: with the flag off nobody can open one, and cases
+// already running are untouched and still workable in the console. Hidden while
+// the flag is still resolving, for the same reason it is hidden on an
+// ineligible order — an action that appears and then vanishes is worse than one
+// that arrives a beat late.
 
 /**
  * @param {object} props
@@ -39,6 +48,8 @@ export default function RaiseDisputeAction({ order, onOpened }) {
   const { user } = useAuth()
   const toast = useToast()
   const navigate = useNavigate()
+
+  const { isEnabled: disputesEnabled } = useFeatureFlag('disputes')
 
   const [anchorEl, setAnchorEl] = useState(null)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -77,7 +88,7 @@ export default function RaiseDisputeAction({ order, onOpened }) {
     [navigate, onOpened, order?.id, toast, user?.id, user?.role]
   )
 
-  if (!isEligible) return null
+  if (!isEligible || !disputesEnabled) return null
 
   return (
     <>
