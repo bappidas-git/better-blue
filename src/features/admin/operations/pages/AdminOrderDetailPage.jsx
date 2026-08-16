@@ -174,9 +174,14 @@ export default function AdminOrderDetailPage() {
               a resolution settles the money and closes the order in one action, which a
               cancellation here does not.
             </Typography>
-            {/* TODO(Prompt 33): link to `paths.adminDisputeDetail(data.dispute.id)` once
-                the admin dispute screen exists. A chip pointing at an unbuilt
-                route lands on the dashboard 404, which is worse than no link. */}
+            {/* Prompt 33 built the workspace, so this leads straight to it. */}
+            <Box sx={{ mt: 1 }}>
+              <EntityRefChip
+                type="dispute"
+                id={data.dispute.id}
+                label="Open the dispute"
+              />
+            </Box>
           </Alert>
         ) : null}
 

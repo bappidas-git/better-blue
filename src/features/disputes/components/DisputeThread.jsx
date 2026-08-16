@@ -53,6 +53,10 @@ function groupByDay(messages) {
  * @param {boolean} [props.isLoading]
  * @param {object} [props.error]
  * @param {() => void} [props.onRetry]
+ * @param {string} [props.label='Dispute conversation'] accessible name for the
+ *   log — Prompt 33's admin workspace says "case thread" instead, because a
+ *   reviewer is reading a case rather than taking part in a conversation
+ * @param {string} [props.emptyDescription] what an empty thread says
  */
 export default function DisputeThread({
   messages = [],
@@ -61,6 +65,8 @@ export default function DisputeThread({
   isLoading,
   error,
   onRetry,
+  label = 'Dispute conversation',
+  emptyDescription = 'Messages between you, the other party, and our team appear here.',
 }) {
   const endRef = useRef(null)
   const previousCount = useRef(messages.length)
@@ -96,7 +102,7 @@ export default function DisputeThread({
         dense
         icon="solar:chat-round-dots-linear"
         title="Nothing said yet"
-        description="Messages between you, the other party, and our team appear here."
+        description={emptyDescription}
       />
     )
   }
@@ -106,7 +112,7 @@ export default function DisputeThread({
       component="ol"
       role="log"
       aria-live="polite"
-      aria-label="Dispute conversation"
+      aria-label={label}
       sx={{ listStyle: 'none', m: 0, p: 0 }}
     >
       <Stack spacing={2}>

@@ -700,6 +700,69 @@ export const paymentService = Object.freeze({
   },
 
   /**
+   * **What resolving an order would do to its escrow** — a read, and the only
+   * supported way for a screen to show a settlement before it happens
+   * (contract §7 operation 43; Prompt 33 §7: money previews come from here,
+   * never from arithmetic in a component).
+   *
+   * Writes nothing. Every figure comes from the same helpers the settlement
+   * itself uses — {@link rateForOrder} for the rate (frozen on the order first,
+   * so a preview cannot quote a rate the release would not charge) and
+   * `applyRate`/`subtractMoney` for the split — so a preview and the ledger row
+   * it predicts cannot drift.
+   *
+   * One `refundAmount` drives all three dispute outcomes
+   * (`docs/payments.md` §6): `0` is a release, the whole held amount is a full
+   * refund, and anything between is the partial split where **commission is
+   * charged only on what the creator keeps**.
+   *
+   * @param {string} orderId `ord_…`
+   * @param {object} [options]
+   * @param {number} [options.refundAmount=0] the part going back to the buyer
+   * @param {boolean} [options.refundAll=false] preview a **full** refund without
+   *   having to read the held amount first — the same "no amount means all of
+   *   it" convention {@link refundPayment} follows, and the reason a caller
+   *   never computes the escrow total itself
+   * @returns {Promise<{orderId: string, currency: string, held: number,
+   *   refundedAmount: number, baseAmount: number, rate: number,
+   *   commissionAmount: number, creatorEarnings: number, payment: object|null}>}
+   *   `held` is `0` when nothing is in escrow, which is what a caller checks
+   *   before offering a settlement at all
+   * @throws {ApiError} `not_found` when the order does not exist
+   *
+   * **Future endpoint:** `GET /orders/:id/settlement-preview?refundAmount=…`,
+   * gated the same way the operation it previews is. The server computes it
+   * from its own records and never echoes a client-sent amount (§9.3).
+   */
+  async previewSettlement(orderId, { refundAmount = 0, refundAll = false } = {}) {
+    const order = await orders.getById(orderId)
+    const held = await findHeldPayment(orderId)
+
+    const escrow = round2(held?.amount ?? 0)
+    // Clamped rather than rejected: this is a preview of a number somebody is
+    // still typing, and `refundPayment` is where an impossible amount is
+    // refused (§13).
+    const refunded = refundAll
+      ? escrow
+      : Math.min(Math.max(toAmount(refundAmount) ?? 0, 0), escrow)
+    const baseAmount = subtractMoney(escrow, refunded)
+    const rate = await rateForOrder(order)
+    const commissionAmount = applyRate(baseAmount, rate)
+
+    return {
+      orderId,
+      currency: held?.currency ?? order.currency ?? appConfig.defaultCurrency,
+      held: escrow,
+      refundedAmount: refunded,
+      baseAmount,
+      rate,
+      commissionAmount,
+      creatorEarnings: subtractMoney(baseAmount, commissionAmount),
+      payment: held,
+    }
+  },
+
+  /**
    * **Funds an order.** The buyer pays, the money is held in escrow, and work
    * starts (contract §7 operation 2).
    *

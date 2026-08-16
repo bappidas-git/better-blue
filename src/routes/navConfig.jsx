@@ -306,10 +306,10 @@ export const creatorNav = Object.freeze([
  * ║ adds `import { PERMISSIONS } from '@/constants/permissions'` at the top   ║
  * ║ of this file if it is not there yet — Prompt 29 added it, so it is there. ║
  * ║                                                                          ║
- * ║ Enabled now: Overview, Requests and Orders (Prompt 31), Users (29),       ║
- * ║ Moderation and Reports (30), Payments, Settlements and Commissions (32),  ║
- * ║ Announcements and Support (31), and Notifications (Prompt 27's shared     ║
- * ║ page, at `paths.ADMIN_NOTIFICATIONS`).                                    ║
+ * ║ Enabled now: Overview, Requests and Orders (Prompt 31), Disputes (33),    ║
+ * ║ Users (29), Moderation and Reports (30), Payments, Settlements and        ║
+ * ║ Commissions (32), Announcements and Support (31), and Notifications       ║
+ * ║ (Prompt 27's shared page, at `paths.ADMIN_NOTIFICATIONS`).                 ║
  * ╚══════════════════════════════════════════════════════════════════════════╝
  *
  * Order is deliberate — it follows what an admin does with their day: check the
@@ -350,15 +350,17 @@ export const adminNav = Object.freeze([
         path: paths.ADMIN_ORDERS,
         permission: PERMISSIONS.ORDERS_MANAGE,
       }),
-      // Prompt 33 — the admin side of the case queue, not the party-facing
-      // screens Prompt 26 built for buyers and creators.
-      // Object.freeze({
-      //   key: 'disputes',
-      //   label: 'Disputes',
-      //   icon: 'solar:shield-warning-linear',
-      //   path: paths.ADMIN_DISPUTES,
-      //   permission: PERMISSIONS.DISPUTES_RESOLVE,
-      // }),
+      Object.freeze({
+        // Prompt 33 — the admin side of the case queue, not the party-facing
+        // screens Prompt 26 built for buyers and creators. Last in the group
+        // because a dispute is what happens after a request and an order, and
+        // an admin without `disputes.resolve` never sees the entry at all.
+        key: 'disputes',
+        label: 'Disputes',
+        icon: 'solar:shield-warning-linear',
+        path: paths.ADMIN_DISPUTES,
+        permission: PERMISSIONS.DISPUTES_RESOLVE,
+      }),
     ]),
   }),
 

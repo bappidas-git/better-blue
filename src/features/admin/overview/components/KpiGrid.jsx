@@ -197,7 +197,8 @@ export default function KpiGrid({ stats, loading = false, onRetry }) {
       icon: withIcon('solar:shield-warning-linear'),
       // A queue with nothing in it is good news, not a warning.
       iconTone: stats?.openDisputes > 0 ? 'warning' : 'success',
-      // TODO(Prompt 33): `to: paths.ADMIN_DISPUTES`.
+      // Prompt 33 built the dispute console, so the tile leads to it.
+      to: paths.ADMIN_DISPUTES,
     }),
     tile({
       key: 'moderation',

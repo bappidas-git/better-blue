@@ -1,16 +1,32 @@
 // Trust & Safety casework — `docs/api-contract.md` §6.16, §6.17.
 //
-// The two workflow operations at the bottom of this file are the party-facing
-// half of a dispute: opening one, and talking on the thread. Resolving one —
-// releasing, refunding, closing — is Prompt 33 and belongs to admins.
+// The file has two halves. The party-facing one (Prompt 26) opens a case and
+// carries the conversation on it. The admin one below it (Prompt 33) works the
+// case: triage, information requests, escalation, and the binding decision that
+// ends it.
+//
+// **No money is written here.** `resolve` decides *what* should happen and then
+// asks `paymentService` — through `releasePayment` and `refundPayment` — to make
+// it happen, exactly as an accepted delivery or a cancellation would
+// (`docs/payments.md` §4). There is deliberately no second implementation of a
+// release in this module: a dispute resolved in the creator's favour and a buyer
+// accepting a delivery must settle identically, including the commission record.
 
 import { NOTIFICATION_TYPE } from '@/constants/notificationTypes'
 import { PERMISSIONS } from '@/constants/permissions'
 import { isAdminRole, ROLES } from '@/constants/roles'
 import { DISPUTE_STATUS_MACHINE, ORDER_STATUS_MACHINE } from '@/constants/stateMachines'
-import { DISPUTE_CATEGORY, DISPUTE_STATUS, ORDER_STATUS } from '@/constants/statuses'
+import {
+  DISPUTE_CATEGORY,
+  DISPUTE_RESOLUTION,
+  DISPUTE_STATUS,
+  ORDER_STATUS,
+  PAYMENT_STATUS,
+} from '@/constants/statuses'
+import { REFUND_CONTEXT } from '@/constants/transactionTemplates'
+import { formatCurrency } from '@/utils/formatters'
 import { ID_PREFIX } from '@/utils/id'
-import { assertTransition } from '@/utils/stateMachine'
+import { assertTransition, canTransition } from '@/utils/stateMachine'
 
 import { API_ERROR_CODE, createApiError } from './api/apiError'
 import { createCrudService } from './api/crudFactory'
@@ -24,6 +40,17 @@ import { uploadService, UPLOAD_PURPOSE } from './uploadService'
 // evaluation time, and both dereference only inside function bodies. Laravel
 // collapses the pair into one controller and it disappears.
 import { orderService } from './orderService'
+// CYCLE (Prompt 33): `paymentService` imports this module for the dispute flag
+// on the escrow monitor, and `resolve` calls back into it to move the money.
+// Same shape, same reason — dereferenced only inside function bodies, and
+// imported rather than reimplemented because a second release path is precisely
+// what this product must not grow.
+import { paymentService } from './paymentService'
+// CYCLE (Prompt 33): `userService` imports this module to count a member's open
+// cases, and the admin queue reads below call back for the names and avatars
+// behind one. Imported rather than reached for directly because `listByIds`
+// strips credentials before anything renders.
+import { userService } from './userService'
 
 const disputes = createCrudService('disputes', { idPrefix: ID_PREFIX.DISPUTE })
 const disputeMessages = createCrudService('disputeMessages', {
@@ -68,6 +95,94 @@ export const SETTLED_DISPUTE_STATUSES = Object.freeze([
   DISPUTE_STATUS.CLOSED,
 ])
 
+/**
+ * Statuses a decision can be issued from — **read off
+ * `DISPUTE_STATUS_MACHINE`**, not listed by hand, so the action bar and
+ * `assertTransition` can never disagree about where Resolve belongs
+ * (Prompt 33 §5: "unresolvable states hide Resolve").
+ *
+ * `open` is deliberately absent: an untriaged case is one nobody has read, and
+ * the machine says so. Assigning it is the first move.
+ */
+export const RESOLVABLE_DISPUTE_STATUSES = Object.freeze(
+  Object.values(DISPUTE_STATUS).filter((status) =>
+    canTransition(DISPUTE_STATUS_MACHINE, status, DISPUTE_STATUS.RESOLVED)
+  )
+)
+
+/**
+ * The reasoning behind a decision, which both parties read on their own screens
+ * (Prompt 26's `ResolutionCard`). Long enough to be an explanation rather than
+ * a verdict, short enough to stay readable.
+ */
+export const RESOLUTION_NOTE_MIN = 30
+export const RESOLUTION_NOTE_MAX = 1000
+
+/** The two parties an information request can be aimed at. */
+export const INFO_REQUEST_ROLES = Object.freeze([ROLES.BUYER, ROLES.CREATOR])
+
+/**
+ * Ceiling on the batched joins behind the admin queue and workspace — the
+ * provider's page ceiling (contract §4.1), comfortably above any seeded case
+ * and gone the moment Laravel answers these with one query each.
+ */
+const QUEUE_JOIN_LIMIT = 100
+
+/**
+ * How an audit entry on a case reads on the workspace timeline.
+ *
+ * The trail stores `action` + `meta`; the sentences live here for the same
+ * reason ledger descriptions live in `constants/transactionTemplates.js` —
+ * writing them at each call site is how one action ends up with three
+ * spellings. `internal` marks the rows a party would never see; the timeline is
+ * admin-only, and the marker is what says so on screen.
+ */
+const DISPUTE_EVENT_STYLE = Object.freeze({
+  'dispute.open': Object.freeze({
+    icon: 'solar:shield-warning-linear',
+    tone: 'warning',
+    title: ({ category }) => `Dispute opened${category ? ` — ${String(category).replace(/_/g, ' ')}` : ''}`,
+    description: () => '',
+  }),
+  'dispute.assign': Object.freeze({
+    icon: 'solar:user-check-linear',
+    tone: 'info',
+    title: ({ previousAdminId }) => (previousAdminId ? 'Reassigned' : 'Picked up for review'),
+    description: () => '',
+  }),
+  'dispute.request_info': Object.freeze({
+    icon: 'solar:chat-round-dots-linear',
+    tone: 'warning',
+    title: ({ from }) => `Information requested from the ${from ?? 'other party'}`,
+    description: () => '',
+  }),
+  'dispute.escalate': Object.freeze({
+    icon: 'solar:double-alt-arrow-up-linear',
+    tone: 'error',
+    internal: true,
+    title: () => 'Escalated to a senior reviewer',
+    description: ({ note }) => note ?? '',
+  }),
+  'dispute.resolve': Object.freeze({
+    icon: 'solar:shield-check-linear',
+    tone: 'success',
+    title: ({ outcome }) => `Decided — ${String(outcome ?? '').replace(/_/g, ' ') || 'resolved'}`,
+    description: ({ note }) => note ?? '',
+  }),
+  'dispute.close': Object.freeze({
+    icon: 'solar:archive-linear',
+    tone: 'neutral',
+    title: () => 'Case closed',
+    description: () => '',
+  }),
+  default: Object.freeze({
+    icon: 'solar:history-linear',
+    tone: 'neutral',
+    title: ({ action }) => String(action ?? 'Activity').replace(/[._]/g, ' '),
+    description: () => '',
+  }),
+})
+
 /** The opening statement's rules, mirrored by the dialog so it can say them first. */
 export const DISPUTE_DESCRIPTION_MIN = 60
 export const DISPUTE_DESCRIPTION_MAX = 2000
@@ -91,6 +206,95 @@ export function awaitingRoleFor(status) {
 export function isAwaitingRole(dispute, role) {
   const awaiting = awaitingRoleFor(dispute?.status)
   return awaiting !== null && awaiting === role
+}
+
+/** The status that parks a case on `role` — the inverse of {@link awaitingRoleFor}. */
+export function awaitingStatusFor(role) {
+  if (role === ROLES.BUYER) return DISPUTE_STATUS.AWAITING_BUYER
+  if (role === ROLES.CREATOR) return DISPUTE_STATUS.AWAITING_CREATOR
+  return null
+}
+
+/* -------------------------------------------------------------------------- */
+/* What an admin may do to a case, right now                                  */
+/* -------------------------------------------------------------------------- */
+//
+// Every predicate below answers from `DISPUTE_STATUS_MACHINE` rather than from
+// a list of statuses somebody typed twice. The action bar in the admin
+// workspace renders from these, so a button is on screen exactly when the
+// service behind it would accept the call — the alternative is offering an
+// action that fails on click, which is the one thing a decision surface must
+// not do (§13).
+
+/** Can this case be picked up or handed to another reviewer? */
+export function canAssignDispute(dispute) {
+  return Boolean(dispute) && !SETTLED_DISPUTE_STATUSES.includes(dispute.status)
+}
+
+/**
+ * Can the team ask `role` for something right now?
+ *
+ * False while the case is already parked on either party: the machine has no
+ * `awaiting_buyer → awaiting_creator` edge, and inventing one would let a case
+ * be owed by two people at once.
+ */
+export function canRequestInfo(dispute, role) {
+  const target = awaitingStatusFor(role)
+  return Boolean(target) && canTransition(DISPUTE_STATUS_MACHINE, dispute?.status, target)
+}
+
+/** Can this case go to a senior reviewer? */
+export function canEscalateDispute(dispute) {
+  return canTransition(DISPUTE_STATUS_MACHINE, dispute?.status, DISPUTE_STATUS.ESCALATED)
+}
+
+/**
+ * Can a binding decision be issued?
+ *
+ * Two conditions, and the second is not the machine's: a case must have been
+ * **picked up** — assigned, or escalated to somebody senior — before anyone
+ * decides it. `resolve` enforces the same pair.
+ */
+export function canResolveDispute(dispute) {
+  if (!RESOLVABLE_DISPUTE_STATUSES.includes(dispute?.status)) return false
+  return Boolean(dispute.assignedAdminId) || dispute.status === DISPUTE_STATUS.ESCALATED
+}
+
+/** Can this decided case be filed away? */
+export function canCloseDispute(dispute) {
+  return canTransition(DISPUTE_STATUS_MACHINE, dispute?.status, DISPUTE_STATUS.CLOSED)
+}
+
+/**
+ * One sentence saying what an outcome did to the money — the same words in the
+ * confirmation step, the thread message, and both parties' notifications, so a
+ * decision cannot be described three ways.
+ *
+ * @param {string} outcome a `DISPUTE_RESOLUTION` value
+ * @param {object} [money]
+ * @param {number} [money.amountRefunded] what went back to the buyer
+ * @param {number} [money.creatorEarnings] what reached the creator, after commission
+ * @param {string} [money.currency]
+ * @returns {string}
+ */
+export function resolutionSummary(outcome, { amountRefunded, creatorEarnings, currency } = {}) {
+  const refunded = formatCurrency(amountRefunded ?? 0, currency)
+
+  switch (outcome) {
+    case DISPUTE_RESOLUTION.RELEASE_PAYMENT:
+      return 'the payment held on this order has been released to the creator in full, minus the usual commission'
+    case DISPUTE_RESOLUTION.FULL_REFUND:
+      return `${refunded} has been returned to the buyer in full, and nothing was released to the creator`
+    case DISPUTE_RESOLUTION.PARTIAL_REFUND:
+      return (
+        `${refunded} has been returned to the buyer and the balance released to the creator` +
+        (Number.isFinite(Number(creatorEarnings))
+          ? ` (${formatCurrency(creatorEarnings, currency)} after commission on what they kept)`
+          : '')
+      )
+    default:
+      return 'the order has been settled according to the decision below'
+  }
 }
 
 /** `conflict` is the contract's code for "not in the right state" (§3.2). */
@@ -178,9 +382,77 @@ function assertBody(body) {
   return text
 }
 
+/** Validates the reasoning behind a decision (§13). */
+function assertResolutionNote(note) {
+  const text = String(note ?? '').trim()
+
+  if (text.length < RESOLUTION_NOTE_MIN) {
+    throw createApiError(
+      API_ERROR_CODE.VALIDATION_FAILED,
+      'Explain the decision before issuing it.',
+      { note: `Both parties read this — use at least ${RESOLUTION_NOTE_MIN} characters.` }
+    )
+  }
+  if (text.length > RESOLUTION_NOTE_MAX) {
+    throw createApiError(API_ERROR_CODE.VALIDATION_FAILED, 'That explanation is too long.', {
+      note: `Keep it under ${RESOLUTION_NOTE_MAX} characters.`,
+    })
+  }
+
+  return text
+}
+
+/**
+ * Thrown when a resolution failed **after** the money moved. There is no
+ * rollback in the mock stack (contract §7), so the error names the step and
+ * what was already written: an escrow released against a case still reading
+ * `under_review` is exactly the state somebody has to reconcile by hand, and
+ * swallowing the error is how it goes unnoticed.
+ */
+function inconsistency(step, done, cause) {
+  return createApiError(
+    API_ERROR_CODE.SERVER_ERROR,
+    `The money was moved but ${step} did not complete. ` +
+      'Support needs to reconcile this case by hand — nothing was rolled back.',
+    { step, completed: done, cause: cause?.message }
+  )
+}
+
 /** The other side of a case, from the perspective of `actorId`. */
 function counterpartOf(dispute, actorId) {
   return dispute.raisedById === actorId ? dispute.againstId : dispute.raisedById
+}
+
+/** Both parties to a case, in a stable order — buyer first is not knowable here. */
+const partiesOf = (dispute) => [dispute.raisedById, dispute.againstId].filter(Boolean)
+
+/**
+ * Writes one message onto a thread as part of a larger operation.
+ *
+ * The admin workflows below each post a message *and* move the case, which is
+ * one intention rather than two — going through {@link disputeService.postMessage}
+ * would fan out its own notifications and re-run guards the caller has already
+ * made stricter. The message shape is identical, which is what matters.
+ */
+function writeThreadMessage({ disputeId, authorId, authorRole, body, internal = false, at }) {
+  return disputeMessages.create({
+    disputeId,
+    authorId,
+    authorRole: authorRole ?? ROLES.ADMIN,
+    body,
+    attachments: [],
+    internal: internal === true,
+    createdAt: at,
+  })
+}
+
+/** A best-effort audit line: an unwritten entry must never undo what happened. */
+async function auditQuietly(entry) {
+  try {
+    return await auditService.log(entry)
+  } catch {
+    return null
+  }
 }
 
 export const disputeService = Object.freeze({
@@ -672,9 +944,868 @@ export const disputeService = Object.freeze({
     return { message, dispute: updated }
   },
 
-  // —— workflow operations (added by later prompts) ——
-  // resolveDispute — Prompt 33 (admin disputes), contract §7 operation 8:
-  // release, full refund, or partial refund plus the audit entry.
+  /* —— admin reads (Prompt 33) ————————————————————————————————————————— */
+
+  /**
+   * **A page of the case queue, ready to render** (contract §7 operation 36).
+   *
+   * A queue row carries things a dispute record does not: the order it froze,
+   * the money still held on it, both parties, and whoever picked it up. Four
+   * batched reads rather than four per row.
+   *
+   * MOCK-JOIN: 00 §10 bans `_expand`, so the ids come back from the list and
+   * the rest is fetched with them OR'd together (contract §4.1). Every join
+   * fails **open** — a row missing its order title is still a row, and an admin
+   * who cannot see the queue at all cannot work it.
+   *
+   * @param {import('./api/listAdapter').ListParams} [params] anything
+   *   {@link disputeService.list} takes
+   * @returns {Promise<import('./api/listAdapter').ListResult>} items are the
+   *   dispute plus `order`, `payment`, `buyer`, `creator`, `assignee`
+   *
+   * **Future endpoint:** `GET /admin/disputes` — one query with four eager
+   * loads, gated on `disputes.resolve`.
+   */
+  async adminListQueue(params = {}) {
+    const page = await disputeService.list(params)
+    if (page.items.length === 0) return page
+
+    const orderIds = [...new Set(page.items.map((entry) => entry.orderId).filter(Boolean))]
+    const personIds = [
+      ...new Set(
+        page.items
+          .flatMap((entry) => [entry.raisedById, entry.againstId, entry.assignedAdminId])
+          .filter(Boolean)
+      ),
+    ]
+
+    const [orders, people, payments] = await Promise.all([
+      orderService.listByIds(orderIds).catch(() => new Map()),
+      userService
+        .listByIds(personIds)
+        .then((accounts) => new Map(accounts.map((account) => [account.id, account])))
+        .catch(() => new Map()),
+      orderIds.length > 0
+        ? paymentService
+            .list({ page: 1, limit: QUEUE_JOIN_LIMIT, filters: { orderId: orderIds } })
+            .catch(() => ({ items: [] }))
+        : { items: [] },
+    ])
+
+    // An order can carry more than one payment row — a declined attempt and
+    // then the one that settled — so the escrow is read from the `held` row
+    // rather than from whichever came back first (`docs/payments.md` §5).
+    const heldByOrder = new Map()
+    payments.items.forEach((payment) => {
+      if (payment.status === PAYMENT_STATUS.HELD) heldByOrder.set(payment.orderId, payment)
+    })
+
+    const items = page.items.map((entry) => {
+      const order = orders.get(entry.orderId) ?? null
+      const raisedBy = people.get(entry.raisedById) ?? null
+      const against = people.get(entry.againstId) ?? null
+
+      return {
+        ...entry,
+        order,
+        payment: heldByOrder.get(entry.orderId) ?? null,
+        raisedBy,
+        against,
+        // Buyer and creator come off the *order*, which is the only record that
+        // knows which side of the engagement each party is on.
+        buyer: order ? (order.buyerId === entry.raisedById ? raisedBy : against) : null,
+        creator: order ? (order.creatorId === entry.raisedById ? raisedBy : against) : null,
+        assignee: entry.assignedAdminId ? (people.get(entry.assignedAdminId) ?? null) : null,
+      }
+    })
+
+    return { ...page, items }
+  },
+
+  /**
+   * **The number beside each queue tab** (contract §7 operation 37).
+   *
+   * Five count queries, each fetched one row deep and read for its `total` —
+   * the trick `notificationService.unreadCount` and `userService`'s aggregates
+   * use. A count that fails resolves to `null` rather than `0`, because "no
+   * cases" and "we could not count the cases" are different sentences and a
+   * tab must not claim the first when it means the second (§13).
+   *
+   * @param {object} [options]
+   * @param {string} [options.adminId] whose "Mine" tab this is — omitted, the
+   *   figure comes back `null` rather than counting everybody's
+   * @returns {Promise<{unassigned: number|null, mine: number|null,
+   *   awaiting: number|null, escalated: number|null, settled: number|null}>}
+   *
+   * **Future endpoint:** part of `GET /admin/disputes/summary` — one grouped
+   * count rather than five.
+   */
+  async getQueueCounts({ adminId } = {}) {
+    const count = (filters) =>
+      disputeService
+        .list({ page: 1, limit: 1, filters })
+        .then((result) => result.total)
+        .catch(() => null)
+
+    const [unassigned, mine, awaiting, escalated, settled] = await Promise.all([
+      count({ status: DISPUTE_STATUS.OPEN }),
+      adminId
+        ? count({ assignedAdminId: adminId, status: [...ACTIVE_DISPUTE_STATUSES] })
+        : Promise.resolve(null),
+      count({ status: [DISPUTE_STATUS.AWAITING_BUYER, DISPUTE_STATUS.AWAITING_CREATOR] }),
+      count({ status: DISPUTE_STATUS.ESCALATED }),
+      count({ status: [...SETTLED_DISPUTE_STATUSES] }),
+    ])
+
+    return { unassigned, mine, awaiting, escalated, settled }
+  },
+
+  /**
+   * **A case's history**, folded from what actually happened to it: the record's
+   * own milestones and the audit entries every admin action on it wrote.
+   *
+   * There is no `disputeEvents` collection and there should not be one — the
+   * trail already exists (`auditLogs`, contract §6.26), and a second copy of it
+   * would be a second thing to keep in step. This is the same reasoning behind
+   * `orderService.listAdminNotes`.
+   *
+   * **Admin-only.** Audit entries carry internal notes in their meta, so this
+   * never reaches a party surface — Prompt 26's screens read the thread instead.
+   *
+   * @param {string} disputeId `dsp_…`
+   * @param {object} [dispute] the case, when the caller already has it
+   * @returns {Promise<object[]>} `TimelineList` items, oldest first
+   */
+  async getDisputeTimeline(disputeId, dispute) {
+    const record = dispute ?? (await disputes.getById(disputeId))
+
+    const { items: entries } = await auditService
+      .list({
+        page: 1,
+        limit: QUEUE_JOIN_LIMIT,
+        sort: 'createdAt',
+        order: SORT_ORDER.ASC,
+        filters: { entityType: 'dispute', entityId: record.id },
+      })
+      .catch(() => ({ items: [] }))
+
+    const timeline = entries.map((entry) => {
+      const style = DISPUTE_EVENT_STYLE[entry.action] ?? DISPUTE_EVENT_STYLE.default
+      return {
+        id: entry.id,
+        at: entry.createdAt,
+        actorId: entry.actorId,
+        action: entry.action,
+        internal: style.internal === true,
+        title: style.title(entry.meta ?? {}),
+        description: style.description?.(entry.meta ?? {}) ?? '',
+        icon: style.icon,
+        tone: style.tone,
+      }
+    })
+
+    // The opening is on the record itself whether or not an audit line survived
+    // for it, so a case always has a beginning on screen.
+    if (!timeline.some((entry) => entry.action === 'dispute.open')) {
+      const opening = DISPUTE_EVENT_STYLE['dispute.open']
+      timeline.unshift({
+        id: `${record.id}-opened`,
+        at: record.createdAt,
+        actorId: record.raisedById,
+        action: 'dispute.open',
+        internal: false,
+        title: opening.title({ category: record.category }),
+        description: '',
+        icon: opening.icon,
+        tone: opening.tone,
+      })
+    }
+
+    return timeline.sort((a, b) => String(a.at).localeCompare(String(b.at)))
+  },
+
+  /**
+   * **Everything the admin workspace shows, in one call** (contract §7
+   * operation 38) — the case, the order and its money, both parties with the
+   * history that makes them readable, whoever is on it, and the timeline.
+   *
+   * The shape mirrors `orderService.getAdminOrderContext`: one composite read
+   * per admin detail screen, every aggregate its own failure boundary, and no
+   * component left holding a query.
+   *
+   * MOCK-AGGREGATE: up to a dozen reads fanned out client-side, most of them in
+   * parallel. Laravel answers the whole thing with one query and four joins.
+   *
+   * @param {string} disputeId `dsp_…`
+   * @returns {Promise<object>} `{ dispute, order, payment, transactions, buyer,
+   *   creator, assignee, parties, priorBetweenParties, timeline }`
+   * @throws {ApiError} `not_found` — the case itself is the payload
+   *
+   * **Future endpoint:** `GET /admin/disputes/:id`, gated on `disputes.resolve`.
+   */
+  async getAdminCaseContext(disputeId) {
+    const dispute = await disputes.getById(disputeId)
+    const order = await orderService.getById(dispute.orderId).catch(() => null)
+
+    const personIds = [
+      dispute.raisedById,
+      dispute.againstId,
+      dispute.assignedAdminId,
+      dispute.resolution?.resolvedById,
+    ].filter(Boolean)
+
+    const [people, payment, transactions, timeline, raisedByCases, againstCases] =
+      await Promise.all([
+        userService
+          .listByIds(personIds)
+          .then((accounts) => new Map(accounts.map((account) => [account.id, account])))
+          .catch(() => new Map()),
+        paymentService.getByOrderId(dispute.orderId).catch(() => null),
+        paymentService
+          .listTransactions({ page: 1, limit: QUEUE_JOIN_LIMIT, filters: { orderId: dispute.orderId } })
+          .then((result) => result.items)
+          .catch(() => []),
+        disputeService.getDisputeTimeline(dispute.id, dispute).catch(() => []),
+        disputeService
+          .listByUser(dispute.raisedById, { page: 1, limit: QUEUE_JOIN_LIMIT })
+          .catch(() => null),
+        disputeService
+          .listByUser(dispute.againstId, { page: 1, limit: QUEUE_JOIN_LIMIT })
+          .catch(() => null),
+      ])
+
+    // Cases these two have had **with each other** before this one — the single
+    // most useful thing on the rail, and the reason both lists are fetched
+    // rather than two counts (§4.3).
+    const priorBetweenParties =
+      raisedByCases === null
+        ? null
+        : raisedByCases.items.filter(
+            (entry) =>
+              entry.id !== dispute.id &&
+              (entry.raisedById === dispute.againstId || entry.againstId === dispute.againstId)
+          )
+
+    const partyFor = (userId, cases) => {
+      if (!userId) return null
+      return {
+        user: people.get(userId) ?? null,
+        // `null` rather than `0` on failure, and rendered as "—": a party with
+        // no history and a party whose history did not load are not the same.
+        disputeCount: cases === null ? null : cases.total,
+        side: order ? (order.buyerId === userId ? ROLES.BUYER : ROLES.CREATOR) : null,
+      }
+    }
+
+    const raisedBy = partyFor(dispute.raisedById, raisedByCases)
+    const against = partyFor(dispute.againstId, againstCases)
+
+    const buyer = order && order.buyerId === dispute.raisedById ? raisedBy : against
+    const creator = order && order.creatorId === dispute.raisedById ? raisedBy : against
+
+    const [buyerOrders, creatorOrders] = await Promise.all([
+      order
+        ? orderService
+            .list({ page: 1, limit: 1, filters: { buyerId: order.buyerId } })
+            .then((result) => result.total)
+            .catch(() => null)
+        : null,
+      order
+        ? orderService
+            .list({ page: 1, limit: 1, filters: { creatorId: order.creatorId } })
+            .then((result) => result.total)
+            .catch(() => null)
+        : null,
+    ])
+
+    return {
+      dispute,
+      order,
+      payment,
+      transactions,
+      raisedBy,
+      against,
+      buyer: buyer ? { ...buyer, ordersCount: buyerOrders } : null,
+      creator: creator ? { ...creator, ordersCount: creatorOrders } : null,
+      assignee: dispute.assignedAdminId ? (people.get(dispute.assignedAdminId) ?? null) : null,
+      resolvedBy: dispute.resolution?.resolvedById
+        ? (people.get(dispute.resolution.resolvedById) ?? null)
+        : null,
+      priorBetweenParties,
+      timeline,
+    }
+  },
+
+  /* —— admin workflow operations (Prompt 33) ——————————————————————————— */
+
+  /**
+   * **Picks a case up** (contract §7 operation 39).
+   *
+   * Triage is one write and one status move: a case somebody owns is a case
+   * somebody is reading, which is the whole difference between `open` and
+   * `under_review`. Reassignment to another reviewer runs through here too and
+   * leaves the status alone — the case was already being read, just by
+   * somebody else.
+   *
+   * SECURITY: the permission check is UX only (00 §11). Laravel scopes this to
+   * `disputes.resolve` and takes the actor from the session.
+   *
+   * @param {string} disputeId `dsp_…`
+   * @param {object} options
+   * @param {string} options.adminId the reviewer taking it, `usr_…`
+   * @param {{id: string, role: string}} [options.actor] who performed the
+   *   assignment — defaults to the assignee (picking a case up yourself)
+   * @returns {Promise<object>} the updated case
+   * @throws {ApiError} `validation_failed` (no assignee) · `conflict` (the case
+   *   is already decided) · `not_found`
+   *
+   * **Future endpoint:** `PATCH /disputes/:id` → the case, one transaction with
+   * the audit entry.
+   */
+  async assign(disputeId, { adminId, actor } = {}) {
+    const dispute = await disputes.getById(disputeId)
+
+    if (!adminId) {
+      throw createApiError(API_ERROR_CODE.VALIDATION_FAILED, 'Choose who is taking this case.', {
+        adminId: 'An assignee is required.',
+      })
+    }
+    if (!canAssignDispute(dispute)) {
+      throw invalidState(
+        'This dispute has been decided, so it can no longer be assigned. Reload the page to see where it got to.',
+        { status: dispute.status }
+      )
+    }
+
+    // Only an untriaged case moves: reassigning one already under review, or
+    // parked on a party, must not quietly clear the ball it is waiting on.
+    const opening = dispute.status === DISPUTE_STATUS.OPEN
+    const at = nowIso()
+
+    const updated = await disputes.update(dispute.id, {
+      assignedAdminId: adminId,
+      ...(opening
+        ? {
+            status: transitionTo(
+              DISPUTE_STATUS_MACHINE,
+              dispute.status,
+              DISPUTE_STATUS.UNDER_REVIEW,
+              'This dispute has moved on. Reload the page to see where it got to.'
+            ),
+          }
+        : {}),
+      updatedAt: at,
+    })
+
+    await auditQuietly({
+      actorId: actor?.id ?? adminId,
+      actorRole: actor?.role ?? ROLES.ADMIN,
+      action: 'dispute.assign',
+      entityType: 'dispute',
+      entityId: dispute.id,
+      meta: {
+        orderId: dispute.orderId,
+        assignedAdminId: adminId,
+        previousAdminId: dispute.assignedAdminId ?? null,
+        fromStatus: dispute.status,
+        toStatus: updated.status,
+      },
+    })
+
+    return updated
+  },
+
+  /**
+   * **Asks one party for something** (contract §7 operation 40).
+   *
+   * The message is public, because a request made in private is a request the
+   * other side cannot see was made — and in casework that is how a decision
+   * stops looking impartial. The status change is what makes it a request
+   * rather than a remark: the case parks on that party, their nav badge lights
+   * up, and Prompt 26's banner tells them the review is waiting on them. Their
+   * reply moves it straight back to `under_review` (operation 23).
+   *
+   * @param {string} disputeId `dsp_…`
+   * @param {object} options
+   * @param {string} options.from `ROLES.BUYER` or `ROLES.CREATOR`
+   * @param {string} options.message what is being asked, 2–2000 characters
+   * @param {{id: string, role: string}} options.actor the reviewer asking
+   * @returns {Promise<{dispute: object, message: object}>}
+   * @throws {ApiError} `validation_failed` (unknown party, empty message) ·
+   *   `conflict` (the case cannot park on that party from where it is) ·
+   *   `not_found`
+   *
+   * **Future endpoint:** `POST /disputes/:id/request-info` →
+   * `{ dispute, message }`, one transaction covering the message, the status,
+   * and the notification.
+   */
+  async requestInfo(disputeId, { from, message, actor } = {}) {
+    const dispute = await disputes.getById(disputeId)
+
+    if (!INFO_REQUEST_ROLES.includes(from)) {
+      throw createApiError(API_ERROR_CODE.VALIDATION_FAILED, 'Choose who to ask.', {
+        from: 'Choose the buyer or the creator.',
+      })
+    }
+
+    const text = assertBody(message)
+    const nextStatus = transitionTo(
+      DISPUTE_STATUS_MACHINE,
+      dispute.status,
+      awaitingStatusFor(from),
+      'This dispute cannot be put back to a party from where it is. Reload the page to see where it got to.'
+    )
+
+    const order = await orderService.getById(dispute.orderId).catch(() => null)
+    const recipientId = from === ROLES.BUYER ? order?.buyerId : order?.creatorId
+    const at = nowIso()
+
+    const posted = await writeThreadMessage({
+      disputeId: dispute.id,
+      authorId: actor?.id,
+      authorRole: actor?.role,
+      body: text,
+      at,
+    })
+
+    const updated = await disputes.update(dispute.id, { status: nextStatus, updatedAt: at })
+
+    // Only the party being asked. The other side reads the request on the
+    // thread, where it belongs — a bell item saying "we asked them something"
+    // is noise on a case they cannot act on.
+    if (recipientId) {
+      await notifyQuietly({
+        userId: recipientId,
+        type: NOTIFICATION_TYPE.DISPUTE_MESSAGE,
+        title: 'Our team needs something from you',
+        body:
+          `We have asked you for more information on the dispute for “${order?.title ?? 'an order'}”. ` +
+          'The review continues as soon as you reply.',
+        entityType: 'dispute',
+        entityId: dispute.id,
+      })
+    }
+
+    await auditQuietly({
+      actorId: actor?.id,
+      actorRole: actor?.role ?? ROLES.ADMIN,
+      action: 'dispute.request_info',
+      entityType: 'dispute',
+      entityId: dispute.id,
+      meta: { orderId: dispute.orderId, from, fromStatus: dispute.status, toStatus: nextStatus },
+    })
+
+    return { dispute: updated, message: posted }
+  },
+
+  /**
+   * **Hands a case to a senior reviewer** (contract §7 operation 41).
+   *
+   * The note is internal, and that is the point: escalation is a conversation
+   * between reviewers about a decision neither party should be pre-empting.
+   * Both parties still see the status — Prompt 26's banner tells them it is
+   * with a senior reviewer and will take a little longer — and neither sees a
+   * word of why.
+   *
+   * @param {string} disputeId `dsp_…`
+   * @param {object} options
+   * @param {string} options.note why it is being escalated, 2–2000 characters,
+   *   admin-only
+   * @param {{id: string, role: string}} options.actor the reviewer escalating
+   * @returns {Promise<{dispute: object, message: object}>}
+   * @throws {ApiError} `validation_failed` · `conflict` (only a case under
+   *   review can be escalated) · `not_found`
+   *
+   * **Future endpoint:** `POST /disputes/:id/escalate` → `{ dispute }`, one
+   * transaction covering the note, the status, and the team fan-out.
+   */
+  async escalate(disputeId, { note, actor } = {}) {
+    const dispute = await disputes.getById(disputeId)
+
+    const text = assertBody(note)
+    const nextStatus = transitionTo(
+      DISPUTE_STATUS_MACHINE,
+      dispute.status,
+      DISPUTE_STATUS.ESCALATED,
+      'This dispute cannot be escalated from where it is. Reload the page to see where it got to.'
+    )
+
+    const order = await orderService.getById(dispute.orderId).catch(() => null)
+    const at = nowIso()
+
+    const posted = await writeThreadMessage({
+      disputeId: dispute.id,
+      authorId: actor?.id,
+      authorRole: actor?.role,
+      body: text,
+      internal: true,
+      at,
+    })
+
+    const updated = await disputes.update(dispute.id, { status: nextStatus, updatedAt: at })
+
+    // The queue only works if somebody is told there is something in it — the
+    // same reason `createDispute` tells the team a case exists at all.
+    await notificationService.notifyAdmins(PERMISSIONS.DISPUTES_RESOLVE, {
+      type: NOTIFICATION_TYPE.DISPUTE_OPENED,
+      title: 'A dispute has been escalated',
+      body: `A ${String(dispute.category).replace(/_/g, ' ')} dispute on “${
+        order?.title ?? 'an order'
+      }” needs a senior review.`,
+      entityType: 'dispute',
+      entityId: dispute.id,
+    })
+
+    await auditQuietly({
+      actorId: actor?.id,
+      actorRole: actor?.role ?? ROLES.ADMIN,
+      action: 'dispute.escalate',
+      entityType: 'dispute',
+      entityId: dispute.id,
+      meta: { orderId: dispute.orderId, fromStatus: dispute.status, toStatus: nextStatus, note: text },
+    })
+
+    return { dispute: updated, message: posted }
+  },
+
+  /**
+   * **Issues a binding decision** — the operation the whole console exists for
+   * (contract §7 operation 8).
+   *
+   * Three outcomes, and each one is a *different* ending for the order as well
+   * as for the money (00 §9: `disputed → completed | refunded | cancelled`):
+   *
+   * | Outcome | Money | Order |
+   * |---|---|---|
+   * | `release_payment` | `releasePayment` — escrow to the creator, less commission | `completed` |
+   * | `full_refund` | `refundPayment` for the whole held amount | `refunded` |
+   * | `partial_refund` | `refundPayment` for part; the remainder settles in the same call | `completed` |
+   *
+   * **Why a partial refund completes the order.** It is the one outcome where
+   * both sides got something: the buyer keeps deliverables and gets money back,
+   * the creator is paid for what they did, and commission is charged only on
+   * what they kept (`docs/payments.md` §6). `refunded` would say the engagement
+   * never happened, and `cancelled` would say it was called off — neither is
+   * true of work that was delivered, kept, and partly paid for.
+   *
+   * Ordering is the safest available: everything is validated, then the order's
+   * own transition is checked **before** a cent moves, then the money moves,
+   * then the case is written. A failure after the money moved throws a loud
+   * `server_error` naming the step (§13) rather than leaving a settled order
+   * behind an undecided case in silence.
+   *
+   * SECURITY: `disputes.resolve` is checked in the UI only (00 §11). This
+   * moves somebody's money — Laravel must enforce the permission, re-derive
+   * every amount from its own records (§9.3), and lock the order for the
+   * duration.
+   *
+   * @param {string} disputeId `dsp_…`
+   * @param {object} options
+   * @param {string} options.outcome a `DISPUTE_RESOLUTION` value
+   * @param {number} [options.amountRefunded] required for `partial_refund`,
+   *   strictly between zero and the held amount; ignored otherwise
+   * @param {string} options.note the reasoning, 30–1000 characters — both
+   *   parties read it verbatim
+   * @param {{id: string, role: string}} options.actor the deciding reviewer
+   * @returns {Promise<{dispute: object, order: object, payment: object|null,
+   *   settlement: object}>}
+   * @throws {ApiError} `validation_failed` (unknown outcome, short note, a
+   *   partial amount outside the escrow) · `conflict` (the case is not one a
+   *   decision can be issued on, is untriaged, or the order/payment moved
+   *   underneath the screen) · `server_error` when the sequence broke after the
+   *   money moved · `not_found`
+   *
+   * **Future endpoint:** `POST /disputes/:id/resolve` →
+   * `{ dispute, order, payment }`, one transaction covering the refund, the
+   * release, the commission, the ledger, the case, the audit entry, and both
+   * notifications.
+   */
+  async resolve(disputeId, { outcome, amountRefunded, note, actor } = {}) {
+    const dispute = await disputes.getById(disputeId)
+
+    /* -- guards, before anything is written -------------------------------- */
+
+    if (!Object.values(DISPUTE_RESOLUTION).includes(outcome)) {
+      throw createApiError(API_ERROR_CODE.VALIDATION_FAILED, 'Choose an outcome.', {
+        outcome: 'Choose one of the three outcomes.',
+      })
+    }
+    if (!RESOLVABLE_DISPUTE_STATUSES.includes(dispute.status)) {
+      throw invalidState(
+        'A decision cannot be issued on this dispute from where it is. Reload the page to see where it got to.',
+        { from: dispute.status, to: DISPUTE_STATUS.RESOLVED }
+      )
+    }
+    if (!canResolveDispute(dispute)) {
+      throw invalidState(
+        'This dispute has not been picked up yet. Assign it to yourself before deciding it.',
+        { status: dispute.status, assignedAdminId: dispute.assignedAdminId ?? null }
+      )
+    }
+
+    const reasoning = assertResolutionNote(note)
+    const order = await orderService.getById(dispute.orderId)
+
+    // What the order becomes. Checked here so an impossible ending is refused
+    // before the escrow is touched rather than after.
+    const orderTarget =
+      outcome === DISPUTE_RESOLUTION.FULL_REFUND ? ORDER_STATUS.REFUNDED : ORDER_STATUS.COMPLETED
+    const orderStatus = transitionTo(
+      ORDER_STATUS_MACHINE,
+      order.status,
+      orderTarget,
+      'This order has already moved on, so this decision can no longer be applied. Reload the page to see where it got to.'
+    )
+
+    // The escrow as it stands, priced through the payment layer — the same
+    // rate and the same rounding the settlement itself will use (§7).
+    const preview = await paymentService.previewSettlement(order.id, {
+      refundAll: outcome === DISPUTE_RESOLUTION.FULL_REFUND,
+      refundAmount: outcome === DISPUTE_RESOLUTION.PARTIAL_REFUND ? amountRefunded : 0,
+    })
+
+    if (preview.payment?.status !== PAYMENT_STATUS.HELD || preview.held <= 0) {
+      throw invalidState(
+        'There is no payment held on this order, so a decision here would move nothing. Check the order before deciding.',
+        { orderId: order.id, expected: PAYMENT_STATUS.HELD, status: preview.payment?.status ?? null }
+      )
+    }
+
+    const requested = Number(amountRefunded)
+    if (outcome === DISPUTE_RESOLUTION.PARTIAL_REFUND) {
+      // Strictly inside the escrow: nothing back is a release and everything
+      // back is a full refund, and both of those are a different decision with
+      // a different ending for the order.
+      if (!Number.isFinite(requested) || requested <= 0 || requested >= preview.held) {
+        throw createApiError(
+          API_ERROR_CODE.VALIDATION_FAILED,
+          'That refund amount is not valid for this order.',
+          {
+            amountRefunded:
+              `Enter an amount above ${formatCurrency(0, preview.currency)} and below the ` +
+              `${formatCurrency(preview.held, preview.currency)} held on this order. ` +
+              'Returning the whole escrow is a full refund.',
+          },
+          422
+        )
+      }
+    }
+
+    /* -- the money, through the payment layer and nowhere else -------------- */
+
+    const refundReason = 'This was the outcome of the dispute raised on it.'
+    let settledOrder = null
+    let payment = null
+
+    if (outcome === DISPUTE_RESOLUTION.RELEASE_PAYMENT) {
+      // `completeOrder` releases the escrow and ends the order in one call —
+      // the same path a buyer accepting a delivery takes (§7.2 operation 6a).
+      const completion = await orderService.completeOrder(order.id, {
+        release: true,
+        reason: 'dispute_resolved',
+        actor,
+      })
+      settledOrder = completion.order
+      payment = completion.payment
+    } else {
+      const isFull = outcome === DISPUTE_RESOLUTION.FULL_REFUND
+
+      payment = await paymentService.refundPayment(order.id, {
+        // A full refund sends no amount: the service returns the whole held
+        // sum, which cannot drift from a figure computed on a screen.
+        ...(isFull ? {} : { amount: preview.refundedAmount }),
+        reason: refundReason,
+        context: REFUND_CONTEXT.DISPUTE,
+        actor,
+      })
+
+      try {
+        settledOrder = isFull
+          ? // `refunded`, not `cancelled`: the engagement happened and the money
+            // went back. `cancelledAt` is the order's one "this ended here"
+            // timestamp (contract §6.9), so it carries the moment.
+            await orderService.update(order.id, { status: orderStatus, cancelledAt: nowIso() })
+          : // A partial refund settled the remainder inside `refundPayment`, so
+            // the order is completed **without** a second release.
+            (
+              await orderService.completeOrder(order.id, {
+                release: false,
+                reason: 'dispute_resolved',
+                actor,
+              })
+            ).order
+      } catch (failure) {
+        throw inconsistency(
+          'the order could not be closed out',
+          { paymentId: payment?.id, refundedAmount: payment?.refundedAmount ?? null },
+          failure
+        )
+      }
+    }
+
+    /* -- the case, the thread, the bells, the trail ------------------------- */
+
+    const at = nowIso()
+    const resolution = {
+      outcome,
+      // Omitted for a release, exactly as the seeds and contract §6.16 have it:
+      // there is no refund to state.
+      ...(outcome === DISPUTE_RESOLUTION.RELEASE_PAYMENT
+        ? {}
+        : { amountRefunded: payment?.refundedAmount ?? preview.refundedAmount }),
+      note: reasoning,
+      resolvedById: actor?.id ?? null,
+      resolvedAt: at,
+    }
+
+    let resolved
+    try {
+      resolved = await disputes.update(dispute.id, {
+        status: transitionTo(
+          DISPUTE_STATUS_MACHINE,
+          dispute.status,
+          DISPUTE_STATUS.RESOLVED,
+          'This dispute has moved on. Reload the page to see where it got to.'
+        ),
+        resolution,
+        updatedAt: at,
+      })
+    } catch (failure) {
+      throw inconsistency(
+        'the decision could not be recorded on the case',
+        { orderId: order.id, paymentId: payment?.id, outcome },
+        failure
+      )
+    }
+
+    const summary = resolutionSummary(outcome, {
+      amountRefunded: resolution.amountRefunded,
+      creatorEarnings: preview.creatorEarnings,
+      currency: preview.currency,
+    })
+
+    // A real message from the reviewer rather than a synthetic system row: the
+    // thread is the record of the case, and the decision is the last thing said
+    // on it (§4.4). Both parties see it where they have been reading everything
+    // else.
+    const message = await writeThreadMessage({
+      disputeId: dispute.id,
+      authorId: actor?.id,
+      authorRole: actor?.role,
+      body: `BetterBlue resolved this dispute: ${summary}.\n\n${reasoning}`,
+      at,
+    }).catch(() => null)
+
+    // Sequential: JSON Server drops one of two concurrent POSTs (see
+    // `notifyAdmins`), and a party who is never told is a party who finds out
+    // from their bank statement.
+    for (const userId of partiesOf(dispute)) {
+      // eslint-disable-next-line no-await-in-loop -- see above.
+      await notifyQuietly({
+        userId,
+        type: NOTIFICATION_TYPE.DISPUTE_RESOLVED,
+        title: 'Your dispute has been decided',
+        body:
+          `A decision has been issued on the dispute for “${order.title}”: ${summary}. ` +
+          'The full reasoning is on the dispute.',
+        entityType: 'dispute',
+        entityId: dispute.id,
+      })
+    }
+
+    await auditQuietly({
+      actorId: actor?.id,
+      actorRole: actor?.role ?? ROLES.ADMIN,
+      action: 'dispute.resolve',
+      entityType: 'dispute',
+      entityId: dispute.id,
+      meta: {
+        orderId: order.id,
+        paymentId: payment?.id ?? null,
+        outcome,
+        amountRefunded: resolution.amountRefunded ?? 0,
+        heldAmount: preview.held,
+        settledAmount: preview.baseAmount,
+        commissionRate: preview.rate,
+        commissionAmount: preview.commissionAmount,
+        creatorEarnings: preview.creatorEarnings,
+        currency: preview.currency,
+        fromStatus: dispute.status,
+        toStatus: DISPUTE_STATUS.RESOLVED,
+        orderFromStatus: order.status,
+        orderToStatus: orderStatus,
+        note: reasoning,
+      },
+    })
+
+    return {
+      dispute: resolved,
+      order: settledOrder ?? order,
+      payment,
+      message,
+      settlement: {
+        held: preview.held,
+        refundedAmount: resolution.amountRefunded ?? 0,
+        baseAmount: preview.baseAmount,
+        rate: preview.rate,
+        commissionAmount: preview.commissionAmount,
+        creatorEarnings: preview.creatorEarnings,
+        currency: preview.currency,
+      },
+    }
+  },
+
+  /**
+   * **Files a decided case away** (contract §7 operation 42).
+   *
+   * `resolved → closed`, and nothing else: the money moved when the decision
+   * was issued, and closing is bookkeeping. It is separate from `resolve`
+   * because the two are different facts — "we decided this" and "nobody came
+   * back on it" — and collapsing them would file a case away before either
+   * party had read the outcome.
+   *
+   * AUTO-CLOSE-HOOK: the natural extension is a scheduled job closing resolved
+   * cases after N days, which is a server-side job and cannot live in a
+   * browser. Until then this is the manual door, and Prompt 26's party screens
+   * read `closed` exactly as they read `resolved`.
+   *
+   * @param {string} disputeId `dsp_…`
+   * @param {object} [options]
+   * @param {{id: string, role: string}} [options.actor] the reviewer closing it
+   * @returns {Promise<object>} the closed case
+   * @throws {ApiError} `conflict` (only a resolved case can be closed) · `not_found`
+   *
+   * **Future endpoint:** `PATCH /disputes/:id` → the case.
+   */
+  async close(disputeId, { actor } = {}) {
+    const dispute = await disputes.getById(disputeId)
+
+    const nextStatus = transitionTo(
+      DISPUTE_STATUS_MACHINE,
+      dispute.status,
+      DISPUTE_STATUS.CLOSED,
+      'Only a dispute that has been decided can be closed. Reload the page to see where it got to.'
+    )
+
+    const at = nowIso()
+    const closed = await disputes.update(dispute.id, { status: nextStatus, updatedAt: at })
+
+    await auditQuietly({
+      actorId: actor?.id,
+      actorRole: actor?.role ?? ROLES.ADMIN,
+      action: 'dispute.close',
+      entityType: 'dispute',
+      entityId: dispute.id,
+      meta: {
+        orderId: dispute.orderId,
+        outcome: dispute.resolution?.outcome ?? null,
+        fromStatus: dispute.status,
+        toStatus: nextStatus,
+      },
+    })
+
+    return closed
+  },
 })
 
 export default disputeService

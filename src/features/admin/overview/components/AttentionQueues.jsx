@@ -12,6 +12,7 @@ import ErrorState from '@/components/feedback/ErrorState'
 import ListSkeleton from '@/components/feedback/skeletons/ListSkeleton'
 import StatusChip from '@/components/data-display/StatusChip'
 import { ORDER_STATUS } from '@/constants/statuses'
+import { DISPUTE_QUEUE_TAB, DISPUTE_SLA } from '@/features/admin/disputes/utils/disputeQueue'
 import { SETTLEMENT_SLA } from '@/features/admin/finance/utils/financeFilters'
 import { AgeBadge, EntityRefChip } from '@/features/admin/shared'
 import { categoryLabel } from '@/features/disputes/utils/disputeDisplay'
@@ -31,10 +32,10 @@ import { formatCurrency, formatDate, formatNumber } from '@/utils/formatters'
 // empty state is **positive**: an empty moderation queue is a good afternoon,
 // not missing data (§13).
 //
-// The "View all" links are comment-gated until the prompt that builds their
+// The "View all" links were comment-gated until the prompt that built their
 // screen — the same rule `navConfig` follows, for the same reason. Moderation
-// went live with Prompt 30, orders with Prompt 31, and settlements with
-// Prompt 32; disputes waits for 33.
+// went live with Prompt 30, orders with Prompt 31, settlements with Prompt 32,
+// and disputes with Prompt 33. All four now lead somewhere.
 
 /**
  * The order list, opened the way this card reads it: the live states, due
@@ -44,9 +45,19 @@ import { formatCurrency, formatDate, formatNumber } from '@/utils/formatters'
  */
 const ADMIN_ORDERS_BY_DUE_DATE = `${paths.ADMIN_ORDERS}?status=${ORDER_STATUS.IN_PROGRESS}&status=${ORDER_STATUS.REVISION_REQUESTED}&sort=due`
 
+/**
+ * The dispute queue opened where this card looks: the untriaged tab, oldest
+ * first — which is the queue's own default, so the tab is the only parameter
+ * worth spelling out (Prompt 33).
+ */
+const ADMIN_DISPUTES_UNASSIGNED = `${paths.ADMIN_DISPUTES}?tab=${DISPUTE_QUEUE_TAB.UNASSIGNED}`
+
 /** Age thresholds per queue, in days. Beyond these the badge turns amber, then red. */
 const SLA = Object.freeze({
-  disputes: { warnAfterDays: 3, errorAfterDays: 7 },
+  // Prompt 33 — imported rather than restated, for the same reason the
+  // settlement thresholds are: a badge must not change colour between this card
+  // and the queue it links to.
+  disputes: DISPUTE_SLA,
   moderation: { warnAfterDays: 2, errorAfterDays: 5 },
   orders: { warnAfterDays: 2, errorAfterDays: 5 },
   // Prompt 32 — imported rather than restated, so a badge cannot change colour
@@ -204,7 +215,20 @@ export default function AttentionQueues({ queues, loading = false, onRetry }) {
               />
             ))
           : null}
-        {/* TODO(Prompt 33): a "View all disputes" link to `paths.ADMIN_DISPUTES`. */}
+        {/* Prompt 33 built the dispute console, so this link is live — and it
+            opens on the tab this card is about: cases nobody has picked up. */}
+        <Box sx={{ mt: 'auto', pt: 1.5 }}>
+          <Link
+            component={RouterLink}
+            to={ADMIN_DISPUTES_UNASSIGNED}
+            variant="body2"
+            underline="hover"
+            sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+          >
+            Open the dispute queue
+            <Icon icon="tabler:arrow-right" width={16} aria-hidden="true" />
+          </Link>
+        </Box>
       </QueueCard>
 
       <QueueCard

@@ -454,7 +454,7 @@ export default function AdminUserDetailPage() {
                   flexWrap="wrap"
                   useFlexGap
                 >
-                  {/* Links land in Prompt 33's admin dispute console. */}
+                  {/* Live since Prompt 33: the chip opens the case workspace. */}
                   <EntityRefChip type="dispute" id={dispute.id} label={categoryLabel(dispute.category)} />
                   <Stack direction="row" spacing={1} alignItems="center">
                     <Typography variant="caption" color="text.secondary">
