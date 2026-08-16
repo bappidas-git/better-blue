@@ -1,5 +1,7 @@
 import { lazy } from 'react'
 
+import SuperAdminRoute from '@/features/admin/shared/SuperAdminRoute'
+
 import { paths } from './paths'
 
 // Admin console route table — mounted under `ProtectedRoute` + `RoleRoute`
@@ -88,6 +90,16 @@ const AdminDisputeDetailPage = lazy(
 const AdminAffiliatesPage = lazy(
   () => import('@/features/admin/affiliates/pages/AdminAffiliatesPage')
 )
+// Prompt 35 — the Platform section. These two are the console's first
+// **role**-gated screens rather than permission-gated ones: they are nested
+// under `SuperAdminRoute` below, which renders the "super admin only" card for
+// any other admin instead of bouncing them back to the console overview they
+// just came from. Each page still carries its own `AdminPageGuard` inside, so
+// the permission story is unchanged for a super admin (who holds every one).
+const AdminSettingsPage = lazy(() => import('@/features/admin/settings/pages/AdminSettingsPage'))
+const AdminCategoriesPage = lazy(
+  () => import('@/features/admin/settings/pages/AdminCategoriesPage')
+)
 const NotificationsPage = lazy(
   () => import('@/features/notifications/pages/NotificationsPage')
 )
@@ -112,6 +124,16 @@ export const adminRoutes = [
   { path: paths.ADMIN_COMMISSIONS, element: <AdminCommissionsPage /> },
   { path: paths.ADMIN_AFFILIATES, element: <AdminAffiliatesPage /> },
   { path: paths.ADMIN_NOTIFICATIONS, element: <NotificationsPage /> },
+  {
+    // Platform (Prompt 35, extended by 36). A pathless wrapper, so the two
+    // screens keep their absolute paths and every future super-admin-only
+    // screen joins by being added to `children` — never by repeating the check.
+    element: <SuperAdminRoute />,
+    children: [
+      { path: paths.ADMIN_SETTINGS, element: <AdminSettingsPage /> },
+      { path: paths.ADMIN_CATEGORIES, element: <AdminCategoriesPage /> },
+    ],
+  },
   // Keeps the whole `/admin` subtree guarded — see buyerRoutes.jsx.
   { path: paths.ADMIN_CATCH_ALL, element: <NotFoundPage /> },
 ]

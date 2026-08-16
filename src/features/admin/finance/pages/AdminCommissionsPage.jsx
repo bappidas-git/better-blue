@@ -8,10 +8,12 @@ import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import { Link as RouterLink } from 'react-router-dom'
 
 import { useToast } from '@/components/feedback/ToastProvider'
 import FormSelect from '@/components/inputs/FormSelect'
 import { PERMISSIONS } from '@/constants/permissions'
+import { ROLES } from '@/constants/roles'
 import CommissionsTable from '@/features/admin/finance/components/CommissionsTable'
 import {
   COMMISSIONS_PARAMS,
@@ -21,9 +23,11 @@ import {
 } from '@/features/admin/finance/utils/financeFilters'
 import { AdminPageGuard } from '@/features/admin/shared'
 import StatCardGrid from '@/features/dashboard/components/StatCardGrid'
+import { useAuth } from '@/context/AuthContext'
 import useApiQuery from '@/hooks/useApiQuery'
 import useListParams from '@/hooks/useListParams'
 import DashboardPage from '@/layouts/dashboard/DashboardPage'
+import { paths } from '@/routes/paths'
 import { paymentService } from '@/services/paymentService'
 import { exportRowsAsCsv } from '@/utils/exportCsv'
 import {
@@ -46,6 +50,15 @@ import {
 // The period select drives the table, the three cards, and the export together,
 // so a figure and the rows under it can never describe different months.
 
+/**
+ * Prompt 35's settings screen, opened on its Commissions section. The key is
+ * `SETTINGS_PARAMS`' `section` and the value is `SETTINGS_SECTION.COMMISSIONS`,
+ * spelled here rather than imported so linking to that screen does not pull its
+ * module into this page's chunk — the same rule `paths.buyerRequestDraft`
+ * follows. Rename it in both places.
+ */
+const COMMISSION_SETTINGS_PATH = `${paths.ADMIN_SETTINGS}?section=commissions`
+
 const EXPORT_COLUMNS = [
   { key: 'id', label: 'Commission ID' },
   { key: 'orderId', label: 'Order ID' },
@@ -59,6 +72,8 @@ const EXPORT_COLUMNS = [
 
 export default function AdminCommissionsPage() {
   const toast = useToast()
+  const { user } = useAuth()
+  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN
 
   const { values, setValue, setValues } = useListParams(COMMISSIONS_PARAMS)
   const { month, page } = values
@@ -256,10 +271,11 @@ export default function AdminCommissionsPage() {
             }}
           />
 
-          {/* Where the rate comes from. A pointer rather than a control: the
-              screen that changes rates is Prompt 35's, and a link to a route
-              nobody has built lands on the dashboard 404 — the rule
-              `navConfig` already follows. */}
+          {/* Where the rate comes from. A pointer rather than a control — and
+              since Prompt 35 the screen it points at exists, so a super admin
+              gets a link straight to the Commissions section. An admin without
+              the role sees the same explanation without a door they cannot open
+              (the route would refuse them anyway). */}
           <Card variant="outlined">
             <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
               <Stack direction="row" spacing={1.5} alignItems="flex-start">
@@ -276,6 +292,18 @@ export default function AdminCommissionsPage() {
                     carries the rate it was awarded at, which is the rate you see in the table
                     above.
                   </Typography>
+                  {isSuperAdmin ? (
+                    <Button
+                      component={RouterLink}
+                      to={COMMISSION_SETTINGS_PATH}
+                      size="small"
+                      variant="outlined"
+                      sx={{ mt: 1.5, minHeight: 44 }}
+                      endIcon={<Icon icon="tabler:arrow-right" width={16} aria-hidden="true" />}
+                    >
+                      Open commission settings
+                    </Button>
+                  ) : null}
                 </Box>
               </Stack>
             </CardContent>

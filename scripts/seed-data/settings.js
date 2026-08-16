@@ -41,7 +41,13 @@ export const platformSettings = {
     categoryOverrides: {},
   },
   affiliate: {
-    enabled: true,
+    // MIGRATION (Prompt 35): `affiliate.enabled` is **gone**. The program had
+    // two switches — this one and `features.affiliateProgram` — which meant two
+    // places to look when it was off and two ways for them to disagree. The
+    // feature flag is now the only switch, so the settings screen has one
+    // control for it and `useFeatureFlag('affiliateProgram')` is the only read.
+    // A legacy `enabled: false` left in an old db.json is ignored, not honoured
+    // (docs/api-contract.md §6.27, docs/data-model.md §5).
     commissionRate: AFFILIATE_COMMISSION_RATE,
     attributionDays: 30,
     payoutMinAmount: 25,
@@ -50,6 +56,11 @@ export const platformSettings = {
     autoApproveDeliveries: true,
     reviewSlaDays: 2,
     rejectionReasons: Object.values(REJECTION_REASON_CODE),
+    // Prompt 35: optional additions a super admin appends to the canonical
+    // codes above. `src/constants/policy.js` stays the source of truth for the
+    // built-in reasons — these are extra `{ code, label }` entries offered
+    // alongside them in the moderation decision dialog, never replacements.
+    customRejectionReasons: [],
   },
   features: {
     affiliateProgram: true,

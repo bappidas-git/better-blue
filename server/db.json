@@ -15755,7 +15755,6 @@
       "categoryOverrides": {}
     },
     "affiliate": {
-      "enabled": true,
       "commissionRate": 0.1,
       "attributionDays": 30,
       "payoutMinAmount": 25
@@ -15770,7 +15769,8 @@
         "ip_violation",
         "metadata_incomplete",
         "other"
-      ]
+      ],
+      "customRejectionReasons": []
     },
     "features": {
       "affiliateProgram": true,

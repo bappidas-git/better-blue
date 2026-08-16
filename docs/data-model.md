@@ -365,6 +365,18 @@ fallback, and `CATEGORY_ID` can never drift.
 | `active` | bool | |
 | `sortOrder` | int | display order = array order in the constants file |
 
+Editable from `/admin/categories` (Prompt 35, super admin only): add, rename,
+re-icon, re-slug, reorder, and deactivate. **Never deleted** — deactivating is
+the whole removal story, so no record can be orphaned; a deactivated category
+stops being offered in new briefs, profiles, and filters and keeps rendering on
+everything already tagged with it. Reordering swaps `sortOrder` with the
+neighbour rather than renumbering the list, so an interrupted move leaves a
+duplicate `sortOrder` (which still sorts sensibly) rather than a hole.
+
+Categories added after the seed get a generated `cat_…` id from
+`utils/id.js` rather than a hand-written one, so `CATEGORY_ID` in
+`categoriesFallback.js` covers the seeded twelve only — as it always has.
+
 **MySQL** `categories` — `slug VARCHAR(64) UNIQUE`, index `(active, sort_order)`.
 
 ### `contentRequests` — 61
@@ -938,8 +950,9 @@ updates it.
 {
   "general":    { "platformName", "supportEmail", "currency", "autoAcceptDays": 5, "payoutMinAmount": 50 },
   "commission": { "defaultRate": 0.2, "categoryOverrides": {} },
-  "affiliate":  { "enabled": true, "commissionRate": 0.1, "attributionDays": 30, "payoutMinAmount": 25 },
-  "moderation": { "autoApproveDeliveries": true, "reviewSlaDays": 2, "rejectionReasons": [...codes] },
+  "affiliate":  { "commissionRate": 0.1, "attributionDays": 30, "payoutMinAmount": 25 },
+  "moderation": { "autoApproveDeliveries": true, "reviewSlaDays": 2,
+                  "rejectionReasons": [...codes], "customRejectionReasons": [] },
   "features":   { "affiliateProgram": true, "publicRequestBoard": true, "reviews": true, "disputes": true },
   "updatedAt":  "…",
   "updatedById": "usr_super"
@@ -948,6 +961,27 @@ updates it.
 
 `updatedAt` / `updatedById` are additions to the Prompt 05 field list so the
 `settings.update` audit entries have something to point at.
+
+**Prompt 35 migration — two shape changes.** Both are seed-level, so
+`npm run seed` is the whole migration:
+
+1. **`affiliate.enabled` removed.** The referral program had two switches, this
+   one and `features.affiliateProgram`, which is one decision with two answers
+   that could disagree. The feature flag is now the only control;
+   `affiliate` holds only the program's numbers. An `affiliate.enabled` left in
+   an older `db.json` is ignored rather than honoured (contract §6.23/§6.27).
+2. **`moderation.customRejectionReasons` added**, an array of `{ code, label }`.
+   `src/constants/policy.js` stays canonical for the six built-in rejection
+   codes — they are neither renameable nor removable, because a `reasonCode`
+   stored on a decided case must keep its meaning. Settings may only *append*,
+   with codes generated from the label under a `custom_` prefix so a collision
+   with a built-in code cannot happen. `moderation.rejectionReasons` is
+   unchanged: it stays the seeded mirror of the canonical codes.
+
+Every write goes through `settingsService.saveSettings`, which stamps
+`updatedAt`/`updatedById`, drops the settings cache so consumers re-read
+immediately, and records a `settings.update` audit entry whose `meta.changes`
+carries the field-level `from → to` the admin approved.
 
 These values drive the seeded money math: the order factory reads
 `commission.defaultRate`, the affiliate factory reads

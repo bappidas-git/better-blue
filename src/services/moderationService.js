@@ -33,6 +33,7 @@ import { notificationService } from './notificationService'
 // tab counts here read its queue — the two halves of one console. Both
 // dereference inside function bodies only, like `orderService`/`deliveryService`.
 import { reportService } from './reportService'
+import { settingsService } from './settingsService'
 
 const moderationReviews = createCrudService('moderationReviews', {
   idPrefix: ID_PREFIX.MODERATION_REVIEW,
@@ -286,10 +287,29 @@ function applyToSubject(subject, review, payload) {
 /* Creator-facing copy                                                        */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * A reason code's meaning: the canonical constants first (Prompt 03 owns them),
+ * then any custom addition a super admin has configured (Prompt 35).
+ *
+ * Constants stay canonical — settings can only *add* — so a code stored on an
+ * old case always resolves to what it meant when it was written.
+ */
+async function resolveReason(reasonCode) {
+  if (!reasonCode) return undefined
+  const canonical = getRejectionReason(reasonCode)
+  if (canonical) return canonical
+
+  try {
+    const reasons = await settingsService.getRejectionReasons()
+    return reasons.find((reason) => reason.code === reasonCode)
+  } catch {
+    return undefined
+  }
+}
+
 /** What the creator's notification says, per decision. */
-function decisionNotification({ decision, subjectTitle, reasonCode, notes, isDelivery }) {
+function decisionNotification({ decision, subjectTitle, reason, notes, isDelivery }) {
   const subject = subjectTitle ? `“${subjectTitle}”` : 'Your submission'
-  const reason = getRejectionReason(reasonCode)
   const because = reason ? ` Reason: ${reason.label}.` : ''
   const note = notes ? ` ${notes}` : ''
 
@@ -322,8 +342,7 @@ function decisionNotification({ decision, subjectTitle, reasonCode, notes, isDel
 }
 
 /** The line the case's history carries for a decision. */
-function decisionHistoryNote({ decision, reasonCode, notes }) {
-  const reason = getRejectionReason(reasonCode)
+function decisionHistoryNote({ decision, reason, notes }) {
   const prefix = MODERATION_DECISION_META[decision]?.label ?? 'Decision'
   return [`${prefix}${reason ? ` — ${reason.label}` : ''}.`, notes].filter(Boolean).join(' ')
 }
@@ -555,7 +574,11 @@ export const moderationService = Object.freeze({
         ],
       })
     }
-    if (meta.requiresReasonCode && !getRejectionReason(reasonCode)) {
+    // Resolved once and threaded through the notification, the history note,
+    // and the validation below — so a super admin's custom addition (Prompt 35)
+    // is accepted and *named* everywhere a built-in code would be.
+    const reason = await resolveReason(reasonCode)
+    if (meta.requiresReasonCode && !reason) {
       throw invalidInput('Pick the reason behind this decision.', {
         reasonCode: ['Choose the Content Policy reason that applies.'],
       })
@@ -599,7 +622,7 @@ export const moderationService = Object.freeze({
           byId: actor.id,
           fromStatus: review.status,
           toStatus: meta.status,
-          note: decisionHistoryNote({ decision, reasonCode, notes: note }),
+          note: decisionHistoryNote({ decision, reason, notes: note }),
         },
       ],
     })
@@ -613,7 +636,7 @@ export const moderationService = Object.freeze({
     const copy = decisionNotification({
       decision,
       subjectTitle: subject?.title ?? (isDelivery ? `version ${subject?.version ?? ''}`.trim() : null),
-      reasonCode,
+      reason,
       notes: note,
       isDelivery,
     })

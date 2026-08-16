@@ -45,6 +45,7 @@ import ReviewDialog from '@/features/reviews/components/ReviewDialog'
 import ReviewDisplay from '@/features/reviews/components/ReviewDisplay'
 import useApiMutation from '@/hooks/useApiMutation'
 import useApiQuery from '@/hooks/useApiQuery'
+import useFeatureFlag from '@/hooks/useFeatureFlag'
 import DashboardPage from '@/layouts/dashboard/DashboardPage'
 import { paths } from '@/routes/paths'
 import { API_ERROR_CODE } from '@/services/api/apiError'
@@ -193,6 +194,8 @@ export default function BuyerOrderDetailPage() {
     enabled: Boolean(orderId) && tab === TAB.TIMELINE,
   })
 
+  const { isEnabled: reviewsEnabled } = useFeatureFlag('reviews')
+
   const { data: categories } = useApiQuery(() => categoryService.listActive(), [])
   const categoryLabel = useMemo(
     () => (categories ?? []).find((category) => category.id === order?.categoryId)?.name,
@@ -331,6 +334,11 @@ export default function BuyerOrderDetailPage() {
     )
   }
 
+  // Prompt 35: `features.reviews` gates the *prompts* — the nudge to rate a
+  // finished order and the form behind it. A review already published is left
+  // exactly where it is, which is why `ReviewDisplay` below is not gated: the
+  // flag stops us asking, it does not retract what somebody wrote.
+  const canPromptForReview = reviewsEnabled && !review
   const actions = orderActions(order, { review })
   const due = describeDue(order)
   const revisionSummary = describeRevisions(order)
@@ -506,7 +514,7 @@ export default function BuyerOrderDetailPage() {
             severity="success"
             icon={<Icon icon="solar:verified-check-bold" width={22} />}
             action={
-              review ? undefined : (
+              canPromptForReview ? (
                 <Button
                   size="small"
                   variant="contained"
@@ -516,7 +524,7 @@ export default function BuyerOrderDetailPage() {
                 >
                   Leave a review
                 </Button>
-              )
+              ) : undefined
             }
             sx={{ alignItems: 'center' }}
           >
@@ -526,9 +534,9 @@ export default function BuyerOrderDetailPage() {
                   creator?.name ?? 'the creator'
                 } after commission. `
               : 'The escrow has been released. '}
-            A short review helps the next business decide.
+            {canPromptForReview ? 'A short review helps the next business decide.' : null}
           </Alert>
-        ) : actions.canLeaveReview ? (
+        ) : actions.canLeaveReview && reviewsEnabled ? (
           <Alert
             severity="info"
             icon={<Icon icon="solar:star-linear" width={22} />}
@@ -693,7 +701,7 @@ export default function BuyerOrderDetailPage() {
       />
 
       <ReviewDialog
-        open={reviewOpen}
+        open={reviewOpen && reviewsEnabled}
         onClose={() => setReviewOpen(false)}
         onSubmit={onSubmitReview}
         creatorName={creator?.name}
