@@ -786,6 +786,81 @@ Object.entries(AWARD_PROPOSALS_24).forEach(([requestKey, award], index) => {
   })
 })
 
+/* -------------------------------------------------------------------------- */
+/* Prompt 26 — the awards behind the disputed orders                          */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The offers that won the three briefs added in Prompt 26, each of which
+ * becomes a disputed order (§9). Emitted last, and separately, for the same
+ * id-stability reason as `LATE_BOARD_PROPOSALS` and `AWARD_PROPOSALS_24`:
+ * adding keys to an earlier object would renumber every proposal after it.
+ */
+const AWARD_PROPOSALS_26 = {
+  awarded_verde_tasting: {
+    creator: 'isla',
+    price: 700,
+    deliveryDays: 7,
+    revisions: 2,
+    awardDaysAgo: 27,
+    message:
+      'I would shoot the tasting menu live across two Friday services rather than staging it — the first for the courses as they leave the pass, the second for the room and anything the first night missed. Fourteen finished frames, lit for the light you already have at that table.',
+    alsoDeclined: ['amara'],
+  },
+  awarded_verde_courtyard: {
+    creator: 'ava',
+    price: 820,
+    deliveryDays: 8,
+    revisions: 2,
+    awardDaysAgo: 21,
+    message:
+      'Three vertical films shot at dusk over two evenings: the courtyard as it lights up, a service run from the pass to the table, and the drinks list piece with the names captioned. Room and kitchen sound throughout, no music beds.',
+    alsoDeclined: ['diego'],
+  },
+  awarded_atlas_marina: {
+    creator: 'mateo',
+    price: 1180,
+    deliveryDays: 10,
+    revisions: 1,
+    awardDaysAgo: 41,
+    message:
+      'Three days on site covering every room category, both restaurants, the terrace across the day, and the frontage from a tender at golden hour. Rooms shot as found, and no sky work on any frame.',
+    alsoDeclined: ['isla'],
+  },
+}
+
+Object.entries(AWARD_PROPOSALS_26).forEach(([requestKey, award], index) => {
+  const request = requestByKey(requestKey)
+  const awardedAt = daysAgo(award.awardDaysAgo, 15, 20)
+
+  const accepted = addProposal({
+    requestKey,
+    creatorKey: award.creator,
+    price: award.price,
+    deliveryDays: award.deliveryDays,
+    revisions: award.revisions,
+    status: ACCEPTED,
+    coverMessage: award.message,
+    createdAt: addDays(request.publishedAt, 1),
+    respondedAt: awardedAt,
+  })
+  acceptedByRequestKey.set(requestKey, accepted)
+
+  award.alsoDeclined.forEach((creatorKey, declinedIndex) => {
+    addProposal({
+      requestKey,
+      creatorKey,
+      price: award.price + 70 * (declinedIndex + 1),
+      deliveryDays: award.deliveryDays + 2 + declinedIndex,
+      revisions: 1,
+      status: DECLINED,
+      coverMessage: pick(DECLINED_MESSAGES, index + declinedIndex)(request),
+      createdAt: addDays(request.publishedAt, 1.5 + declinedIndex * 0.5),
+      respondedAt: awardedAt,
+    })
+  })
+})
+
 export { proposals }
 
 /** The accepted proposal for a request key — the order factory builds on it. */

@@ -1,11 +1,21 @@
 // Seed: `disputes` + `disputeMessages` — Trust & Safety casework
 // (Prompt 05 §4.3).
 //
-// Five cases spanning the lifecycle: one just opened and not yet triaged, one
-// under review with an admin assigned, two resolved (a full refund and a
-// partial refund), and one closed after the evidence supported the creator.
+// Nine cases spanning the lifecycle: one just opened and not yet triaged, one
+// under review with an admin assigned, one waiting on the buyer, one waiting on
+// the creator, one escalated to a senior reviewer, three resolved (a release,
+// a full refund, and a partial refund), and one closed after the evidence
+// supported the creator. That is **every** DISPUTE_STATUS and **every**
+// DISPUTE_RESOLUTION with at least one example, which is what the party-facing
+// screens are demonstrated against (Prompt 26 §9).
+//
 // Every thread carries at least one `internal: true` note — admin-only
-// commentary that must never be rendered to the buyer or the creator.
+// commentary that must never be rendered to the buyer or the creator, and the
+// thing the internal-note leak check is run against.
+//
+// Prompt 26 added the four cases marked below. The three live ones sit on
+// orders added in the same prompt; the resolved release sits on an existing
+// completed order, which is what a payment released after a dispute looks like.
 //
 // Refund amounts come from `orders.js#settlementFor`, the same source
 // `finance.js` uses, so a resolution can never disagree with the ledger.
@@ -205,6 +215,161 @@ const DISPUTE_SOURCE = [
         author: 'admin',
         daysAgo: 14,
         body: 'Reviewed and closed in the creator’s favour. The master files are sharp at full resolution — the softness came from the compressed preview. Payment has been released and the order is complete.',
+      },
+    ],
+  },
+
+  /* --- Prompt 26 additions ------------------------------------------------- */
+
+  {
+    // `awaiting_buyer` — the demo buyer's ball. Drives their nav badge, the
+    // "Action needed" accent on the card, and the warning banner on the detail.
+    key: 'verde_tasting_scope',
+    requestKey: 'awarded_verde_tasting',
+    category: DISPUTE_CATEGORY.SCOPE_MISMATCH,
+    status: DISPUTE_STATUS.AWAITING_BUYER,
+    openedDaysAgo: 12,
+    updatedDaysAgo: 4,
+    assignedAdmin: ADMIN_ID.MAYA,
+    raisedBy: 'buyer',
+    description:
+      'The brief asked for every course as it is served across the eight-course menu and we have received eleven usable frames covering six courses. Two courses are missing entirely and the room frames were taken before the table was dressed, so none of them show service as it looks on the night.',
+    evidenceCount: 2,
+    messages: [
+      {
+        author: 'buyer',
+        daysAgo: 12,
+        body: 'Six of the eight courses are covered and the room frames were shot before we dressed the table. We would like the two missing courses photographed on a Friday service, or the price adjusted to reflect what arrived.',
+      },
+      {
+        author: 'creator',
+        daysAgo: 11,
+        body: 'Both missing courses were pulled from the menu on the second night and I was told at the pass that they would not be going out. I am happy to come back for a third service at no extra cost once they are back on.',
+      },
+      {
+        author: 'admin',
+        daysAgo: 6,
+        internal: true,
+        body: 'Internal: delivery note does mention two courses being pulled, so this looks like a menu change rather than a shortfall. Asking the buyer to confirm before proposing that the creator returns for one service.',
+      },
+      {
+        author: 'admin',
+        daysAgo: 4,
+        body: 'Thank you both. Verde — can you confirm whether those two courses are back on the Friday menu, and whether a return visit works for you? If it does, that is the cleanest outcome here and the creator has already offered it at no charge.',
+      },
+    ],
+  },
+  {
+    // `awaiting_creator` — the demo creator's ball, and between the two demo
+    // accounts, so the same case reads from both chairs.
+    key: 'verde_courtyard_quality',
+    requestKey: 'awarded_verde_courtyard',
+    category: DISPUTE_CATEGORY.QUALITY_ISSUE,
+    status: DISPUTE_STATUS.AWAITING_CREATOR,
+    openedDaysAgo: 8,
+    updatedDaysAgo: 3,
+    assignedAdmin: ADMIN_ID.PRIYA,
+    raisedBy: 'buyer',
+    description:
+      'Two of the three films arrived and the third has not been submitted at all. The two we do have were shot with the heaters off, so the courtyard reads cold and empty — which is the opposite of what the winter terrace campaign needs. We are due to launch the terrace in a fortnight.',
+    evidenceCount: 1,
+    messages: [
+      {
+        author: 'buyer',
+        daysAgo: 8,
+        body: 'The two films we have look like an empty courtyard on a cold night. The brief asked for the space at dusk with the heaters lit, and that is the whole point of the campaign. The third film has not arrived at all.',
+      },
+      {
+        author: 'admin',
+        daysAgo: 5,
+        body: 'Thank you — I have watched both cuts against the brief. The heaters are visibly off in each one, and the brief does call for them lit. Ava, could you let us know whether a reshoot at dusk is possible, and by when?',
+      },
+      {
+        author: 'admin',
+        daysAgo: 3,
+        internal: true,
+        body: 'Internal: brief is explicit about the heaters and the delivery note does not flag them as unavailable. Holding for the creator; if a reshoot is offered inside a week this closes without a refund.',
+      },
+    ],
+  },
+  {
+    // `escalated` — passed to a senior reviewer, nothing ever delivered.
+    key: 'atlas_marina_nondelivery',
+    requestKey: 'awarded_atlas_marina',
+    category: DISPUTE_CATEGORY.NON_DELIVERY,
+    status: DISPUTE_STATUS.ESCALATED,
+    openedDaysAgo: 19,
+    updatedDaysAgo: 5,
+    assignedAdmin: ADMIN_ID.MAYA,
+    raisedBy: 'buyer',
+    description:
+      'Nothing has been submitted sixteen days past the delivery date and the brochure goes to print at the end of the month. The creator has answered here but we still have no files and no firm date, and we cannot hold the print slot any longer.',
+    evidenceCount: 2,
+    messages: [
+      {
+        author: 'buyer',
+        daysAgo: 19,
+        body: 'We are sixteen days past the date with nothing delivered. The spring brochure goes to print at the end of the month and this property is four spreads of it.',
+      },
+      {
+        author: 'creator',
+        daysAgo: 18,
+        body: 'The resort moved my access twice and then closed the terrace for resurfacing during my window. I have the rooms and both restaurants shot and can deliver those now, but the frontage and the terrace need a second visit.',
+      },
+      {
+        author: 'admin',
+        daysAgo: 12,
+        body: 'Thank you both. A partial delivery of what is already shot is worth having while we work out the rest — Mateo, please submit those on the order. I am asking a senior reviewer to look at how the remainder should be settled given the print deadline.',
+      },
+      {
+        author: 'admin',
+        daysAgo: 5,
+        internal: true,
+        body: 'Internal: escalating. Access was genuinely obstructed by the property, so this is not a creator failure, but the buyer loses the print slot either way. Likely landing on a partial release once the shot material is submitted.',
+      },
+    ],
+  },
+  {
+    // `resolved` with `release_payment` — the outcome that had no *resolved*
+    // example (the seeded release sat on a closed case).
+    key: 'bloom_campaign_claims',
+    requestKey: 'completed_bloom_campaign',
+    category: DISPUTE_CATEGORY.POLICY_CONCERN,
+    status: DISPUTE_STATUS.RESOLVED,
+    openedDaysAgo: 34,
+    updatedDaysAgo: 32,
+    assignedAdmin: ADMIN_ID.PRIYA,
+    raisedBy: 'buyer',
+    description:
+      'The first cut carried a claim our regulatory team has not approved, and we want it on record that we raised it before accepting anything. Asking for a review of whether the delivered masters meet the approved claims list we supplied with the brief.',
+    evidenceCount: 1,
+    resolution: {
+      outcome: DISPUTE_RESOLUTION.RELEASE_PAYMENT,
+      resolvedById: ADMIN_ID.PRIYA,
+      resolvedDaysAgo: 32,
+      note: 'The creator corrected the wording on every master inside a day of being told, and the delivered files match the approved claims list supplied with the brief. There is no shortfall against the order, so the payment has been released to the creator in full. The buyer raised this appropriately and nothing about the record counts against either account.',
+    },
+    messages: [
+      {
+        author: 'buyer',
+        daysAgo: 34,
+        body: 'The closing card on the first cut said "repairs the skin barrier" and our approved wording is "supports the skin barrier". We asked for it to be changed, but we want the delivered files checked against the approved list before we accept.',
+      },
+      {
+        author: 'creator',
+        daysAgo: 33,
+        body: 'Updated masters went out the next morning with the approved wording on all three ratios and the caption files. Happy for them to be checked line by line against the list.',
+      },
+      {
+        author: 'admin',
+        daysAgo: 33,
+        internal: true,
+        body: 'Internal: checked all three masters and the caption files against the approved claims list supplied with the brief. Every line matches. Correction was made within a day, so there is nothing to record against the creator account.',
+      },
+      {
+        author: 'admin',
+        daysAgo: 32,
+        body: 'Reviewed and resolved. The delivered masters match the approved claims list, and the wording was corrected within a day of being raised. The payment has been released to the creator in full. Thank you for flagging it before accepting — that is exactly the right order to do it in.',
       },
     ],
   },

@@ -11,15 +11,16 @@ import { paths } from './paths'
 // screen, and the checkout stub. Prompt 19 replaced that stub with the real
 // checkout, added Payments, and put a temporary page behind the order-detail
 // pattern that checkout now sends people to. Prompt 20 replaced *that* stub
-// with the order workspace and added the orders list beside it. Prompts append
-// `{ path, element }` entries here using `React.lazy` pages and the absolute
-// constants from ./paths.js — for example:
+// with the order workspace and added the orders list beside it. Prompt 26
+// mounted the disputes screens — note that they are the **shared** feature
+// pages, mounted unchanged at `/creator/disputes` too, and read the signed-in
+// role for themselves. Prompts append `{ path, element }` entries here using
+// `React.lazy` pages and the absolute constants from ./paths.js — for example:
 //
-//   const BuyerDisputesPage = lazy(() => import('@/features/disputes/pages/BuyerDisputesPage'))
-//   export const buyerRoutes = [{ path: paths.BUYER_DISPUTES, element: <BuyerDisputesPage /> }]
+//   const BuyerAffiliatePage = lazy(() => import('@/features/affiliate/pages/BuyerAffiliatePage'))
+//   export const buyerRoutes = [{ path: paths.BUYER_AFFILIATE, element: <BuyerAffiliatePage /> }]
 //
-// Paths still reserved in ./paths.js: BUYER_DISPUTES,
-// BUYER_DISPUTE_DETAIL_PATTERN, BUYER_AFFILIATE, BUYER_NOTIFICATIONS.
+// Paths still reserved in ./paths.js: BUYER_AFFILIATE, BUYER_NOTIFICATIONS.
 
 const BuyerOverviewPage = lazy(() => import('@/features/dashboard/pages/BuyerOverviewPage'))
 const BuyerProfilePage = lazy(() => import('@/features/buyerAccount/pages/BuyerProfilePage'))
@@ -33,6 +34,8 @@ const CheckoutPage = lazy(() => import('@/features/checkout/pages/CheckoutPage')
 const BuyerPaymentsPage = lazy(() => import('@/features/payments/pages/BuyerPaymentsPage'))
 const BuyerOrdersPage = lazy(() => import('@/features/orders/pages/BuyerOrdersPage'))
 const BuyerOrderDetailPage = lazy(() => import('@/features/orders/pages/BuyerOrderDetailPage'))
+const DisputesListPage = lazy(() => import('@/features/disputes/pages/DisputesListPage'))
+const DisputeDetailPage = lazy(() => import('@/features/disputes/pages/DisputeDetailPage'))
 const NotFoundPage = lazy(() => import('@/features/staticPages/pages/NotFoundPage'))
 
 export const buyerRoutes = [
@@ -46,6 +49,8 @@ export const buyerRoutes = [
   { path: paths.BUYER_ORDERS, element: <BuyerOrdersPage /> },
   { path: paths.BUYER_ORDER_DETAIL_PATTERN, element: <BuyerOrderDetailPage /> },
   { path: paths.BUYER_PAYMENTS, element: <BuyerPaymentsPage /> },
+  { path: paths.BUYER_DISPUTES, element: <DisputesListPage /> },
+  { path: paths.BUYER_DISPUTE_DETAIL_PATTERN, element: <DisputeDetailPage /> },
   { path: paths.BUYER_PROFILE, element: <BuyerProfilePage /> },
   { path: paths.BUYER_SETTINGS, element: <BuyerSettingsPage /> },
   // Keeps every `/buyer/...` URL inside the guarded branch, built or not, so a

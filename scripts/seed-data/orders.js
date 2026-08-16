@@ -535,6 +535,70 @@ buildOrder({
   ],
 })
 
+/* -------------------------------------------------------------------------- */
+/* Prompt 26 — the disputed orders behind the case gallery                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Three more orders frozen at `disputed`, one per dispute status that had no
+ * seeded example — `awaiting_buyer`, `awaiting_creator`, and `escalated`
+ * (Prompt 26 §9). Two of them sit between the two demo accounts so the awaiting
+ * banners and the nav badge can be seen from both chairs.
+ *
+ * Built **after** the history engagements for the same id-stability reason as
+ * Prompt 24's order above: nothing that already exists is renumbered. Their
+ * payments follow automatically — `finance.js` derives the escrow chain from
+ * the order status, and a disputed order means one `charge` and a payment left
+ * `held`, which is exactly the point of a dispute.
+ */
+const DISPUTED_ORDERS_26 = [
+  {
+    // `awaiting_buyer`: our team has come back to the demo buyer for something.
+    requestKey: 'awarded_verde_tasting',
+    buyer: 'verde',
+    creator: 'isla',
+    status: ORDER_STATUS.DISPUTED,
+    fundedAfterHours: 5,
+    deliveries: [
+      {
+        submittedDaysAgo: 17,
+        status: DELIVERY_STATUS.SUBMITTED,
+        fileCount: 3,
+        message:
+          'Fourteen frames from the two Friday services: every course as it left the pass, plus three wider frames of the table set before guests arrived. Two courses were plated differently on the second night, so I have delivered the version that matches the printed card.',
+      },
+    ],
+  },
+  {
+    // `awaiting_creator`: the ball is with the demo creator.
+    requestKey: 'awarded_verde_courtyard',
+    buyer: 'verde',
+    creator: 'ava',
+    status: ORDER_STATUS.DISPUTED,
+    fundedAfterHours: 3,
+    deliveries: [
+      {
+        submittedDaysAgo: 11,
+        status: DELIVERY_STATUS.SUBMITTED,
+        fileCount: 2,
+        message:
+          'Two of the three films attached — the courtyard at dusk and the service run. The drinks piece needs a reshoot: the heaters were not lit on either evening and the terrace reads cold on every take.',
+      },
+    ],
+  },
+  {
+    // `escalated`: with a senior reviewer, and nothing was ever delivered.
+    requestKey: 'awarded_atlas_marina',
+    buyer: 'atlas',
+    creator: 'mateo',
+    status: ORDER_STATUS.DISPUTED,
+    fundedAfterHours: 7,
+    deliveries: [],
+  },
+]
+
+DISPUTED_ORDERS_26.forEach(buildOrder)
+
 export { orders, deliveries, revisions }
 
 /** The order created from a request key (scenario key or history key). */

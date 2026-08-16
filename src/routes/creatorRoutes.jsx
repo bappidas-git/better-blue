@@ -17,10 +17,11 @@ import { paths } from './paths'
 // Prompt 23 added the request board and the proposal manager, plus a stub for
 // the order detail route; Prompt 24 replaced that stub with the real order
 // workspace and mounted the orders list beside it; Prompt 25 added the earnings
-// and payouts screen.
+// and payouts screen. Prompt 26 mounted the disputes screens — the **same two
+// components** the buyer's table mounts, parameterised by the signed-in role
+// rather than duplicated per dashboard.
 //
-// Paths still reserved in ./paths.js: CREATOR_DISPUTES,
-// CREATOR_DISPUTE_DETAIL_PATTERN, CREATOR_NOTIFICATIONS.
+// Paths still reserved in ./paths.js: CREATOR_NOTIFICATIONS.
 
 const CreatorOverviewPage = lazy(
   () => import('@/features/dashboard/pages/CreatorOverviewPage')
@@ -45,6 +46,8 @@ const CreatorProfilePage = lazy(
 const CreatorSettingsPage = lazy(
   () => import('@/features/creatorAccount/pages/CreatorSettingsPage')
 )
+const DisputesListPage = lazy(() => import('@/features/disputes/pages/DisputesListPage'))
+const DisputeDetailPage = lazy(() => import('@/features/disputes/pages/DisputeDetailPage'))
 const NotFoundPage = lazy(() => import('@/features/staticPages/pages/NotFoundPage'))
 
 export const creatorRoutes = [
@@ -55,6 +58,8 @@ export const creatorRoutes = [
   { path: paths.CREATOR_ORDER_DETAIL_PATTERN, element: <CreatorOrderDetailPage /> },
   { path: paths.CREATOR_PORTFOLIO, element: <CreatorPortfolioPage /> },
   { path: paths.CREATOR_EARNINGS, element: <CreatorEarningsPage /> },
+  { path: paths.CREATOR_DISPUTES, element: <DisputesListPage /> },
+  { path: paths.CREATOR_DISPUTE_DETAIL_PATTERN, element: <DisputeDetailPage /> },
   { path: paths.CREATOR_PROFILE, element: <CreatorProfilePage /> },
   { path: paths.CREATOR_SETTINGS, element: <CreatorSettingsPage /> },
   // Keeps the whole `/creator` subtree guarded — see buyerRoutes.jsx.

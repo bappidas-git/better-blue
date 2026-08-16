@@ -5,6 +5,9 @@
 // shape live in exactly one place.
 
 import { NOTIFICATION_META } from '@/constants/notificationTypes'
+import { hasPermission } from '@/constants/permissions'
+import { ADMIN_ROLES } from '@/constants/roles'
+import { ACCOUNT_STATUS } from '@/constants/statuses'
 import { ID_PREFIX } from '@/utils/id'
 
 import { API_ERROR_CODE, createApiError } from './api/apiError'
@@ -16,6 +19,9 @@ const notifications = createCrudService('notifications', { idPrefix: ID_PREFIX.N
 
 /** Cap on one "mark all as read" pass — see the note on `markAllRead`. */
 const MARK_ALL_LIMIT = 100
+
+/** Ceiling on one `notifyAdmins` fan-out — the team is small, the cap is a guard. */
+const ADMIN_FANOUT_LIMIT = 50
 
 /**
  * Reads `users.notificationPrefs[category].inApp` for a type (contract §6.19).
@@ -150,6 +156,60 @@ export const notificationService = Object.freeze({
       ...(entityType && entityId ? { entityType, entityId } : {}),
       read: false,
     })
+  },
+
+  /**
+   * **Tells the team.** Emits one notification per admin holding `permission`,
+   * so a workflow can raise something for Trust & Safety without knowing who is
+   * on shift (Prompt 26 §4.1; Prompt 33 reuses it for resolutions).
+   *
+   * Suspended and deactivated admin accounts are skipped — a queue item
+   * addressed to someone who cannot sign in helps nobody.
+   *
+   * MOCK-FANOUT: JSON Server cannot express "users holding permission X", so
+   * this reads the admin accounts and filters them in the browser with
+   * `hasPermission`, then writes one row each — **sequentially**, for the same
+   * reason `markAllRead` writes sequentially: JSON Server rewrites the whole of
+   * `db.json` on every write, and two POSTs in flight at once silently lose
+   * one of them. (Written in parallel first, and the super admin's row was the
+   * one that vanished.) Laravel replaces the whole thing with
+   * `User::permission($permission)->each(...)` inside the same transaction as
+   * the action that triggered it, and the loop disappears with it.
+   *
+   * Best effort by design: it resolves to whatever was written and never
+   * rejects, because no workflow should fail because a bell item did not.
+   *
+   * @param {string} permission a `PERMISSIONS` key, e.g. `disputes.resolve`
+   * @param {object} payload everything {@link notify} takes except `userId`
+   * @returns {Promise<object[]>} the notifications that were created
+   */
+  async notifyAdmins(permission, payload = {}) {
+    if (!permission) return []
+
+    let admins = []
+    try {
+      const { items } = await userService.list({
+        page: 1,
+        limit: ADMIN_FANOUT_LIMIT,
+        filters: { role: [...ADMIN_ROLES] },
+      })
+      admins = items.filter(
+        (admin) =>
+          admin.accountStatus === ACCOUNT_STATUS.ACTIVE && hasPermission(admin, permission)
+      )
+    } catch {
+      return []
+    }
+
+    const written = []
+    for (const admin of admins) {
+      // eslint-disable-next-line no-await-in-loop -- see MOCK-FANOUT above.
+      const notification = await notificationService
+        .notify({ ...payload, userId: admin.id })
+        .catch(() => null)
+      if (notification) written.push(notification)
+    }
+    return written
   },
 
   // —— workflow operations (added by later prompts) ——
