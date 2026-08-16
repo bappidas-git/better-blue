@@ -4,6 +4,12 @@ import { Box, Button, Card, CardContent, Chip, Stack, Typography } from '@mui/ma
 import { NOTIFICATION_TYPE } from '@/constants/notificationTypes'
 import { DEFAULT_ADMIN_PERMISSIONS, PERMISSIONS } from '@/constants/permissions'
 import { ROLES } from '@/constants/roles'
+import {
+  AdminAccessNotice,
+  AdminPageGuard,
+  AgeBadge,
+  EntityRefChip,
+} from '@/features/admin/shared'
 import ActivityFeed from '@/features/dashboard/components/ActivityFeed'
 import ChartCard from '@/features/dashboard/components/ChartCard'
 import QuickActions from '@/features/dashboard/components/QuickActions'
@@ -176,6 +182,20 @@ const FIXTURE_ADMIN_NAV = [
 ]
 
 const FIXTURE_MORE_KEYS = ['settings', 'roles']
+
+/** Fixed clock for the `AgeBadge` row, so the gallery shows every tone at once. */
+const AGE_FIXTURE_NOW = new Date('2026-08-16T12:00:00.000Z')
+
+/** Ages in days: inside SLA, past the warning, past the breach. */
+const AGE_FIXTURE_DAYS = [0, 1, 4, 11]
+
+const ENTITY_FIXTURES = [
+  { type: 'order', id: 'ord_012', label: 'Menu photography for the summer service' },
+  { type: 'user', id: 'usr_creator_ava', label: 'Ava Martinez' },
+  { type: 'request', id: 'req_021', label: 'App feature film' },
+  { type: 'dispute', id: 'dsp_001', showType: true },
+  { type: 'payout', id: 'pyo_006', showType: true },
+]
 
 const FIXTURE_ADMINS = [
   {
@@ -423,6 +443,89 @@ export default function WidgetsGallery() {
             <NavResolution key={entry.key} caption={entry.caption} user={entry.user} />
           ))}
         </Box>
+      </GalleryBlock>
+
+      <GalleryBlock
+        title="Admin console kit"
+        caption="features/admin/shared — the pieces Prompts 29–36 build on. AdminPageGuard is the page-level half of the permission story: the nav already hides what an admin cannot use, so reaching this card means a typed URL or a colleague's link, and neither deserves a blank screen. The live gate below reads the current session, so it shows the refusal card when signed out and the guarded content when signed in as a super admin."
+      >
+        <Stack spacing={3}>
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+            }}
+          >
+            <Box>
+              <Typography variant="caption" color="text.secondary" component="p" sx={{ mb: 1 }}>
+                AdminAccessNotice — what a refused page renders
+              </Typography>
+              <AdminAccessNotice permission={PERMISSIONS.SETTINGS_MANAGE} />
+            </Box>
+
+            <Box>
+              <Typography variant="caption" color="text.secondary" component="p" sx={{ mb: 1 }}>
+                AdminPageGuard — live against your session, requiring{' '}
+                {PERMISSIONS.ADMINS_MANAGE}
+              </Typography>
+              <AdminPageGuard permission={PERMISSIONS.ADMINS_MANAGE}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="subtitle2">Admin team</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      You hold this permission, so the screen renders normally.
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </AdminPageGuard>
+            </Box>
+          </Box>
+
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+            }}
+          >
+            <FeedCard title="AgeBadge">
+              <Typography variant="caption" color="text.secondary" component="p" sx={{ mb: 1.5 }}>
+                Neutral, then amber past the warning threshold, then red past the SLA. The
+                compact label is for the eye; the accessible name is the full sentence.
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {AGE_FIXTURE_DAYS.map((days) => (
+                  <AgeBadge
+                    key={days}
+                    date={new Date(AGE_FIXTURE_NOW.getTime() - days * 86400000).toISOString()}
+                    now={AGE_FIXTURE_NOW}
+                    noun="Raised"
+                  />
+                ))}
+                <AgeBadge
+                  date={new Date(AGE_FIXTURE_NOW.getTime() - 9 * 86400000).toISOString()}
+                  now={AGE_FIXTURE_NOW}
+                  overdue
+                  noun="Delivery"
+                />
+              </Stack>
+            </FeedCard>
+
+            <FeedCard title="EntityRefChip">
+              <Typography variant="caption" color="text.secondary" component="p" sx={{ mb: 1.5 }}>
+                One chip for every cross-reference in the console. The id → route map is
+                comment-gated in the component until each screen exists, so these render as
+                labels today and become links as Prompts 29–36 land.
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {ENTITY_FIXTURES.map((entity) => (
+                  <EntityRefChip key={entity.id} {...entity} />
+                ))}
+              </Stack>
+            </FeedCard>
+          </Box>
+        </Stack>
       </GalleryBlock>
     </Stack>
   )

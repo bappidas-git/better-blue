@@ -17,7 +17,7 @@ import { Link as RouterLink } from 'react-router-dom'
 import Logo from '@/components/brand/Logo'
 import UserAvatar from '@/components/data-display/UserAvatar'
 import { appConfig } from '@/config/appConfig'
-import { ROLE_META } from '@/constants/roles'
+import { ROLE_META, isAdminRole } from '@/constants/roles'
 import NotificationBell from '@/features/notifications/components/NotificationBell'
 import { paths } from '@/routes/paths'
 
@@ -168,10 +168,33 @@ export default function TopBar({
           variant="subtitle1"
           component="p"
           noWrap
-          sx={{ flexGrow: 1, minWidth: 0, fontWeight: 700 }}
+          sx={{ minWidth: 0, fontWeight: 700 }}
         >
           {title}
         </Typography>
+
+        {/* Prompt 28: inside the console, which console. Admin and super admin
+            share every `/admin` URL and see different amounts of it, so the two
+            are worth telling apart at a glance — especially when a super admin
+            is checking what a colleague can reach. Admin-only by design: a
+            buyer knows they are a buyer, and a chip saying so on every screen
+            would be decoration. */}
+        {isAdminRole(user?.role) ? (
+          <Chip
+            size="small"
+            label={ROLE_META[user.role]?.label ?? user.role}
+            sx={{
+              flexShrink: 0,
+              height: 22,
+              fontSize: '0.6875rem',
+              fontWeight: 600,
+              bgcolor: 'primary.surface',
+              color: 'primary.dark',
+            }}
+          />
+        ) : null}
+
+        <Box sx={{ flexGrow: 1, minWidth: 0 }} />
 
         <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
           <NotificationBell notificationsPath={notificationsPath} />
