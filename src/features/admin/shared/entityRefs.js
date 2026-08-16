@@ -89,9 +89,15 @@ export function resolveEntityPath(type, id) {
     // console browses *cases*, not items, and `/admin/moderation/:id` takes a
     // `mod_…`. A caller holding the case should pass `type="moderation_review"`.
     // case 'portfolio_item':
-    // case 'request':           return paths.ADMIN_REQUESTS               // Prompt 31
-    // case 'order':             return paths.adminOrderDetail(id)         // Prompt 31
-    // case 'support_ticket':    return paths.ADMIN_SUPPORT                // Prompt 31
+    // Prompt 31. Requests and tickets are read in a side sheet on their queue
+    // screen rather than at a route of their own, so both chips point at the
+    // list — the same shape `report` takes. Orders do have a detail route.
+    case 'request':
+      return paths.ADMIN_REQUESTS
+    case 'order':
+      return paths.adminOrderDetail(id)
+    case 'support_ticket':
+      return `${paths.ADMIN_SUPPORT}?ticket=${encodeURIComponent(id)}`
     // case 'payment':           return paths.ADMIN_PAYMENTS               // Prompt 32
     // case 'payout':            return paths.ADMIN_SETTLEMENTS            // Prompt 32
     // case 'dispute':           return paths.adminDisputeDetail(id)       // Prompt 33

@@ -22,6 +22,7 @@ import { toAmount } from '@/utils/money'
 import { assertTransition } from '@/utils/stateMachine'
 
 import { API_ERROR_CODE, createApiError } from './api/apiError'
+import { auditService } from './auditService'
 import { createCrudService } from './api/crudFactory'
 import { SORT_ORDER } from './api/listAdapter'
 import { buyerProfileService } from './buyerProfileService'
@@ -287,15 +288,21 @@ async function loadBuyers(buyerUserIds) {
  * (the same constraint `orderService.acceptProposal` works around). A creator
  * whose notification fails still has a correctly declined offer.
  */
-async function endLiveProposals(request, { reason, closing }) {
+async function endLiveProposals(request, { reason, closing, byAdmin = false }) {
   const live = await proposalService.listUndecided(request.id)
   if (live.length === 0) return 0
 
   const verb = closing ? 'closed' : 'cancelled'
-  const body =
-    `The buyer has ${verb} “${request.title}” without awarding it, so your proposal ` +
-    'will not be taken forward.' +
-    (reason ? ` They said: “${reason}”` : ' Thanks for taking the time to propose.')
+  // Prompt 31: the same cascade, told honestly about who did it. A creator
+  // reading "the buyer closed this" about a brief BetterBlue took down would
+  // aim their next question at the wrong person.
+  const body = byAdmin
+    ? `BetterBlue has ${verb} “${request.title}”, so your proposal will not be taken forward.` +
+      (reason ? ` Reason: ${reason}` : '') +
+      ' Nothing about this reflects on your proposal or your account.'
+    : `The buyer has ${verb} “${request.title}” without awarding it, so your proposal ` +
+      'will not be taken forward.' +
+      (reason ? ` They said: “${reason}”` : ' Thanks for taking the time to propose.')
   const respondedAt = new Date().toISOString()
 
   for (const offer of live) {
@@ -854,6 +861,169 @@ export const requestService = Object.freeze({
     })
 
     return { request: cancelled, declinedProposals }
+  },
+
+  /* ------------------------------------------------------------------------ */
+  /* Admin console (Prompt 31)                                                */
+  /* ------------------------------------------------------------------------ */
+
+  /**
+   * **The platform-wide request board** — every brief, whoever posted it, with
+   * the business behind it resolved (Prompt 31 §4.1).
+   *
+   * The buyer's own list is `listForBuyer` and the public board is `listBoard`;
+   * this is the third view, and it is the only one with no status floor: an
+   * admin looking for a brief that was cancelled last week needs to be able to
+   * find it. `listBoard`'s buyer join is reused rather than rewritten, so
+   * "public information only" stays one decision.
+   *
+   * @param {object} [params]
+   * @param {number} [params.page=1]
+   * @param {number} [params.limit=20]
+   * @param {string} [params.sort='createdAt'] `createdAt` | `publishedAt` |
+   *   `deadline` | `budgetMax` | `proposalsCount`
+   * @param {'asc'|'desc'} [params.order='desc']
+   * @param {string} [params.search] matches the title and description
+   * @param {string|string[]} [params.status] one or several `REQUEST_STATUS` values
+   * @param {string|string[]} [params.categoryId] `cat_…`
+   * @param {string} [params.createdFrom] ISO lower bound on `createdAt`
+   * @param {string} [params.createdTo] ISO upper bound on `createdAt`
+   * @returns {Promise<import('./api/listAdapter').ListResult>} briefs, each with
+   *   `buyer` (`null` when the join failed — the row still renders)
+   *
+   * **Future endpoint:** `GET /admin/contentRequests?…&include=buyer`.
+   */
+  async adminListRequests({
+    page = 1,
+    limit = 20,
+    sort = 'createdAt',
+    order = SORT_ORDER.DESC,
+    search,
+    status,
+    categoryId,
+    createdFrom,
+    createdTo,
+  } = {}) {
+    const filters = {}
+    if (status) filters.status = status
+    if (categoryId) filters.categoryId = categoryId
+    if (createdFrom) filters.createdAt_gte = createdFrom
+    if (createdTo) filters.createdAt_lte = createdTo
+
+    const result = await contentRequests.list({ page, limit, sort, order, search, filters })
+    if (result.items.length === 0) return result
+
+    let buyers = new Map()
+    try {
+      buyers = await loadBuyers(result.items.map((request) => request.buyerId))
+    } catch {
+      // The briefs are the payload; the trading name is the garnish.
+    }
+
+    return {
+      ...result,
+      items: result.items.map((request) => ({
+        ...request,
+        buyer: buyers.get(request.buyerId) ?? null,
+      })),
+    }
+  },
+
+  /**
+   * **Closes a live brief administratively** (Prompt 31 §4.1) — a policy or
+   * housekeeping closure by BetterBlue rather than by the business that posted
+   * it.
+   *
+   * Deliberately a sibling of {@link closeRequest} rather than a flag on it:
+   * the cascade is the same, but *who did it* changes the copy every proposer
+   * reads, adds a notification the buyer would otherwise not get, and adds an
+   * audit entry — and none of those belong behind an `if (isAdmin)` inside a
+   * buyer-facing function.
+   *
+   * **`open` only, and there is no reopen.** `REQUEST_STATUS_MACHINE` makes
+   * `closed` terminal (00 §9), so the console offers no "reopen": a business
+   * that still wants the work posts the brief again, which is also the honest
+   * record — the creators who proposed the first time were told it was over.
+   *
+   * @param {string} id `req_…`
+   * @param {object} options
+   * @param {string} options.reason required — read by the buyer and by every
+   *   proposer, and recorded on the brief and in the trail
+   * @param {{id: string, role: string}} [options.actor] the acting admin
+   * @returns {Promise<{request: object, declinedProposals: number}>}
+   * @throws {ApiError} `validation_failed` without a reason · `conflict` when
+   *   the brief is not open · `not_found`
+   *
+   * **Future endpoint:** `POST /admin/contentRequests/:id/close` → `{ request }`.
+   */
+  async adminCloseRequest(id, { reason, actor } = {}) {
+    const trimmedReason = text(reason)
+    if (!trimmedReason) {
+      throw createApiError(
+        API_ERROR_CODE.VALIDATION_FAILED,
+        'An administrative closure needs a reason.',
+        { reason: 'Say why this request is being closed.' }
+      )
+    }
+
+    const request = await contentRequests.getById(id)
+    const status = transitionTo(
+      request.status,
+      REQUEST_STATUS.CLOSED,
+      'This request is no longer open, so it cannot be closed.'
+    )
+
+    const declinedProposals = await endLiveProposals(request, {
+      reason: trimmedReason,
+      closing: true,
+      byAdmin: true,
+    })
+
+    const closed = await contentRequests.update(id, {
+      status,
+      closedAt: new Date().toISOString(),
+      closureReason: trimmedReason,
+    })
+
+    // The buyer hears about their own brief being taken down. This is the one
+    // party `closeRequest` never notifies, because there they are the one who
+    // clicked; here they are not.
+    try {
+      await notificationService.notify({
+        userId: request.buyerId,
+        type: NOTIFICATION_TYPE.REQUEST_CLOSED,
+        title: 'Your request was closed by BetterBlue',
+        body:
+          `“${request.title}” has been closed and is no longer visible to creators. ` +
+          `Reason: ${trimmedReason}`,
+        entityType: 'request',
+        entityId: request.id,
+      })
+    } catch {
+      // A brief that is already closed must not be un-closed by a bell item.
+    }
+
+    if (actor?.id) {
+      try {
+        await auditService.log({
+          actorId: actor.id,
+          actorRole: actor.role,
+          action: 'request.close',
+          entityType: 'request',
+          entityId: request.id,
+          meta: {
+            fromStatus: request.status,
+            reason: trimmedReason,
+            declinedProposals,
+            buyerId: request.buyerId,
+          },
+        })
+      } catch {
+        // As above — an unwritten trail entry must not undo a closure.
+      }
+    }
+
+    return { request: closed, declinedProposals }
   },
 })
 

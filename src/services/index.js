@@ -91,8 +91,20 @@ export { creatorDashboardService, EARNINGS_MONTHS } from './creatorDashboardServ
 
 /* Platform ---------------------------------------------------------------- */
 export { landingService } from './landingService'
-export { notificationService } from './notificationService'
-export { supportService } from './supportService'
+export {
+  notificationService,
+  ANNOUNCEMENT_AUDIENCE,
+  ANNOUNCEMENT_BODY_MAX,
+  ANNOUNCEMENT_BODY_MIN,
+  ANNOUNCEMENT_TITLE_MAX,
+  ANNOUNCEMENT_TITLE_MIN,
+} from './notificationService'
+export {
+  supportService,
+  OPEN_TICKET_STATUSES,
+  TICKET_ACTION,
+  TICKET_REPLY_MAX,
+} from './supportService'
 export { affiliateService } from './affiliateService'
 export { settingsService, SETTINGS_FALLBACK } from './settingsService'
 export { auditService } from './auditService'

@@ -22,6 +22,11 @@ export const NOTIFICATION_TYPE = Object.freeze({
   PROPOSAL_SHORTLISTED: 'proposal_shortlisted',
   PROPOSAL_ACCEPTED: 'proposal_accepted',
   PROPOSAL_DECLINED: 'proposal_declined',
+  // Prompt 31 addition: BetterBlue closing a buyer's brief administratively.
+  // The proposers already had `proposal_declined`; the **buyer** had nothing —
+  // their brief would simply have stopped being open, with the reason visible
+  // only to somebody who went looking for it.
+  REQUEST_CLOSED: 'request_closed',
   ORDER_PAID: 'order_paid',
   DELIVERY_SUBMITTED: 'delivery_submitted',
   REVISION_REQUESTED: 'revision_requested',
@@ -113,6 +118,12 @@ export const NOTIFICATION_META = Object.freeze({
     label: 'Proposal declined',
     icon: 'solar:close-circle-linear',
     tone: 'neutral',
+    category: NOTIFICATION_CATEGORY.MARKETPLACE,
+  }),
+  [NOTIFICATION_TYPE.REQUEST_CLOSED]: Object.freeze({
+    label: 'Request closed',
+    icon: 'solar:clipboard-remove-linear',
+    tone: 'warning',
     category: NOTIFICATION_CATEGORY.MARKETPLACE,
   }),
   [NOTIFICATION_TYPE.ORDER_PAID]: Object.freeze({

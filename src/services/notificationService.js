@@ -6,15 +6,17 @@
 
 import {
   NOTIFICATION_META,
+  NOTIFICATION_TYPE,
   allowsInAppCategory,
   isMandatoryNotification,
 } from '@/constants/notificationTypes'
 import { hasPermission } from '@/constants/permissions'
-import { ADMIN_ROLES } from '@/constants/roles'
+import { ADMIN_ROLES, ROLES } from '@/constants/roles'
 import { ACCOUNT_STATUS } from '@/constants/statuses'
 import { ID_PREFIX } from '@/utils/id'
 
 import { API_ERROR_CODE, createApiError } from './api/apiError'
+import { auditService } from './auditService'
 import { createCrudService } from './api/crudFactory'
 import { SORT_ORDER } from './api/listAdapter'
 import { userService } from './userService'
@@ -26,6 +28,74 @@ const MARK_ALL_LIMIT = 100
 
 /** Ceiling on one `notifyAdmins` fan-out — the team is small, the cap is a guard. */
 const ADMIN_FANOUT_LIMIT = 50
+
+/* -------------------------------------------------------------------------- */
+/* Announcements (Prompt 31)                                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Who a platform announcement goes to (contract §7.1 operation 12).
+ *
+ * `all` is every active **member**, not every account: the admin team is who
+ * *sends* announcements, and a console full of "we have changed the commission
+ * rate" addressed to the people who changed it is noise. An admin who also
+ * wants the message reads it on this screen's history. Documented rather than
+ * assumed, because "all" is exactly the word somebody will read as "everyone".
+ */
+export const ANNOUNCEMENT_AUDIENCE = Object.freeze({
+  ALL: 'all',
+  BUYERS: 'buyers',
+  CREATORS: 'creators',
+})
+
+/** Audience → the roles it resolves to. The one place that mapping lives. */
+const AUDIENCE_ROLES = Object.freeze({
+  [ANNOUNCEMENT_AUDIENCE.ALL]: Object.freeze([ROLES.BUYER, ROLES.CREATOR]),
+  [ANNOUNCEMENT_AUDIENCE.BUYERS]: Object.freeze([ROLES.BUYER]),
+  [ANNOUNCEMENT_AUDIENCE.CREATORS]: Object.freeze([ROLES.CREATOR]),
+})
+
+/** Length bounds on the composer, enforced here as well as in the form (§13). */
+export const ANNOUNCEMENT_TITLE_MIN = 8
+export const ANNOUNCEMENT_TITLE_MAX = 80
+export const ANNOUNCEMENT_BODY_MIN = 20
+export const ANNOUNCEMENT_BODY_MAX = 500
+
+/** Rows per page while walking the audience — the provider's ceiling (§4.1). */
+const AUDIENCE_PAGE_SIZE = 100
+
+/**
+ * Hard stop on one broadcast. Well above the seeded marketplace and far below
+ * the point where a browser tab doing this becomes defensible — see the note on
+ * {@link notificationService.broadcastAnnouncement}.
+ */
+const BROADCAST_LIMIT = 1000
+
+/** The `list` filter behind an audience: active accounts in its roles. */
+function audienceFilters(audience) {
+  const roles = AUDIENCE_ROLES[audience]
+  if (!roles) {
+    throw createApiError(
+      API_ERROR_CODE.VALIDATION_FAILED,
+      'Choose who this announcement is for.',
+      { audience: 'Pick an audience.' }
+    )
+  }
+  return { role: [...roles], accountStatus: ACCOUNT_STATUS.ACTIVE }
+}
+
+/** Trimmed text, length-checked, or an `ApiError` naming the field. */
+function announcementText(value, { field, label, min, max }) {
+  const trimmed = String(value ?? '').trim()
+  if (trimmed.length < min || trimmed.length > max) {
+    throw createApiError(
+      API_ERROR_CODE.VALIDATION_FAILED,
+      `The announcement ${field} needs to be between ${min} and ${max} characters.`,
+      { [field]: `${label} must be ${min}–${max} characters.` }
+    )
+  }
+  return trimmed
+}
 
 /**
  * Reads `users.notificationPrefs[category].inApp` for a type (contract §6.19).
@@ -240,9 +310,177 @@ export const notificationService = Object.freeze({
     return written
   },
 
-  // —— workflow operations (added by later prompts) ——
-  // broadcastAnnouncement — Prompt 34 (admin operations), contract §7
-  // operation 12: one `system_announcement` per member in the audience.
+  /* —— workflow operations —————————————————————————————————————————————— */
+
+  /**
+   * **How many members an audience actually contains** — the number the send
+   * confirmation prints before anything is written (Prompt 31 §13).
+   *
+   * A separate, cheap read on purpose: "send to 243 people" is a decision, and
+   * an admin should be told the size of it while they can still change their
+   * mind. One row is fetched for its `total`, the same trick `unreadCount` uses.
+   *
+   * @param {string} audience an {@link ANNOUNCEMENT_AUDIENCE} value
+   * @returns {Promise<number>} active members in that audience
+   * @throws {ApiError} `validation_failed` on an unknown audience
+   */
+  async countAudience(audience) {
+    const { total } = await userService.list({
+      page: 1,
+      limit: 1,
+      filters: audienceFilters(audience),
+    })
+    return total
+  },
+
+  /**
+   * **Sends a platform announcement** (contract §7.1 operation 12).
+   *
+   * One `system_announcement` per active member in the audience, with no
+   * `entityType`/`entityId` — an announcement is about the service, not about a
+   * record, and there is nowhere for it to deep-link to. The type is on
+   * `MANDATORY_NOTIFICATION_TYPES`, so preferences do not suppress it: a member
+   * who has silenced this has silenced the only channel the platform has.
+   *
+   * MOCK-FANOUT: `GET /users` walked a page at a time, then one `POST` per
+   * recipient, **sequentially** — JSON Server rewrites `db.json` on every write
+   * and two POSTs in flight lose one of them (the constraint `notifyAdmins` and
+   * `markAllRead` work around). With 23 seeded members that is ~24 requests; at
+   * 10,000 members it is 10,000 from a browser tab, which is why the Laravel
+   * side is one request and a queued job. `BROADCAST_LIMIT` stops a mistake
+   * here from becoming a very long afternoon.
+   *
+   * **Partial failure is reported, not swallowed** (§13): a recipient whose
+   * write fails is counted in `failed` and the caller says "Sent 240 of 243".
+   * Retrying re-sends to everybody, which is why the copy says so — a duplicate
+   * announcement is recoverable and a silent gap is not.
+   *
+   * @param {object} input
+   * @param {string} input.audience an {@link ANNOUNCEMENT_AUDIENCE} value
+   * @param {string} input.title 8–80 characters
+   * @param {string} input.body 20–500 characters
+   * @param {{id: string, role: string}} [input.actor] the sending admin — the
+   *   audit entry is skipped without one
+   * @param {(progress: {sent: number, failed: number, total: number}) => void} [input.onProgress]
+   *   called as the fan-out advances, so a long send has a moving number
+   * @returns {Promise<{audience: string, title: string, recipientCount: number,
+   *   sent: number, failed: number, audited: boolean}>}
+   * @throws {ApiError} `validation_failed` on a bad audience, title, or body
+   *
+   * **Future endpoint:** `POST /announcements` → `{ sent }` — one request, the
+   * fan-out in a queued job, and the audit entry written once inside it.
+   */
+  async broadcastAnnouncement({ audience, title, body, actor, onProgress } = {}) {
+    const filters = audienceFilters(audience)
+    const safeTitle = announcementText(title, {
+      field: 'title',
+      label: 'The title',
+      min: ANNOUNCEMENT_TITLE_MIN,
+      max: ANNOUNCEMENT_TITLE_MAX,
+    })
+    const safeBody = announcementText(body, {
+      field: 'body',
+      label: 'The message',
+      min: ANNOUNCEMENT_BODY_MIN,
+      max: ANNOUNCEMENT_BODY_MAX,
+    })
+
+    // The audience is collected first and in full, so the count the admin
+    // confirmed and the count that gets written come from the same read.
+    const recipients = []
+    for (let page = 1; recipients.length < BROADCAST_LIMIT; page += 1) {
+      // eslint-disable-next-line no-await-in-loop -- pages are sequential by nature.
+      const { items, total } = await userService.list({
+        page,
+        limit: AUDIENCE_PAGE_SIZE,
+        filters,
+      })
+      recipients.push(...items.map((member) => member.id))
+      if (items.length === 0 || recipients.length >= total) break
+    }
+
+    let sent = 0
+    let failed = 0
+    const total = recipients.length
+
+    for (const userId of recipients) {
+      // eslint-disable-next-line no-await-in-loop -- see MOCK-FANOUT above.
+      const written = await notificationService
+        .notify({
+          userId,
+          type: NOTIFICATION_TYPE.SYSTEM_ANNOUNCEMENT,
+          title: safeTitle,
+          body: safeBody,
+        })
+        .catch(() => null)
+
+      if (written) sent += 1
+      else failed += 1
+      onProgress?.({ sent, failed, total })
+    }
+
+    // The audit entry **is** the announcement history (Prompt 31 §4.4): there is
+    // no `announcements` collection, and adding one to store four fields that
+    // the trail already has to record would be a second source of truth for the
+    // same event. `meta` carries everything the history list renders.
+    let audited = false
+    if (actor?.id) {
+      try {
+        await auditService.log({
+          actorId: actor.id,
+          actorRole: actor.role,
+          action: 'announcement.send',
+          entityType: 'platform_settings',
+          meta: { title: safeTitle, body: safeBody, audience, recipientCount: total, sent, failed },
+        })
+        audited = true
+      } catch {
+        // A send that happened must not be undone by a trail entry that did not.
+      }
+    }
+
+    return { audience, title: safeTitle, recipientCount: total, sent, failed, audited }
+  },
+
+  /**
+   * **The announcements that have been sent**, newest first — read straight off
+   * the audit trail (§4.4).
+   *
+   * Deliberately not a collection of its own. An announcement is an event, not
+   * a record with a life of its own: nothing edits one, nothing deletes one, and
+   * the trail already has to hold it. Reading the history from there keeps the
+   * two from ever disagreeing, at the cost of a `meta` shape this function has
+   * to be tolerant about — the seeded entry spells its fields `subject` and
+   * `recipients`, so both spellings are read.
+   *
+   * @param {object} [params]
+   * @param {number} [params.page=1]
+   * @param {number} [params.limit=10]
+   * @returns {Promise<import('./api/listAdapter').ListResult>} entries carrying
+   *   `title`, `body`, `audience`, `recipientCount`, `sentAt`, `actorId`
+   */
+  async listAnnouncements({ page = 1, limit = 10 } = {}) {
+    const result = await auditService.list({
+      page,
+      limit,
+      filters: { action: 'announcement.send' },
+    })
+
+    return {
+      ...result,
+      items: result.items.map((entry) => ({
+        id: entry.id,
+        actorId: entry.actorId,
+        actorRole: entry.actorRole,
+        sentAt: entry.createdAt,
+        title: entry.meta?.title ?? entry.meta?.subject ?? 'Announcement',
+        body: entry.meta?.body ?? null,
+        audience: entry.meta?.audience ?? null,
+        recipientCount: entry.meta?.recipientCount ?? entry.meta?.recipients ?? null,
+        failed: entry.meta?.failed ?? 0,
+      })),
+    }
+  },
 })
 
 export default notificationService
