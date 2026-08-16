@@ -352,7 +352,7 @@ export default function AdminOverviewPage() {
                 to={paths.ADMIN_AUDIT}
                 size="small"
                 endIcon={<Icon icon="tabler:arrow-right" width={16} aria-hidden="true" />}
-                sx={{ mt: 1 }}
+                sx={{ mt: 1, minHeight: 44 }}
               >
                 View the full audit log
               </Button>

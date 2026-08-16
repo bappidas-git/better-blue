@@ -38,6 +38,28 @@ const hoverLift = (theme) => ({
 })
 
 export const components = {
+  // MUI's default `variantMapping` renders `subtitle1` and `subtitle2` as
+  // `<h6>` elements. Those two variants are used all over this app for visual
+  // subtitles — a card's second line, a field group's caption, a chip's label —
+  // and every one of them was landing in the document outline as a heading,
+  // producing stray `<h6>`s and heading-level jumps like `h1 → h3 → h6`
+  // (00 §13: "heading hierarchy"). Found by the Prompt 37 accessibility sweep:
+  // 60 occurrences across 29 files.
+  //
+  // Fixing it here rather than at 60 call sites keeps the rule in one place and
+  // catches every future use. Nothing visual changes — the type scale comes
+  // from `variant`, not from the element. Anything that genuinely *is* a
+  // heading already says so with an explicit `component="h2"`/`"h3"`, which
+  // still wins: `variantMapping` is only the fallback.
+  MuiTypography: {
+    defaultProps: {
+      variantMapping: {
+        subtitle1: 'p',
+        subtitle2: 'p',
+      },
+    },
+  },
+
   MuiButtonBase: {
     styleOverrides: {
       // ButtonBase sets `outline: 0`, so the keyboard focus ring must be

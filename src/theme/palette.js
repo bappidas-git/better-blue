@@ -34,10 +34,31 @@ export const palette = {
     surface: '#FDF2F8',
     contrastText: '#FFFFFF',
   },
-  success: { main: '#16A34A' },
-  warning: { main: '#F59E0B' },
-  error: { main: '#DC2626' },
-  info: { main: '#0EA5E9' },
+  // Semantic colours. The `main` values are the locked tokens (00 §6) and are
+  // what fills a chip, an icon, or a progress bar. The `dark` values are what
+  // *text* uses — `softTone` in ./components.js paints Chip and Alert labels
+  // with `dark` on a 12% wash of `main`, and a handful of captions use it
+  // directly.
+  //
+  // Left to MUI, `dark` is `main` darkened by a flat 20%, which is a ratio
+  // nobody checked: the Prompt 37 contrast sweep found warning at 3.31:1 and
+  // info at 4.18:1 against white — both under AA for body text — and success
+  // passing on white (4.91:1) but failing on its own tint (4.30:1). These are
+  // the shades derived to clear 4.5:1 on **both** surfaces, so a warning
+  // caption and a warning chip are each legible:
+  //
+  //   token          dark       on paper   on 12% tint
+  //   success        #117E39      5.16         4.52
+  //   warning        #9A6407      5.00         4.56
+  //   error          #B01E1E      6.88         5.72
+  //   info           #0A75A5      5.12         4.53
+  //
+  // `error` already passed on MUI's automatic shade; it is spelled out anyway
+  // so all four are pinned and none can drift with a library default.
+  success: { main: '#16A34A', dark: '#117E39' },
+  warning: { main: '#F59E0B', dark: '#9A6407' },
+  error: { main: '#DC2626', dark: '#B01E1E' },
+  info: { main: '#0EA5E9', dark: '#0A75A5' },
   background: {
     default: '#FAFAFC',
     paper: '#FFFFFF',

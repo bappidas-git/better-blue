@@ -17,6 +17,7 @@ import useAttachmentQueue, {
   EVIDENCE_MAX_SIZE_MB,
 } from '@/features/disputes/hooks/useAttachmentQueue'
 import { DISPUTE_CATEGORY_OPTIONS } from '@/features/disputes/utils/disputeDisplay'
+import { focusFieldById } from '@/hooks/useForm'
 import {
   DISPUTE_DESCRIPTION_MAX,
   DISPUTE_DESCRIPTION_MIN,
@@ -69,6 +70,13 @@ export default function RaiseDisputeDialog({ open, onClose, onSubmit, order }) {
   const descriptionError = validateDescription(description)
   const categoryError = category ? null : 'Choose what this is about.'
   const canSubmit = !descriptionError && !categoryError && !queue.isBlocked && !isSubmitting
+  // The button is disabled only for the things a person cannot argue with: a
+  // submit already in flight, or an attachment still uploading / needing a
+  // retry (both of which the chips and their `aria-live` line explain). An
+  // *invalid* form keeps its button live so that pressing it says what is
+  // wrong and jumps there, rather than going quiet with no reason given
+  // (00 §12).
+  const isBusy = isSubmitting || queue.isBlocked
 
   const close = useCallback(() => {
     if (isSubmitting) return
@@ -78,7 +86,12 @@ export default function RaiseDisputeDialog({ open, onClose, onSubmit, order }) {
   const submit = useCallback(async () => {
     setCategoryTouched(true)
     setDescriptionTouched(true)
-    if (!canSubmit) return
+    if (!canSubmit) {
+      // 00 §12 — first invalid field, in the order they are asked.
+      if (categoryError) focusFieldById('dispute-category')
+      else if (descriptionError) focusFieldById('dispute-description')
+      return
+    }
 
     setSubmitting(true)
     try {
@@ -98,7 +111,16 @@ export default function RaiseDisputeDialog({ open, onClose, onSubmit, order }) {
     } finally {
       setSubmitting(false)
     }
-  }, [canSubmit, category, description, onSubmit, queue.files, resetQueue])
+  }, [
+    canSubmit,
+    category,
+    categoryError,
+    description,
+    descriptionError,
+    onSubmit,
+    queue.files,
+    resetQueue,
+  ])
 
   const categoryHint = category ? getStatusMeta(category).description : null
 
@@ -114,7 +136,7 @@ export default function RaiseDisputeDialog({ open, onClose, onSubmit, order }) {
           <Button onClick={close} color="inherit" disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={submit} variant="gradient" disabled={!canSubmit}>
+          <Button onClick={submit} variant="gradient" disabled={isBusy}>
             {isSubmitting ? 'Opening…' : 'Open dispute'}
           </Button>
         </>
@@ -204,7 +226,7 @@ export default function RaiseDisputeDialog({ open, onClose, onSubmit, order }) {
           </Box>
 
           {queue.overflowNotice ? (
-            <Typography variant="caption" color="warning.main" sx={{ display: 'block', mt: 1 }}>
+            <Typography variant="caption" color="warning.dark" sx={{ display: 'block', mt: 1 }}>
               {queue.overflowNotice}
             </Typography>
           ) : null}

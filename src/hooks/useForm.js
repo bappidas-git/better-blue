@@ -13,6 +13,32 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 /** DOM id convention shared with the `Form*` fields, so submit can focus by id. */
 export const fieldId = (name) => `field-${name}`
 
+/**
+ * Focuses (and scrolls to) a control by its DOM id.
+ *
+ * `handleSubmit` uses this for its first-invalid focus. It is exported because
+ * a handful of dialogs deliberately do **not** use `useForm` — a delivery is a
+ * queue of uploads, a withdrawal is one amount checked against a balance — and
+ * 00 §12's "first invalid field focused on submit" applies to them just the
+ * same. They pass their own field id rather than a `useForm` field name.
+ *
+ * Silent no-op when nothing matches, so a caller never has to guard.
+ *
+ * @param {string} id the control's DOM id
+ *
+ * @example
+ * if (!category) { focusFieldById('dispute-category'); return }
+ */
+export function focusFieldById(id) {
+  if (typeof document === 'undefined' || !id) return
+  const node = document.getElementById(id)
+  if (!node) return
+  node.focus?.({ preventScroll: true })
+  // `scroll-behavior` is forced to `auto` for reduced-motion users in
+  // src/styles/global.css, so this stays comfortable either way.
+  node.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
+}
+
 const runRule = (rule, value, values) =>
   typeof rule === 'function' ? rule(value, values) : undefined
 
@@ -143,13 +169,12 @@ export function useForm({ initialValues = {}, validators = {} } = {}) {
 
   /** Focus (and scroll to) a field by registered ref, falling back to its id. */
   const focusField = useCallback((name) => {
-    const node =
-      fieldNodes.current[name] ??
-      (typeof document !== 'undefined' ? document.getElementById(fieldId(name)) : null)
-    if (!node) return
+    const node = fieldNodes.current[name]
+    if (!node) {
+      focusFieldById(fieldId(name))
+      return
+    }
     node.focus?.({ preventScroll: true })
-    // `scroll-behavior` is forced to `auto` for reduced-motion users in
-    // src/styles/global.css, so this stays comfortable either way.
     node.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
   }, [])
 

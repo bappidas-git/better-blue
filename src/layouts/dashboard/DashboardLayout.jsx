@@ -74,6 +74,11 @@ function SkipToContentLink() {
         zIndex: (theme) => theme.zIndex.tooltip + 1,
         px: 2,
         py: 1.25,
+        // Clears 44px including the padding — a keyboard user tabs to it, but a
+        // switch-control or head-pointer user still has to hit it (00 §13).
+        minHeight: 44,
+        display: 'inline-flex',
+        alignItems: 'center',
         borderRadius: 1.5,
         bgcolor: 'primary.main',
         color: 'primary.contrastText',

@@ -70,6 +70,10 @@ const TYPE_TARGET = Object.freeze({
   [NOTIFICATION_TYPE.PROPOSAL_SHORTLISTED]: TARGET.REQUEST,
   [NOTIFICATION_TYPE.PROPOSAL_ACCEPTED]: TARGET.ORDER,
   [NOTIFICATION_TYPE.PROPOSAL_DECLINED]: TARGET.REQUEST,
+  // An admin took a brief down (`requestService.closeRequest`). It is addressed
+  // to the buyer who wrote it, carries `entityType: 'request'`, and the thing
+  // they will want is the brief itself and the reason on it.
+  [NOTIFICATION_TYPE.REQUEST_CLOSED]: TARGET.REQUEST,
   [NOTIFICATION_TYPE.ORDER_PAID]: TARGET.ORDER,
   [NOTIFICATION_TYPE.DELIVERY_SUBMITTED]: TARGET.ORDER,
   [NOTIFICATION_TYPE.REVISION_REQUESTED]: TARGET.ORDER,
@@ -126,8 +130,10 @@ const BUYER_TARGETS = Object.freeze({
   // answer to a payment notification that arrived on the wrong role.
   [TARGET.PAYOUTS]: () => paths.BUYER_PAYMENTS,
   [TARGET.CONTENT]: () => null,
-  // Prompt 34 mounts `/buyer/affiliate`; until then this falls back to home.
-  [TARGET.AFFILIATE]: () => null,
+  // Prompt 34 mounted `/buyer/affiliate`. The screen gates itself on the
+  // `affiliateProgram` flag; with the flag off it renders its own "not
+  // available" state, which is a truer answer than the dashboard home.
+  [TARGET.AFFILIATE]: () => paths.BUYER_AFFILIATE,
   [TARGET.ACCOUNT]: () => paths.BUYER_SETTINGS,
   [TARGET.OVERVIEW]: () => paths.BUYER,
 })
@@ -148,7 +154,10 @@ const CREATOR_TARGETS = Object.freeze({
   [TARGET.MONEY]: () => paths.CREATOR_EARNINGS,
   [TARGET.PAYOUTS]: () => paths.creatorEarningsTab(EARNINGS_TAB.PAYOUTS),
   [TARGET.CONTENT]: () => paths.CREATOR_PORTFOLIO,
-  // Prompt 34 builds the creator affiliate screen.
+  // Prompt 34 shipped referrals as a *buyer* programme — `affiliateService`
+  // only converts referred sign-ups whose role is `buyer`, and the only nav
+  // entry is `buyerNav`'s. There is no creator screen to point at, so an
+  // affiliate notification that reached a creator falls back to home.
   [TARGET.AFFILIATE]: () => null,
   [TARGET.ACCOUNT]: () => paths.CREATOR_SETTINGS,
   [TARGET.OVERVIEW]: () => paths.CREATOR,
@@ -188,48 +197,23 @@ const TARGETS_BY_ROLE = Object.freeze({
 })
 
 /* -------------------------------------------------------------------------- */
-/* 3. Admin screens that do not exist yet                                     */
+/* 3. Admin screens that do not exist yet — none left                         */
 /* -------------------------------------------------------------------------- */
 
-/**
- * ╔══════════════════════════════════════════════════════════════════════════╗
- * ║ DELETE YOUR LINE when you mount the screen.                              ║
- * ╚══════════════════════════════════════════════════════════════════════════╝
- *
- * `ADMIN_TARGETS` above is written against the finished console, because a map
- * is easier to read whole than assembled over eight prompts. These are the
- * entries `routes/adminRoutes.jsx` has not mounted yet: a notification aimed at
- * one resolves to the admin home instead of the dashboard 404 that the
- * `/admin/*` catch-all would otherwise render.
- *
- * Detail routes are covered by their list path — `/admin/users/usr_1` is
- * pending while `/admin/users` is.
- */
-const ADMIN_PENDING = Object.freeze([
-  // Prompt 29 mounted `/admin/users` and `/admin/users/:userId`, so its line is
-  // gone — an admin notification about an account now lands on the account.
-  // Prompt 30 mounted `/admin/moderation`, its detail route, and `/admin/reports`,
-  // so its line is gone — an admin notification about a review case now lands on
-  // the case.
-  paths.ADMIN_REQUESTS, // Prompt 31
-  paths.ADMIN_ORDERS, // Prompt 31
-  // Prompt 32 mounted `/admin/payments`, `/admin/settlements`, and
-  // `/admin/commissions`, so their lines are gone — an admin notification about
-  // money now lands on the finance console, and the `payout_requested` emit
-  // `requestPayout` gained in the same prompt has somewhere real to go.
-  // Prompt 33 mounted `/admin/disputes` and its detail route, so its line is
-  // gone too — "new dispute to triage" now lands on the case itself.
-  paths.ADMIN_AFFILIATES, // Prompt 34
-])
-
-const isPendingAdminPath = (path) =>
-  ADMIN_PENDING.some((pending) => path === pending || path.startsWith(`${pending}/`))
+// `ADMIN_TARGETS` was written against the finished console, so while it was
+// being assembled over eight prompts an `ADMIN_PENDING` list held the paths
+// `routes/adminRoutes.jsx` had not mounted yet, and resolution bounced those to
+// the admin home rather than the `/admin/*` catch-all's 404.
+//
+// Prompt 36 mounted the last of them. Every path `ADMIN_TARGETS` can return is
+// now a live route — verified against `adminRoutes.jsx` in the Prompt 37
+// hardening pass — so the list and its guard are gone, and an admin
+// notification about a request, an order, or the referral programme lands on
+// that screen instead of on the dashboard home.
 
 /* -------------------------------------------------------------------------- */
 /* Resolution                                                                 */
 /* -------------------------------------------------------------------------- */
-
-const isAdminRole = (role) => role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN
 
 /** Reported once per unmapped type per session, rather than on every render. */
 const warned = new Set()
@@ -273,7 +257,6 @@ export function getNotificationPath(notification, role) {
 
   const path = targets[target]?.(notification) ?? null
   if (!path) return home
-  if (isAdminRole(role) && isPendingAdminPath(path)) return home
 
   return path
 }

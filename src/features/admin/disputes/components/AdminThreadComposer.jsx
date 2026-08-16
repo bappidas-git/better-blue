@@ -214,7 +214,7 @@ export default function AdminThreadComposer({ onSend, disabled, disabledReason }
       </Box>
 
       {queue.overflowNotice ? (
-        <Typography variant="caption" color="warning.main" sx={{ display: 'block', mt: 1 }}>
+        <Typography variant="caption" color="warning.dark" sx={{ display: 'block', mt: 1 }}>
           {queue.overflowNotice}
         </Typography>
       ) : null}

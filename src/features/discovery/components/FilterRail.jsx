@@ -11,6 +11,7 @@ import Stack from '@mui/material/Stack'
 import Switch from '@mui/material/Switch'
 import Typography from '@mui/material/Typography'
 
+import { visuallyHidden } from '@mui/utils'
 import FilterChipGroup from '@/components/inputs/FilterChipGroup'
 import useDebounce from '@/hooks/useDebounce'
 import { formatCurrency } from '@/utils/formatters'
@@ -134,6 +135,14 @@ export default function FilterRail({
 
   return (
     <Stack spacing={3} divider={<Divider />}>
+      {/* The rail's own level in the outline. Without it the page jumps
+          straight from its `h1` to the `h3` of the first filter group
+          (00 §13). Visually hidden — the divider and the layout already say
+          "filters" to anyone who can see them. */}
+      <Typography component="h2" sx={visuallyHidden}>
+        Filters
+      </Typography>
+
       <FilterSection title="Category" id={`${idPrefix}-category`}>
         {isCategoriesLoading ? (
           <Stack spacing={1.25}>

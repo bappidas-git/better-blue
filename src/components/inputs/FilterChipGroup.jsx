@@ -62,11 +62,17 @@ export default function FilterChipGroup({
         mx: -0.25,
         scrollbarWidth: 'none',
         '&::-webkit-scrollbar': { display: 'none' },
-        // MUI chips are 32px tall — too small to tap comfortably, so the
-        // default size grows to a 44px target on touch-sized viewports (00 §13).
-        ...(size === 'md' && {
-          '& .MuiChip-root': { height: { xs: 44, md: 32 }, borderRadius: 999 },
-        }),
+        // MUI chips are 32px tall at `medium` and 24px at `small` — both too
+        // small to tap, so every chip grows to a 44px target on touch-sized
+        // viewports (00 §13). `size` sets the *desktop* density only: it is a
+        // choice about how tight a toolbar looks, not about whether a finger
+        // can hit it. (Until the Prompt 37 responsive sweep the floor was
+        // applied to `md` alone, which left every admin list page's filters at
+        // 24px on a phone.)
+        '& .MuiChip-root': {
+          height: { xs: 44, md: size === 'sm' ? 24 : 32 },
+          borderRadius: 999,
+        },
         ...sx,
       }}
       {...rest}

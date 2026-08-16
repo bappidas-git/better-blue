@@ -14,6 +14,7 @@ import { Link as RouterLink } from 'react-router-dom'
 import CurrencyField from '@/components/inputs/CurrencyField'
 import ResponsiveDialog from '@/components/layout/ResponsiveDialog'
 import { CREATOR_PAYOUT_METHOD_ANCHOR } from '@/features/creatorAccount/components/PayoutMethodCard'
+import { focusFieldById } from '@/hooks/useForm'
 import { paths } from '@/routes/paths'
 import { formatCurrency } from '@/utils/formatters'
 
@@ -103,7 +104,14 @@ export default function WithdrawDialog({
     event.preventDefault()
     setTouched(true)
     setServerError(null)
-    if (!canSubmit) return
+    if (!canSubmit) {
+      // An amount that does not fit gets the message *and* the cursor, rather
+      // than a button that quietly stops working (00 §12). "No payout method"
+      // is the one thing the field cannot fix, so it stays on the alert above
+      // with its own "Add one" link.
+      if (hasMethod && validation) focusFieldById('withdraw-amount')
+      return
+    }
 
     try {
       const payout = await onConfirm(numeric)
@@ -131,7 +139,7 @@ export default function WithdrawDialog({
         type="submit"
         form="withdraw-form"
         variant="contained"
-        disabled={!canSubmit}
+        disabled={!hasMethod || isSubmitting}
         sx={{ minHeight: 44 }}
       >
         {isSubmitting ? 'Requesting…' : 'Request payout'}

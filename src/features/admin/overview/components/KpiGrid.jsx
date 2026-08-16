@@ -168,9 +168,11 @@ export default function KpiGrid({ stats, loading = false, onRetry }) {
       format: statCount,
       icon: withIcon('solar:box-linear'),
       iconTone: 'info',
-      // TODO(Prompt 31): `to: paths.ADMIN_ORDERS` once the orders console exists.
-      // A tile pointing at an unbuilt route lands on the dashboard 404 — the
-      // same rule `navConfig` follows for its entries.
+      // Prompt 31 built the orders console, so the tile is a link. Like the
+      // members tile below it lands on the unfiltered list rather than on a
+      // pre-filtered "active" view: the tile is a way in, not a re-statement of
+      // the number just clicked.
+      to: paths.ADMIN_ORDERS,
     }),
     tile({
       key: 'newUsers',

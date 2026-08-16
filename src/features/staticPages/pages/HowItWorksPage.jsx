@@ -108,7 +108,7 @@ export default function HowItWorksPage() {
                       variant="text"
                       size="small"
                       endIcon={<Icon icon="tabler:arrow-right" width={16} />}
-                      sx={{ ml: -1.75 }}
+                      sx={{ ml: -1.75, minHeight: 44 }}
                     >
                       More on this
                     </Button>

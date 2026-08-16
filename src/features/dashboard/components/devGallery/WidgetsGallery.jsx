@@ -150,33 +150,35 @@ const ACTIVITY = [
 
 /* --- Nav resolver read-out ------------------------------------------------ */
 
-// A fixture nav, not the live `adminNav`: Prompt 14 seeds only the Overview
-// entry per role (later prompts append theirs), so the filtering and the mobile
-// split need representative data to be visible at all.
+// A fixture nav, not the live `adminNav`. The gallery demonstrates *the
+// resolver* — permission filtering and the mobile bottom-nav split — so it needs
+// a tree small enough to read whole and stable enough that the read-out below
+// does not shift every time `navConfig` gains an entry. Paths still come from
+// `paths.js` (00 §2.6); only the shape of the tree is hand-built.
 const FIXTURE_ADMIN_NAV = [
-  { key: 'overview', label: 'Overview', icon: 'solar:widget-5-linear', path: '/admin', exact: true },
+  { key: 'overview', label: 'Overview', icon: 'solar:widget-5-linear', path: paths.ADMIN, exact: true },
   {
     key: 'trust',
     group: 'Trust & Safety',
     items: [
-      { key: 'moderation', label: 'Moderation', icon: 'solar:shield-check-linear', path: '/admin/moderation', permission: PERMISSIONS.MODERATION_REVIEW },
-      { key: 'reports', label: 'Reports', icon: 'solar:flag-linear', path: '/admin/reports', permission: PERMISSIONS.REPORTS_MANAGE },
+      { key: 'moderation', label: 'Moderation', icon: 'solar:shield-check-linear', path: paths.ADMIN_MODERATION, permission: PERMISSIONS.MODERATION_REVIEW },
+      { key: 'reports', label: 'Reports', icon: 'solar:flag-linear', path: paths.ADMIN_REPORTS, permission: PERMISSIONS.REPORTS_MANAGE },
     ],
   },
   {
     key: 'finance',
     group: 'Finance',
     items: [
-      { key: 'payments', label: 'Payments', icon: 'solar:card-linear', path: '/admin/payments', permission: PERMISSIONS.PAYMENTS_MANAGE },
-      { key: 'settlements', label: 'Settlements', icon: 'solar:banknote-2-linear', path: '/admin/settlements', permission: PERMISSIONS.SETTLEMENTS_PROCESS },
+      { key: 'payments', label: 'Payments', icon: 'solar:card-linear', path: paths.ADMIN_PAYMENTS, permission: PERMISSIONS.PAYMENTS_MANAGE },
+      { key: 'settlements', label: 'Settlements', icon: 'solar:banknote-2-linear', path: paths.ADMIN_SETTLEMENTS, permission: PERMISSIONS.SETTLEMENTS_PROCESS },
     ],
   },
   {
     key: 'platform',
     group: 'Platform',
     items: [
-      { key: 'settings', label: 'Settings', icon: 'solar:settings-linear', path: '/admin/settings', permission: PERMISSIONS.SETTINGS_MANAGE },
-      { key: 'roles', label: 'Admin team', icon: 'solar:users-group-rounded-linear', path: '/admin/roles', roles: [ROLES.SUPER_ADMIN] },
+      { key: 'settings', label: 'Settings', icon: 'solar:settings-linear', path: paths.ADMIN_SETTINGS, permission: PERMISSIONS.SETTINGS_MANAGE },
+      { key: 'roles', label: 'Admin team', icon: 'solar:users-group-rounded-linear', path: paths.ADMIN_ROLES, roles: [ROLES.SUPER_ADMIN] },
     ],
   },
 ]
