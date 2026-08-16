@@ -369,6 +369,24 @@ export const orderService = Object.freeze({
   },
 
   /**
+   * Several orders in one round trip, keyed by id — what a list of records that
+   * merely *reference* orders needs to show their titles (Prompt 26 §4.2).
+   *
+   * MOCK-JOIN: one request with the ids OR'd (contract §4.1), rather than one
+   * per row. Laravel: `GET /disputes?include=order`.
+   *
+   * @param {string[]} orderIds `ord_…`
+   * @returns {Promise<Map<string, object>>} `ord_…` → the order
+   */
+  async listByIds(orderIds = []) {
+    const ids = [...new Set(orderIds.filter(Boolean))]
+    if (ids.length === 0) return new Map()
+
+    const { items } = await orders.list({ page: 1, limit: COUNT_LIMIT, filters: { id: ids } })
+    return new Map(items.map((order) => [order.id, order]))
+  },
+
+  /**
    * How many engagements a business has taken all the way to completion — the
    * one number on the request board's buyer card that says whether a brief
    * comes from somebody who finishes what they start (Prompt 23 §4.3).

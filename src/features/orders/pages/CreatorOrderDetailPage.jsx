@@ -25,6 +25,7 @@ import ErrorState from '@/components/feedback/ErrorState'
 import CardSkeleton from '@/components/feedback/skeletons/CardSkeleton'
 import { useToast } from '@/components/feedback/ToastProvider'
 import StickyActionBar from '@/components/layout/StickyActionBar'
+import { ORDER_STATUS } from '@/constants/statuses'
 import { useAuth } from '@/context/AuthContext'
 import DeliveryComposer from '@/features/deliveries/components/DeliveryComposer'
 import DeliveryVersionList from '@/features/deliveries/components/DeliveryVersionList'
@@ -32,6 +33,8 @@ import EarningsCard from '@/features/deliveries/components/EarningsCard'
 import FulfillmentChecklist from '@/features/deliveries/components/FulfillmentChecklist'
 import RevisionContextBanner from '@/features/deliveries/components/RevisionContextBanner'
 import useDeliveryComposer from '@/features/deliveries/hooks/useDeliveryComposer'
+import OrderDisputeBanner from '@/features/disputes/components/OrderDisputeBanner'
+import RaiseDisputeAction from '@/features/disputes/components/RaiseDisputeAction'
 import {
   creatorOrderActions,
   describeAutoAccept,
@@ -46,6 +49,7 @@ import { paths } from '@/routes/paths'
 import { API_ERROR_CODE } from '@/services/api/apiError'
 import { categoryService } from '@/services/categoryService'
 import { deliveryService } from '@/services/deliveryService'
+import { disputeService } from '@/services/disputeService'
 import { orderService } from '@/services/orderService'
 import { requestService } from '@/services/requestService'
 import { settingsService, SETTINGS_FALLBACK } from '@/services/settingsService'
@@ -179,6 +183,16 @@ export default function CreatorOrderDetailPage() {
     []
   )
   const autoAcceptDays = settings?.general?.autoAcceptDays
+
+  // Prompt 26: only asked for on a frozen order, since it exists purely to give
+  // the dispute banner somewhere to link to. A failure leaves the banner in
+  // place without its link rather than failing the page.
+  const isDisputed = order?.status === ORDER_STATUS.DISPUTED
+  const { data: dispute } = useApiQuery(
+    () => disputeService.findForOrder(orderId).catch(() => null),
+    [orderId, isDisputed],
+    { enabled: Boolean(orderId) && isDisputed }
+  )
 
   const { data: categories } = useApiQuery(() => categoryService.listActive(), [])
   const categoryLabel = useMemo(
@@ -424,8 +438,15 @@ export default function CreatorOrderDetailPage() {
           ) : null}
         </Stack>
       }
+      /* Prompt 26 filled the DISPUTE-SLOT: "Report an issue" lives in an
+         overflow menu that renders itself only on the order states a dispute
+         can be raised from. A creator raises one over payment or conduct just
+         as a buyer does over the work. */
+      actions={<RaiseDisputeAction order={order} onOpened={refetch} />}
     >
       <Stack spacing={{ xs: 2, md: 2.5 }}>
+        <OrderDisputeBanner order={order} dispute={dispute} role={user?.role} />
+
         {actions.isAnsweringRevision ? (
           <RevisionContextBanner
             order={order}

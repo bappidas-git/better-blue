@@ -1012,7 +1012,133 @@ const historyRequests = HISTORY_ENGAGEMENTS.map((engagement) => {
   })
 })
 
-export const contentRequests = [...scenarioRequests, ...historyRequests]
+/* -------------------------------------------------------------------------- */
+/* Prompt 26 — briefs behind the disputed orders the case gallery needs        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Three more awarded briefs, each of which becomes a **disputed** order so the
+ * dispute statuses that had no example can have one: `awaiting_buyer`,
+ * `awaiting_creator`, and `escalated` (Prompt 26 §9). Two of them sit between
+ * the two demo accounts, so the badge, the "Action needed" accent, and the
+ * awaiting banners can all be walked without signing in as anyone else.
+ *
+ * Built **after** the history requests rather than appended to
+ * `SCENARIO_SOURCE`: request ids are handed out in creation order, and adding a
+ * row to the scenario array would renumber every archived brief — and with it
+ * every order, payment, and delivery downstream. Landing them at the very end
+ * moves nothing that already exists.
+ */
+const LATE_SCENARIO_SOURCE = [
+  {
+    key: 'awarded_verde_tasting',
+    buyer: 'verde',
+    status: REQUEST_STATUS.AWARDED,
+    category: CATEGORY_ID.FOOD_BEVERAGE,
+    contentType: PHOTO,
+    title: 'Tasting menu stills for the winter chef’s table',
+    description:
+      'Photography for the eight-course winter tasting menu we run at the chef’s table on Fridays. Every course photographed as it is served, plus a handful of room frames showing the table set for service. These go on the booking page and into the printed card guests take home.',
+    quantity: 14,
+    orientation: ORIENTATION.ANY,
+    usageRights: USAGE_RIGHTS.WEBSITE,
+    brandGuidelines:
+      'Low winter light, deep warm tones, plates photographed as served with no restyling between courses.',
+    dos: 'One overhead and one 45-degree frame per course. Two or three wider frames of the table set for service.',
+    donts: 'No flash at the table, no props brought in from outside the kitchen, no guests in frame.',
+    referenceUrls: ['https://verdekitchen.test/press/chefs-table-brief'],
+    budgetType: BUDGET_TYPE.FIXED,
+    budgetMin: 700,
+    budgetMax: 700,
+    deadlineDaysAgo: 9,
+    createdDaysAgo: 30,
+  },
+  {
+    key: 'awarded_verde_courtyard',
+    buyer: 'verde',
+    status: REQUEST_STATUS.AWARDED,
+    category: CATEGORY_ID.FOOD_BEVERAGE,
+    contentType: VIDEO,
+    title: 'Courtyard dining films for the winter terrace launch',
+    description:
+      'Three short films for the covered courtyard we are opening for winter service: the space at dusk with the heaters and lights on, a service sequence from the pass to the table, and a short piece on the winter drinks list.',
+    quantity: 3,
+    videoDurationSec: 30,
+    orientation: ORIENTATION.PORTRAIT,
+    usageRights: USAGE_RIGHTS.PAID_ADS,
+    brandGuidelines:
+      'Warm, low light and a slow pace. Kitchen and room sound only — no licensed music on any cut.',
+    dos: 'Shoot at dusk with the heaters lit. Caption the drinks names on the third film.',
+    donts: 'No guests in frame without a signed release, no drone footage, no music beds.',
+    referenceUrls: ['https://verdekitchen.test/press/winter-terrace-brief'],
+    budgetType: BUDGET_TYPE.FIXED,
+    budgetMin: 820,
+    budgetMax: 820,
+    deadlineDaysAgo: 6,
+    createdDaysAgo: 24,
+  },
+  {
+    key: 'awarded_atlas_marina',
+    buyer: 'atlas',
+    status: REQUEST_STATUS.AWARDED,
+    category: CATEGORY_ID.TRAVEL_HOSPITALITY,
+    contentType: PHOTO,
+    title: 'Marina resort photography for the spring brochure',
+    description:
+      'A full property set for the marina resort going into the spring brochure and the partner booking pages: rooms, the two restaurants, the pool terrace, and the berth frontage from the water.',
+    quantity: 32,
+    orientation: ORIENTATION.LANDSCAPE,
+    usageRights: USAGE_RIGHTS.FULL_COMMERCIAL,
+    brandGuidelines:
+      'Bright, even coastal light. Rooms photographed as found, no digital tidying, no sky replacement.',
+    dos: 'Cover every room category, both restaurants, the terrace, and the frontage from the water.',
+    donts: 'No composite skies, no guests in frame, no third-party boat branding in the frontage shots.',
+    referenceUrls: ['https://atlasescapes.test/partners/marina-brief'],
+    budgetType: BUDGET_TYPE.FIXED,
+    budgetMin: 1180,
+    budgetMax: 1180,
+    deadlineDaysAgo: 16,
+    createdDaysAgo: 44,
+  },
+]
+
+const lateScenarioRequests = LATE_SCENARIO_SOURCE.map((source) => {
+  const createdAt = daysAgo(source.createdDaysAgo, 13, 30)
+  return compact({
+    id: nextRequestId(source.key),
+    buyerId: buyerId(source.buyer),
+    title: source.title,
+    description: source.description,
+    categoryId: source.category,
+    contentType: source.contentType,
+    quantity: source.quantity,
+    videoDurationSec: source.videoDurationSec,
+    orientation: source.orientation,
+    usageRights: source.usageRights,
+    brandGuidelines: source.brandGuidelines,
+    dos: source.dos,
+    donts: source.donts,
+    referenceUrls: source.referenceUrls,
+    budgetType: source.budgetType,
+    budgetMin: source.budgetMin,
+    budgetMax: source.budgetMax,
+    currency: CURRENCY,
+    // Every one of these briefs is already past its delivery date — which is
+    // most of the reason each ended up in dispute.
+    deadline: daysAgo(source.deadlineDaysAgo, 17, 0),
+    status: source.status,
+    proposalsCount: 0,
+    awardedProposalId: null,
+    createdAt,
+    publishedAt: addDays(createdAt, 0.25),
+  })
+})
+
+export const contentRequests = [
+  ...scenarioRequests,
+  ...historyRequests,
+  ...lateScenarioRequests,
+]
 
 /** `requestId('open_verde_menu')` → `req_001`. Throws on an unknown key. */
 export function requestId(key) {

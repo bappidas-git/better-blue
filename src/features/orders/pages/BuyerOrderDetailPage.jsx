@@ -26,8 +26,10 @@ import ErrorState from '@/components/feedback/ErrorState'
 import CardSkeleton from '@/components/feedback/skeletons/CardSkeleton'
 import { useToast } from '@/components/feedback/ToastProvider'
 import StickyActionBar from '@/components/layout/StickyActionBar'
-import { getStatusMeta } from '@/constants/statuses'
+import { getStatusMeta, ORDER_STATUS } from '@/constants/statuses'
 import { useAuth } from '@/context/AuthContext'
+import OrderDisputeBanner from '@/features/disputes/components/OrderDisputeBanner'
+import RaiseDisputeAction from '@/features/disputes/components/RaiseDisputeAction'
 import AcceptDeliveryDialog from '@/features/orders/components/AcceptDeliveryDialog'
 import DeliverySection from '@/features/orders/components/DeliverySection'
 import OrderStateBanner from '@/features/orders/components/OrderStateBanner'
@@ -49,6 +51,7 @@ import { API_ERROR_CODE } from '@/services/api/apiError'
 import { categoryService } from '@/services/categoryService'
 import { creatorProfileService } from '@/services/creatorProfileService'
 import { deliveryService } from '@/services/deliveryService'
+import { disputeService } from '@/services/disputeService'
 import { orderService } from '@/services/orderService'
 import { reviewService } from '@/services/reviewService'
 import { revisionService } from '@/services/revisionService'
@@ -158,6 +161,16 @@ export default function BuyerOrderDetailPage() {
     () => reviewService.getByOrderId(orderId),
     [orderId],
     { enabled: Boolean(orderId) }
+  )
+
+  // Prompt 26: only asked for on a frozen order, since it exists purely to give
+  // the dispute banner somewhere to link to. A failure leaves the banner in
+  // place without its link rather than failing the page.
+  const isDisputed = order?.status === ORDER_STATUS.DISPUTED
+  const { data: dispute } = useApiQuery(
+    () => disputeService.findForOrder(orderId).catch(() => null),
+    [orderId, isDisputed],
+    { enabled: Boolean(orderId) && isDisputed }
   )
 
   // Settings are cached in the service for a minute (Prompt 07), so this is one
@@ -460,23 +473,33 @@ export default function BuyerOrderDetailPage() {
         </Stack>
       }
       actions={
-        actions.canPay ? (
-          <Button
-            component={RouterLink}
-            to={paths.buyerCheckout(order.id)}
-            variant="gradient"
-            startIcon={<Icon icon="solar:card-linear" width={18} aria-hidden="true" />}
-          >
-            Complete payment
-          </Button>
-        ) : undefined
+        /* Prompt 26 filled the DISPUTE-SLOT that stood here: "Report an issue"
+           now lives in the overflow menu, which renders itself only on the
+           order states a dispute can be raised from. */
+        <Stack direction="row" spacing={1} alignItems="center">
+          {actions.canPay ? (
+            <Button
+              component={RouterLink}
+              to={paths.buyerCheckout(order.id)}
+              variant="gradient"
+              startIcon={<Icon icon="solar:card-linear" width={18} aria-hidden="true" />}
+            >
+              Complete payment
+            </Button>
+          ) : null}
+          <RaiseDisputeAction order={order} onOpened={refetch} />
+        </Stack>
       }
-      /* DISPUTE-SLOT (Prompt 26): "Report an issue" belongs in an actions menu
-         here, opening the dispute form for this order. It is deliberately not
-         rendered yet — a button that leads nowhere is worse than no button. */
     >
       <Stack spacing={{ xs: 2, md: 2.5 }}>
-        <OrderStateBanner order={order} autoAcceptDays={autoAcceptDays} />
+        {/* Exactly one banner at a time. On a disputed order the dispute banner
+            supersedes the state banner: they say the same thing, and only one
+            of them can link to the case. */}
+        {isDisputed ? (
+          <OrderDisputeBanner order={order} dispute={dispute} role={user?.role} />
+        ) : (
+          <OrderStateBanner order={order} autoAcceptDays={autoAcceptDays} />
+        )}
 
         {justAccepted ? (
           <Alert

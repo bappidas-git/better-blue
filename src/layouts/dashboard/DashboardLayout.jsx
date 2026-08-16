@@ -20,6 +20,7 @@ import {
   isNavItemActive,
   splitBottomNav,
 } from '@/routes/navConfig'
+import { disputeService } from '@/services/disputeService'
 import { notificationService } from '@/services/notificationService'
 import { orderService } from '@/services/orderService'
 import { portfolioService } from '@/services/portfolioService'
@@ -179,6 +180,15 @@ export default function DashboardLayout() {
     { enabled: Boolean(user?.id) && isCreator }
   )
 
+  // Prompt 26: disputes waiting on this member's response. One query for both
+  // roles — `countAwaitingResponse` picks `awaiting_buyer` or `awaiting_creator`
+  // from the role it is given, so the two navs share a badge key.
+  const { data: disputesAwaiting } = useApiQuery(
+    () => disputeService.countAwaitingResponse(user?.id, user?.role),
+    [user?.id, user?.role, pathname],
+    { enabled: Boolean(user?.id) && (isBuyer || isCreator) }
+  )
+
   const badges = useMemo(
     () => ({
       [BADGE_KEY.BUYER_PROPOSALS_AWAITING]: proposalsAwaiting ?? 0,
@@ -186,8 +196,10 @@ export default function DashboardLayout() {
       [BADGE_KEY.CREATOR_PORTFOLIO_ATTENTION]: portfolioAttention ?? 0,
       [BADGE_KEY.CREATOR_PROPOSALS_SHORTLISTED]: proposalsShortlisted ?? 0,
       [BADGE_KEY.CREATOR_ORDERS_AWAITING_DELIVERY]: ordersAwaitingDelivery ?? 0,
+      [BADGE_KEY.DISPUTES_AWAITING_RESPONSE]: disputesAwaiting ?? 0,
     }),
     [
+      disputesAwaiting,
       ordersAwaitingDelivery,
       ordersAwaitingReview,
       portfolioAttention,

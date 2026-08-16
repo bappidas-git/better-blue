@@ -86,6 +86,13 @@ export const BADGE_KEY = Object.freeze({
   CREATOR_PROPOSALS_SHORTLISTED: 'creator.proposalsShortlisted',
   /** Orders whose next move is the creator's — deliver, or answer a revision (Prompt 24). */
   CREATOR_ORDERS_AWAITING_DELIVERY: 'creator.ordersAwaitingDelivery',
+  /**
+   * Disputes waiting on this member's response (Prompt 26). One key for both
+   * roles: the count is role-aware at the source — a buyer's is
+   * `awaiting_buyer`, a creator's `awaiting_creator` — and only one of the two
+   * navs is ever on screen.
+   */
+  DISPUTES_AWAITING_RESPONSE: 'disputes.awaitingResponse',
 })
 
 /* -------------------------------------------------------------------------- */
@@ -93,8 +100,8 @@ export const BADGE_KEY = Object.freeze({
 /* -------------------------------------------------------------------------- */
 
 /**
- * Prompts append: disputes (26), affiliate (34), notifications (27). Requests,
- * Orders, and Payments belong between Overview and Profile — the account
+ * Prompts append: affiliate (34), notifications (27). Requests, Orders,
+ * Payments, and Disputes belong between Overview and Profile — the account
  * entries stay last.
  */
 export const buyerNav = Object.freeze([
@@ -135,6 +142,18 @@ export const buyerNav = Object.freeze([
     path: paths.BUYER_PAYMENTS,
   }),
   Object.freeze({
+    // Prompt 26. After Payments and before the account entries: a dispute is
+    // about an order and its money, so it belongs at the end of that run. The
+    // badge counts only the cases waiting on *this buyer* — a dispute our team
+    // is quietly working through is not a task, and a permanent number here
+    // would read as one.
+    key: 'disputes',
+    label: 'Disputes',
+    icon: 'solar:shield-warning-linear',
+    path: paths.BUYER_DISPUTES,
+    badgeKey: BADGE_KEY.DISPUTES_AWAITING_RESPONSE,
+  }),
+  Object.freeze({
     key: NAV_KEY.PROFILE,
     label: 'Profile',
     icon: 'solar:buildings-3-linear',
@@ -154,9 +173,9 @@ export const buyerNav = Object.freeze([
 /* -------------------------------------------------------------------------- */
 
 /**
- * Prompts append: disputes (26), notifications (27). Those both belong
- * **between** Overview and Profile — the account entries stay last, the same
- * order the buyer's nav keeps.
+ * Prompts append: notifications (27), which belongs **between** Overview and
+ * Profile — the account entries stay last, the same order the buyer's nav
+ * keeps.
  */
 export const creatorNav = Object.freeze([
   Object.freeze({
@@ -217,6 +236,16 @@ export const creatorNav = Object.freeze([
     icon: 'solar:gallery-linear',
     path: paths.CREATOR_PORTFOLIO,
     badgeKey: BADGE_KEY.CREATOR_PORTFOLIO_ATTENTION,
+  }),
+  Object.freeze({
+    // Prompt 26. The mirror of the buyer's entry, in the same place relative to
+    // the account items: after the work and the money, before Profile. Same
+    // badge key — the count behind it is role-aware.
+    key: 'disputes',
+    label: 'Disputes',
+    icon: 'solar:shield-warning-linear',
+    path: paths.CREATOR_DISPUTES,
+    badgeKey: BADGE_KEY.DISPUTES_AWAITING_RESPONSE,
   }),
   Object.freeze({
     // Prompt 21. "Profile" here means the public storefront, not the account —
@@ -300,7 +329,9 @@ export const MORE_NAV_KEYS = Object.freeze({
   // Settings is the only key explicitly deferred; with Orders added in
   // Prompt 20 the buyer's four thumb-reachable destinations are Overview,
   // Requests, Orders, and Payments, and `splitBottomNav` pushes Profile into
-  // the sheet alongside Settings by overflow rather than by name.
+  // the sheet alongside Settings by overflow rather than by name. Prompt 26's
+  // Disputes overflows the same way — and should: a dispute is read once every
+  // few days at most, and its badge still shows inside the sheet.
   [ROLES.BUYER]: Object.freeze([NAV_KEY.SETTINGS]),
   // Prompt 23 is the one Prompt 21's note anticipated: Browse and Proposals
   // take the creator to six destinations, so the two account entries move into
@@ -309,8 +340,9 @@ export const MORE_NAV_KEYS = Object.freeze({
   // does not — so `splitBottomNav` overflows Portfolio into the sheet by
   // position. Prompt 25's Earnings makes eight and overflows the same way: a
   // balance is checked, not worked on, and it is one tap into the More sheet.
-  // The bar reads Overview · Browse · Proposals · Orders, with More holding
-  // Earnings, Portfolio, Profile, and Settings.
+  // Prompt 26's Disputes overflows for the same reason. The bar reads
+  // Overview · Browse · Proposals · Orders, with More holding Earnings,
+  // Disputes, Portfolio, Profile, and Settings.
   [ROLES.CREATOR]: Object.freeze([NAV_KEY.PROFILE, NAV_KEY.SETTINGS]),
   [ROLES.ADMIN]: Object.freeze([]),
   [ROLES.SUPER_ADMIN]: Object.freeze([]),

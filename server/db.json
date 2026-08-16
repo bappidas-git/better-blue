@@ -189,7 +189,7 @@
       "avatarUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23F5F3FF%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%237C3AED%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3ENW%3C%2Ftext%3E%3C%2Fsvg%3E",
       "phone": "+1 503 555 0142",
       "createdAt": "2026-04-22T10:15:00.000Z",
-      "lastLoginAt": "2026-08-14T08:30:00.000Z",
+      "lastLoginAt": "2026-08-16T00:50:16.767Z",
       "notificationPrefs": {
         "marketplace": {
           "inApp": true
@@ -505,7 +505,7 @@
       "avatarUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23E5E2EC%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%23171223%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3EAM%3C%2Ftext%3E%3C%2Fsvg%3E",
       "phone": "+1 512 555 0110",
       "createdAt": "2026-04-23T10:15:00.000Z",
-      "lastLoginAt": "2026-08-16T00:12:58.214Z",
+      "lastLoginAt": "2026-08-14T08:30:00.000Z",
       "notificationPrefs": {
         "marketplace": {
           "inApp": true
@@ -928,7 +928,7 @@
       "bio": "A plant-forward restaurant group with six locations across the Pacific Northwest. We commission seasonal menu photography and short social videos for each new menu drop.",
       "location": "Portland, OR, United States",
       "logoUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23E5E2EC%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%23171223%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3EVK%3C%2Ftext%3E%3C%2Fsvg%3E",
-      "totalSpent": 6000,
+      "totalSpent": 7520,
       "createdAt": "2026-04-22T10:40:00.000Z"
     },
     {
@@ -952,7 +952,7 @@
       "bio": "A boutique tour operator running small-group trips across southern Europe. Our marketing runs on authentic destination photography and short itinerary films.",
       "location": "Lisbon, Portugal",
       "logoUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23FDF2F8%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%23BE185D%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3EAC%3C%2Ftext%3E%3C%2Fsvg%3E",
-      "totalSpent": 5005,
+      "totalSpent": 6185,
       "createdAt": "2026-04-24T10:40:00.000Z"
     },
     {
@@ -4625,6 +4625,88 @@
       "awardedProposalId": "prp_098",
       "createdAt": "2026-04-23T13:30:00.000Z",
       "publishedAt": "2026-04-23T19:30:00.000Z"
+    },
+    {
+      "id": "req_062",
+      "buyerId": "usr_buyer_verde",
+      "title": "Tasting menu stills for the winter chef’s table",
+      "description": "Photography for the eight-course winter tasting menu we run at the chef’s table on Fridays. Every course photographed as it is served, plus a handful of room frames showing the table set for service. These go on the booking page and into the printed card guests take home.",
+      "categoryId": "cat_food_beverage",
+      "contentType": "photo",
+      "quantity": 14,
+      "orientation": "any",
+      "usageRights": "website",
+      "brandGuidelines": "Low winter light, deep warm tones, plates photographed as served with no restyling between courses.",
+      "dos": "One overhead and one 45-degree frame per course. Two or three wider frames of the table set for service.",
+      "donts": "No flash at the table, no props brought in from outside the kitchen, no guests in frame.",
+      "referenceUrls": [
+        "https://verdekitchen.test/press/chefs-table-brief"
+      ],
+      "budgetType": "fixed",
+      "budgetMin": 700,
+      "budgetMax": 700,
+      "currency": "USD",
+      "deadline": "2026-08-05T17:00:00.000Z",
+      "status": "awarded",
+      "proposalsCount": 2,
+      "awardedProposalId": "prp_109",
+      "createdAt": "2026-07-15T13:30:00.000Z",
+      "publishedAt": "2026-07-15T19:30:00.000Z"
+    },
+    {
+      "id": "req_063",
+      "buyerId": "usr_buyer_verde",
+      "title": "Courtyard dining films for the winter terrace launch",
+      "description": "Three short films for the covered courtyard we are opening for winter service: the space at dusk with the heaters and lights on, a service sequence from the pass to the table, and a short piece on the winter drinks list.",
+      "categoryId": "cat_food_beverage",
+      "contentType": "video",
+      "quantity": 3,
+      "videoDurationSec": 30,
+      "orientation": "portrait",
+      "usageRights": "paid_ads",
+      "brandGuidelines": "Warm, low light and a slow pace. Kitchen and room sound only — no licensed music on any cut.",
+      "dos": "Shoot at dusk with the heaters lit. Caption the drinks names on the third film.",
+      "donts": "No guests in frame without a signed release, no drone footage, no music beds.",
+      "referenceUrls": [
+        "https://verdekitchen.test/press/winter-terrace-brief"
+      ],
+      "budgetType": "fixed",
+      "budgetMin": 820,
+      "budgetMax": 820,
+      "currency": "USD",
+      "deadline": "2026-08-08T17:00:00.000Z",
+      "status": "awarded",
+      "proposalsCount": 2,
+      "awardedProposalId": "prp_111",
+      "createdAt": "2026-07-21T13:30:00.000Z",
+      "publishedAt": "2026-07-21T19:30:00.000Z"
+    },
+    {
+      "id": "req_064",
+      "buyerId": "usr_buyer_atlas",
+      "title": "Marina resort photography for the spring brochure",
+      "description": "A full property set for the marina resort going into the spring brochure and the partner booking pages: rooms, the two restaurants, the pool terrace, and the berth frontage from the water.",
+      "categoryId": "cat_travel_hospitality",
+      "contentType": "photo",
+      "quantity": 32,
+      "orientation": "landscape",
+      "usageRights": "full_commercial",
+      "brandGuidelines": "Bright, even coastal light. Rooms photographed as found, no digital tidying, no sky replacement.",
+      "dos": "Cover every room category, both restaurants, the terrace, and the frontage from the water.",
+      "donts": "No composite skies, no guests in frame, no third-party boat branding in the frontage shots.",
+      "referenceUrls": [
+        "https://atlasescapes.test/partners/marina-brief"
+      ],
+      "budgetType": "fixed",
+      "budgetMin": 1180,
+      "budgetMax": 1180,
+      "currency": "USD",
+      "deadline": "2026-07-29T17:00:00.000Z",
+      "status": "awarded",
+      "proposalsCount": 2,
+      "awardedProposalId": "prp_113",
+      "createdAt": "2026-07-01T13:30:00.000Z",
+      "publishedAt": "2026-07-01T19:30:00.000Z"
     }
   ],
   "proposals": [
@@ -6439,6 +6521,105 @@
       "status": "declined",
       "createdAt": "2026-08-04T07:30:00.000Z",
       "respondedAt": "2026-08-04T15:20:00.000Z"
+    },
+    {
+      "id": "prp_109",
+      "requestId": "req_062",
+      "creatorId": "usr_creator_isla",
+      "coverMessage": "I would shoot the tasting menu live across two Friday services rather than staging it — the first for the courses as they leave the pass, the second for the room and anything the first night missed. Fourteen finished frames, lit for the light you already have at that table.",
+      "price": 700,
+      "currency": "USD",
+      "deliveryDays": 7,
+      "revisionsIncluded": 2,
+      "sampleItemIds": [
+        "pfi_030",
+        "pfi_031"
+      ],
+      "status": "accepted",
+      "createdAt": "2026-07-16T19:30:00.000Z",
+      "respondedAt": "2026-07-18T15:20:00.000Z"
+    },
+    {
+      "id": "prp_110",
+      "requestId": "req_062",
+      "creatorId": "usr_creator_amara",
+      "coverMessage": "I have delivered work close to this brief before and can cover the full scope in one production block. Happy to walk through my approach to \"Tasting menu stills for the winter chef’s table\" on a call before you decide.",
+      "price": 770,
+      "currency": "USD",
+      "deliveryDays": 9,
+      "revisionsIncluded": 1,
+      "sampleItemIds": [
+        "pfi_044",
+        "pfi_045"
+      ],
+      "status": "declined",
+      "createdAt": "2026-07-17T07:30:00.000Z",
+      "respondedAt": "2026-07-18T15:20:00.000Z"
+    },
+    {
+      "id": "prp_111",
+      "requestId": "req_063",
+      "creatorId": "usr_creator_ava",
+      "coverMessage": "Three vertical films shot at dusk over two evenings: the courtyard as it lights up, a service run from the pass to the table, and the drinks list piece with the names captioned. Room and kitchen sound throughout, no music beds.",
+      "price": 820,
+      "currency": "USD",
+      "deliveryDays": 8,
+      "revisionsIncluded": 2,
+      "sampleItemIds": [
+        "pfi_004",
+        "pfi_005"
+      ],
+      "status": "accepted",
+      "createdAt": "2026-07-22T19:30:00.000Z",
+      "respondedAt": "2026-07-24T15:20:00.000Z"
+    },
+    {
+      "id": "prp_112",
+      "requestId": "req_063",
+      "creatorId": "usr_creator_diego",
+      "coverMessage": "My quote for \"Courtyard dining films for the winter terrace launch\" covers production, editing, and one round of changes, with the shot list agreed before we start. Availability comfortably clears your deadline.",
+      "price": 890,
+      "currency": "USD",
+      "deliveryDays": 10,
+      "revisionsIncluded": 1,
+      "sampleItemIds": [
+        "pfi_024",
+        "pfi_025"
+      ],
+      "status": "declined",
+      "createdAt": "2026-07-23T07:30:00.000Z",
+      "respondedAt": "2026-07-24T15:20:00.000Z"
+    },
+    {
+      "id": "prp_113",
+      "requestId": "req_064",
+      "creatorId": "usr_creator_mateo",
+      "coverMessage": "Three days on site covering every room category, both restaurants, the terrace across the day, and the frontage from a tender at golden hour. Rooms shot as found, and no sky work on any frame.",
+      "price": 1180,
+      "currency": "USD",
+      "deliveryDays": 10,
+      "revisionsIncluded": 1,
+      "sampleItemIds": [],
+      "status": "accepted",
+      "createdAt": "2026-07-02T19:30:00.000Z",
+      "respondedAt": "2026-07-04T15:20:00.000Z"
+    },
+    {
+      "id": "prp_114",
+      "requestId": "req_064",
+      "creatorId": "usr_creator_isla",
+      "coverMessage": "I would keep this simple: one shoot day, a clear deliverables list, and files handed over in the formats \"Marina resort photography for the spring brochure\" asks for. Recent work in this category is attached as samples.",
+      "price": 1250,
+      "currency": "USD",
+      "deliveryDays": 12,
+      "revisionsIncluded": 1,
+      "sampleItemIds": [
+        "pfi_031",
+        "pfi_032"
+      ],
+      "status": "declined",
+      "createdAt": "2026-07-03T07:30:00.000Z",
+      "respondedAt": "2026-07-04T15:20:00.000Z"
     }
   ],
   "orders": [
@@ -7569,6 +7750,78 @@
       "completedAt": null,
       "cancelledAt": null,
       "createdAt": "2026-08-04T15:20:00.000Z"
+    },
+    {
+      "id": "ord_048",
+      "requestId": "req_062",
+      "proposalId": "prp_109",
+      "buyerId": "usr_buyer_verde",
+      "creatorId": "usr_creator_isla",
+      "title": "Tasting menu stills for the winter chef’s table",
+      "categoryId": "cat_food_beverage",
+      "contentType": "photo",
+      "price": 700,
+      "currency": "USD",
+      "commissionRate": 0.2,
+      "commissionAmount": 140,
+      "creatorEarnings": 560,
+      "revisionsIncluded": 2,
+      "revisionsUsed": 0,
+      "deliveryDueAt": "2026-07-25T20:20:00.000Z",
+      "status": "disputed",
+      "activatedAt": "2026-07-18T20:20:00.000Z",
+      "deliveredAt": "2026-07-28T14:45:00.000Z",
+      "completedAt": null,
+      "cancelledAt": null,
+      "createdAt": "2026-07-18T15:20:00.000Z"
+    },
+    {
+      "id": "ord_049",
+      "requestId": "req_063",
+      "proposalId": "prp_111",
+      "buyerId": "usr_buyer_verde",
+      "creatorId": "usr_creator_ava",
+      "title": "Courtyard dining films for the winter terrace launch",
+      "categoryId": "cat_food_beverage",
+      "contentType": "video",
+      "price": 820,
+      "currency": "USD",
+      "commissionRate": 0.2,
+      "commissionAmount": 164,
+      "creatorEarnings": 656,
+      "revisionsIncluded": 2,
+      "revisionsUsed": 0,
+      "deliveryDueAt": "2026-08-01T18:20:00.000Z",
+      "status": "disputed",
+      "activatedAt": "2026-07-24T18:20:00.000Z",
+      "deliveredAt": "2026-08-03T14:45:00.000Z",
+      "completedAt": null,
+      "cancelledAt": null,
+      "createdAt": "2026-07-24T15:20:00.000Z"
+    },
+    {
+      "id": "ord_050",
+      "requestId": "req_064",
+      "proposalId": "prp_113",
+      "buyerId": "usr_buyer_atlas",
+      "creatorId": "usr_creator_mateo",
+      "title": "Marina resort photography for the spring brochure",
+      "categoryId": "cat_travel_hospitality",
+      "contentType": "photo",
+      "price": 1180,
+      "currency": "USD",
+      "commissionRate": 0.2,
+      "commissionAmount": 236,
+      "creatorEarnings": 944,
+      "revisionsIncluded": 1,
+      "revisionsUsed": 0,
+      "deliveryDueAt": "2026-07-14T22:20:00.000Z",
+      "status": "disputed",
+      "activatedAt": "2026-07-04T22:20:00.000Z",
+      "deliveredAt": null,
+      "completedAt": null,
+      "cancelledAt": null,
+      "createdAt": "2026-07-04T15:20:00.000Z"
     }
   ],
   "deliveries": [
@@ -8943,6 +9196,70 @@
       "revisionId": null,
       "submittedAt": "2026-08-13T14:45:00.000Z",
       "respondedAt": null
+    },
+    {
+      "id": "dlv_042",
+      "orderId": "ord_048",
+      "version": 1,
+      "message": "Fourteen frames from the two Friday services: every course as it left the pass, plus three wider frames of the table set before guests arrived. Two courses were plated differently on the second night, so I have delivered the version that matches the printed card.",
+      "files": [
+        {
+          "id": "dfl_111",
+          "name": "tasting-menu-stills-for-v1-01.jpg",
+          "url": "https://picsum.photos/seed/dfl-111/1600/900",
+          "thumbnailUrl": "https://picsum.photos/seed/dfl-111/400/300",
+          "mediaType": "image",
+          "sizeKb": 2400
+        },
+        {
+          "id": "dfl_112",
+          "name": "tasting-menu-stills-for-v1-02.jpg",
+          "url": "https://picsum.photos/seed/dfl-112/1600/900",
+          "thumbnailUrl": "https://picsum.photos/seed/dfl-112/400/300",
+          "mediaType": "image",
+          "sizeKb": 2580
+        },
+        {
+          "id": "dfl_113",
+          "name": "tasting-menu-stills-for-v1-03.jpg",
+          "url": "https://picsum.photos/seed/dfl-113/1600/900",
+          "thumbnailUrl": "https://picsum.photos/seed/dfl-113/400/300",
+          "mediaType": "image",
+          "sizeKb": 2760
+        }
+      ],
+      "status": "submitted",
+      "revisionId": null,
+      "submittedAt": "2026-07-28T14:45:00.000Z",
+      "respondedAt": null
+    },
+    {
+      "id": "dlv_043",
+      "orderId": "ord_049",
+      "version": 1,
+      "message": "Two of the three films attached — the courtyard at dusk and the service run. The drinks piece needs a reshoot: the heaters were not lit on either evening and the terrace reads cold on every take.",
+      "files": [
+        {
+          "id": "dfl_114",
+          "name": "courtyard-dining-films-for-v1-01.mp4",
+          "url": "https://picsum.photos/seed/dfl-114/1600/900",
+          "thumbnailUrl": "https://picsum.photos/seed/dfl-114/400/300",
+          "mediaType": "video",
+          "sizeKb": 48000
+        },
+        {
+          "id": "dfl_115",
+          "name": "courtyard-dining-films-for-v1-02.mp4",
+          "url": "https://picsum.photos/seed/dfl-115/1600/900",
+          "thumbnailUrl": "https://picsum.photos/seed/dfl-115/400/300",
+          "mediaType": "video",
+          "sizeKb": 57600
+        }
+      ],
+      "status": "submitted",
+      "revisionId": null,
+      "submittedAt": "2026-08-03T14:45:00.000Z",
+      "respondedAt": null
     }
   ],
   "revisions": [
@@ -9811,6 +10128,57 @@
       "heldAt": "2026-08-04T19:20:00.000Z",
       "releasedAt": null,
       "refundedAt": null
+    },
+    {
+      "id": "pay_050",
+      "orderId": "ord_048",
+      "buyerId": "usr_buyer_verde",
+      "amount": 700,
+      "currency": "USD",
+      "provider": "dummy",
+      "method": {
+        "brand": "visa",
+        "last4": "4242"
+      },
+      "createdAt": "2026-07-18T15:20:00.000Z",
+      "status": "held",
+      "heldAt": "2026-07-18T20:20:00.000Z",
+      "releasedAt": null,
+      "refundedAt": null
+    },
+    {
+      "id": "pay_051",
+      "orderId": "ord_049",
+      "buyerId": "usr_buyer_verde",
+      "amount": 820,
+      "currency": "USD",
+      "provider": "dummy",
+      "method": {
+        "brand": "visa",
+        "last4": "4242"
+      },
+      "createdAt": "2026-07-24T15:20:00.000Z",
+      "status": "held",
+      "heldAt": "2026-07-24T18:20:00.000Z",
+      "releasedAt": null,
+      "refundedAt": null
+    },
+    {
+      "id": "pay_052",
+      "orderId": "ord_050",
+      "buyerId": "usr_buyer_atlas",
+      "amount": 1180,
+      "currency": "USD",
+      "provider": "dummy",
+      "method": {
+        "brand": "visa",
+        "last4": "8801"
+      },
+      "createdAt": "2026-07-04T15:20:00.000Z",
+      "status": "held",
+      "heldAt": "2026-07-04T22:20:00.000Z",
+      "releasedAt": null,
+      "refundedAt": null
     }
   ],
   "transactions": [
@@ -10535,6 +10903,18 @@
     },
     {
       "id": "txn_061",
+      "type": "charge",
+      "orderId": "ord_050",
+      "paymentId": "pay_052",
+      "userId": "usr_buyer_atlas",
+      "amount": -1180,
+      "description": "Escrow charge for “Marina resort photography for the spring brochure”",
+      "createdAt": "2026-07-04T22:20:00.000Z",
+      "currency": "USD",
+      "balanceAfter": null
+    },
+    {
+      "id": "txn_062",
       "type": "release",
       "orderId": "ord_034",
       "paymentId": "pay_036",
@@ -10546,7 +10926,7 @@
       "balanceAfter": 956
     },
     {
-      "id": "txn_062",
+      "id": "txn_063",
       "type": "commission",
       "orderId": "ord_034",
       "paymentId": "pay_036",
@@ -10558,7 +10938,7 @@
       "balanceAfter": 848
     },
     {
-      "id": "txn_063",
+      "id": "txn_064",
       "type": "charge",
       "orderId": "ord_037",
       "paymentId": "pay_039",
@@ -10570,7 +10950,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_064",
+      "id": "txn_065",
       "type": "charge",
       "orderId": "ord_013",
       "paymentId": "pay_015",
@@ -10582,7 +10962,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_065",
+      "id": "txn_066",
       "type": "release",
       "orderId": "ord_035",
       "paymentId": "pay_037",
@@ -10594,7 +10974,7 @@
       "balanceAfter": 1052
     },
     {
-      "id": "txn_066",
+      "id": "txn_067",
       "type": "commission",
       "orderId": "ord_035",
       "paymentId": "pay_037",
@@ -10606,7 +10986,7 @@
       "balanceAfter": 928
     },
     {
-      "id": "txn_067",
+      "id": "txn_068",
       "type": "release",
       "orderId": "ord_036",
       "paymentId": "pay_038",
@@ -10618,7 +10998,7 @@
       "balanceAfter": 1452
     },
     {
-      "id": "txn_068",
+      "id": "txn_069",
       "type": "commission",
       "orderId": "ord_036",
       "paymentId": "pay_038",
@@ -10630,7 +11010,7 @@
       "balanceAfter": 1304
     },
     {
-      "id": "txn_069",
+      "id": "txn_070",
       "type": "charge",
       "orderId": "ord_038",
       "paymentId": "pay_040",
@@ -10642,7 +11022,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_070",
+      "id": "txn_071",
       "type": "charge",
       "orderId": "ord_011",
       "paymentId": "pay_013",
@@ -10654,7 +11034,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_071",
+      "id": "txn_072",
       "type": "refund",
       "orderId": "ord_016",
       "paymentId": "pay_018",
@@ -10666,7 +11046,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_072",
+      "id": "txn_073",
       "type": "release",
       "orderId": "ord_012",
       "paymentId": "pay_014",
@@ -10678,7 +11058,7 @@
       "balanceAfter": 2244
     },
     {
-      "id": "txn_073",
+      "id": "txn_074",
       "type": "commission",
       "orderId": "ord_012",
       "paymentId": "pay_014",
@@ -10690,7 +11070,7 @@
       "balanceAfter": 2040
     },
     {
-      "id": "txn_074",
+      "id": "txn_075",
       "type": "release",
       "orderId": "ord_037",
       "paymentId": "pay_039",
@@ -10702,7 +11082,7 @@
       "balanceAfter": 1484
     },
     {
-      "id": "txn_075",
+      "id": "txn_076",
       "type": "commission",
       "orderId": "ord_037",
       "paymentId": "pay_039",
@@ -10714,7 +11094,7 @@
       "balanceAfter": 1384
     },
     {
-      "id": "txn_076",
+      "id": "txn_077",
       "type": "charge",
       "orderId": "ord_014",
       "paymentId": "pay_016",
@@ -10726,7 +11106,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_077",
+      "id": "txn_078",
       "type": "charge",
       "orderId": "ord_039",
       "paymentId": "pay_041",
@@ -10738,7 +11118,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_078",
+      "id": "txn_079",
       "type": "charge",
       "orderId": "ord_010",
       "paymentId": "pay_012",
@@ -10750,7 +11130,19 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_079",
+      "id": "txn_080",
+      "type": "charge",
+      "orderId": "ord_048",
+      "paymentId": "pay_050",
+      "userId": "usr_buyer_verde",
+      "amount": -700,
+      "description": "Escrow charge for “Tasting menu stills for the winter chef’s table”",
+      "createdAt": "2026-07-18T20:20:00.000Z",
+      "currency": "USD",
+      "balanceAfter": null
+    },
+    {
+      "id": "txn_081",
       "type": "charge",
       "orderId": "ord_040",
       "paymentId": "pay_042",
@@ -10762,7 +11154,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_080",
+      "id": "txn_082",
       "type": "release",
       "orderId": "ord_038",
       "paymentId": "pay_040",
@@ -10774,7 +11166,7 @@
       "balanceAfter": 1108
     },
     {
-      "id": "txn_081",
+      "id": "txn_083",
       "type": "commission",
       "orderId": "ord_038",
       "paymentId": "pay_040",
@@ -10786,7 +11178,7 @@
       "balanceAfter": 992
     },
     {
-      "id": "txn_082",
+      "id": "txn_084",
       "type": "charge",
       "orderId": "ord_041",
       "paymentId": "pay_043",
@@ -10798,7 +11190,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_083",
+      "id": "txn_085",
       "type": "release",
       "orderId": "ord_039",
       "paymentId": "pay_041",
@@ -10810,7 +11202,7 @@
       "balanceAfter": 2354
     },
     {
-      "id": "txn_084",
+      "id": "txn_086",
       "type": "commission",
       "orderId": "ord_039",
       "paymentId": "pay_041",
@@ -10822,7 +11214,7 @@
       "balanceAfter": 2216
     },
     {
-      "id": "txn_085",
+      "id": "txn_087",
       "type": "payout",
       "payoutId": "pyo_002",
       "userId": "usr_creator_ava",
@@ -10833,7 +11225,7 @@
       "balanceAfter": 817.6
     },
     {
-      "id": "txn_086",
+      "id": "txn_088",
       "type": "charge",
       "orderId": "ord_042",
       "paymentId": "pay_044",
@@ -10845,7 +11237,19 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_087",
+      "id": "txn_089",
+      "type": "charge",
+      "orderId": "ord_049",
+      "paymentId": "pay_051",
+      "userId": "usr_buyer_verde",
+      "amount": -820,
+      "description": "Escrow charge for “Courtyard dining films for the winter terrace launch”",
+      "createdAt": "2026-07-24T18:20:00.000Z",
+      "currency": "USD",
+      "balanceAfter": null
+    },
+    {
+      "id": "txn_090",
       "type": "charge",
       "orderId": "ord_008",
       "paymentId": "pay_010",
@@ -10857,7 +11261,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_088",
+      "id": "txn_091",
       "type": "charge",
       "orderId": "ord_005",
       "paymentId": "pay_006",
@@ -10869,7 +11273,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_089",
+      "id": "txn_092",
       "type": "release",
       "orderId": "ord_040",
       "paymentId": "pay_042",
@@ -10881,7 +11285,7 @@
       "balanceAfter": 1964
     },
     {
-      "id": "txn_090",
+      "id": "txn_093",
       "type": "commission",
       "orderId": "ord_040",
       "paymentId": "pay_042",
@@ -10893,7 +11297,7 @@
       "balanceAfter": 1832
     },
     {
-      "id": "txn_091",
+      "id": "txn_094",
       "type": "partial_refund",
       "orderId": "ord_013",
       "paymentId": "pay_015",
@@ -10905,7 +11309,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_092",
+      "id": "txn_095",
       "type": "release",
       "orderId": "ord_013",
       "paymentId": "pay_015",
@@ -10917,7 +11321,7 @@
       "balanceAfter": 615
     },
     {
-      "id": "txn_093",
+      "id": "txn_096",
       "type": "commission",
       "orderId": "ord_013",
       "paymentId": "pay_015",
@@ -10929,7 +11333,7 @@
       "balanceAfter": 492
     },
     {
-      "id": "txn_094",
+      "id": "txn_097",
       "type": "charge",
       "orderId": "ord_043",
       "paymentId": "pay_045",
@@ -10941,7 +11345,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_095",
+      "id": "txn_098",
       "type": "charge",
       "orderId": "ord_009",
       "paymentId": "pay_011",
@@ -10953,7 +11357,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_096",
+      "id": "txn_099",
       "type": "release",
       "orderId": "ord_041",
       "paymentId": "pay_043",
@@ -10965,7 +11369,7 @@
       "balanceAfter": 1427.6
     },
     {
-      "id": "txn_097",
+      "id": "txn_100",
       "type": "commission",
       "orderId": "ord_041",
       "paymentId": "pay_043",
@@ -10977,7 +11381,7 @@
       "balanceAfter": 1305.6
     },
     {
-      "id": "txn_098",
+      "id": "txn_101",
       "type": "charge",
       "orderId": "ord_003",
       "paymentId": "pay_004",
@@ -10989,7 +11393,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_099",
+      "id": "txn_102",
       "type": "charge",
       "orderId": "ord_044",
       "paymentId": "pay_046",
@@ -11001,7 +11405,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_100",
+      "id": "txn_103",
       "type": "release",
       "orderId": "ord_014",
       "paymentId": "pay_016",
@@ -11013,7 +11417,7 @@
       "balanceAfter": 1592
     },
     {
-      "id": "txn_101",
+      "id": "txn_104",
       "type": "commission",
       "orderId": "ord_014",
       "paymentId": "pay_016",
@@ -11025,7 +11429,7 @@
       "balanceAfter": 1464
     },
     {
-      "id": "txn_102",
+      "id": "txn_105",
       "type": "release",
       "orderId": "ord_042",
       "paymentId": "pay_044",
@@ -11037,7 +11441,7 @@
       "balanceAfter": 2025.6
     },
     {
-      "id": "txn_103",
+      "id": "txn_106",
       "type": "commission",
       "orderId": "ord_042",
       "paymentId": "pay_044",
@@ -11049,7 +11453,7 @@
       "balanceAfter": 1881.6
     },
     {
-      "id": "txn_104",
+      "id": "txn_107",
       "type": "charge",
       "orderId": "ord_004",
       "paymentId": "pay_005",
@@ -11061,7 +11465,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_105",
+      "id": "txn_108",
       "type": "release",
       "orderId": "ord_043",
       "paymentId": "pay_045",
@@ -11073,7 +11477,7 @@
       "balanceAfter": 2441.6
     },
     {
-      "id": "txn_106",
+      "id": "txn_109",
       "type": "commission",
       "orderId": "ord_043",
       "paymentId": "pay_045",
@@ -11085,7 +11489,7 @@
       "balanceAfter": 2329.6
     },
     {
-      "id": "txn_107",
+      "id": "txn_110",
       "type": "charge",
       "orderId": "ord_006",
       "paymentId": "pay_007",
@@ -11097,7 +11501,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_108",
+      "id": "txn_111",
       "type": "charge",
       "orderId": "ord_047",
       "paymentId": "pay_049",
@@ -11109,7 +11513,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_109",
+      "id": "txn_112",
       "type": "charge",
       "orderId": "ord_045",
       "paymentId": "pay_047",
@@ -11121,7 +11525,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_110",
+      "id": "txn_113",
       "type": "release",
       "orderId": "ord_044",
       "paymentId": "pay_046",
@@ -11133,7 +11537,7 @@
       "balanceAfter": 2859.6
     },
     {
-      "id": "txn_111",
+      "id": "txn_114",
       "type": "commission",
       "orderId": "ord_044",
       "paymentId": "pay_046",
@@ -11145,7 +11549,7 @@
       "balanceAfter": 2753.6
     },
     {
-      "id": "txn_112",
+      "id": "txn_115",
       "type": "charge",
       "orderId": "ord_002",
       "paymentId": "pay_003",
@@ -11157,7 +11561,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_113",
+      "id": "txn_116",
       "type": "release",
       "orderId": "ord_045",
       "paymentId": "pay_047",
@@ -11169,7 +11573,7 @@
       "balanceAfter": 2352
     },
     {
-      "id": "txn_114",
+      "id": "txn_117",
       "type": "commission",
       "orderId": "ord_045",
       "paymentId": "pay_047",
@@ -11713,6 +12117,116 @@
       },
       "createdAt": "2026-07-24T09:25:00.000Z",
       "updatedAt": "2026-08-02T16:40:00.000Z"
+    },
+    {
+      "id": "dsp_006",
+      "orderId": "ord_048",
+      "raisedById": "usr_buyer_verde",
+      "againstId": "usr_creator_isla",
+      "category": "scope_mismatch",
+      "description": "The brief asked for every course as it is served across the eight-course menu and we have received eleven usable frames covering six courses. Two courses are missing entirely and the room frames were taken before the table was dressed, so none of them show service as it looks on the night.",
+      "evidence": [
+        {
+          "id": "evd_008",
+          "name": "dispute-evidence-08.jpg",
+          "url": "https://picsum.photos/seed/evd-008/800/600",
+          "thumbnailUrl": "https://picsum.photos/seed/evd-008/400/300",
+          "mediaType": "image",
+          "sizeKb": 820
+        },
+        {
+          "id": "evd_009",
+          "name": "dispute-evidence-09.jpg",
+          "url": "https://picsum.photos/seed/evd-009/800/600",
+          "thumbnailUrl": "https://picsum.photos/seed/evd-009/400/300",
+          "mediaType": "image",
+          "sizeKb": 960
+        }
+      ],
+      "status": "awaiting_buyer",
+      "assignedAdminId": "usr_admin_maya",
+      "createdAt": "2026-08-02T09:25:00.000Z",
+      "updatedAt": "2026-08-10T16:40:00.000Z"
+    },
+    {
+      "id": "dsp_007",
+      "orderId": "ord_049",
+      "raisedById": "usr_buyer_verde",
+      "againstId": "usr_creator_ava",
+      "category": "quality_issue",
+      "description": "Two of the three films arrived and the third has not been submitted at all. The two we do have were shot with the heaters off, so the courtyard reads cold and empty — which is the opposite of what the winter terrace campaign needs. We are due to launch the terrace in a fortnight.",
+      "evidence": [
+        {
+          "id": "evd_010",
+          "name": "dispute-evidence-10.jpg",
+          "url": "https://picsum.photos/seed/evd-010/800/600",
+          "thumbnailUrl": "https://picsum.photos/seed/evd-010/400/300",
+          "mediaType": "image",
+          "sizeKb": 820
+        }
+      ],
+      "status": "awaiting_creator",
+      "assignedAdminId": "usr_admin_priya",
+      "createdAt": "2026-08-06T09:25:00.000Z",
+      "updatedAt": "2026-08-11T16:40:00.000Z"
+    },
+    {
+      "id": "dsp_008",
+      "orderId": "ord_050",
+      "raisedById": "usr_buyer_atlas",
+      "againstId": "usr_creator_mateo",
+      "category": "non_delivery",
+      "description": "Nothing has been submitted sixteen days past the delivery date and the brochure goes to print at the end of the month. The creator has answered here but we still have no files and no firm date, and we cannot hold the print slot any longer.",
+      "evidence": [
+        {
+          "id": "evd_011",
+          "name": "dispute-evidence-11.jpg",
+          "url": "https://picsum.photos/seed/evd-011/800/600",
+          "thumbnailUrl": "https://picsum.photos/seed/evd-011/400/300",
+          "mediaType": "image",
+          "sizeKb": 820
+        },
+        {
+          "id": "evd_012",
+          "name": "dispute-evidence-12.jpg",
+          "url": "https://picsum.photos/seed/evd-012/800/600",
+          "thumbnailUrl": "https://picsum.photos/seed/evd-012/400/300",
+          "mediaType": "image",
+          "sizeKb": 960
+        }
+      ],
+      "status": "escalated",
+      "assignedAdminId": "usr_admin_maya",
+      "createdAt": "2026-07-26T09:25:00.000Z",
+      "updatedAt": "2026-08-09T16:40:00.000Z"
+    },
+    {
+      "id": "dsp_009",
+      "orderId": "ord_012",
+      "raisedById": "usr_buyer_bloom",
+      "againstId": "usr_creator_zoe",
+      "category": "policy_concern",
+      "description": "The first cut carried a claim our regulatory team has not approved, and we want it on record that we raised it before accepting anything. Asking for a review of whether the delivered masters meet the approved claims list we supplied with the brief.",
+      "evidence": [
+        {
+          "id": "evd_013",
+          "name": "dispute-evidence-13.jpg",
+          "url": "https://picsum.photos/seed/evd-013/800/600",
+          "thumbnailUrl": "https://picsum.photos/seed/evd-013/400/300",
+          "mediaType": "image",
+          "sizeKb": 820
+        }
+      ],
+      "status": "resolved",
+      "assignedAdminId": "usr_admin_priya",
+      "resolution": {
+        "outcome": "release_payment",
+        "note": "The creator corrected the wording on every master inside a day of being told, and the delivered files match the approved claims list supplied with the brief. There is no shortfall against the order, so the payment has been released to the creator in full. The buyer raised this appropriately and nothing about the record counts against either account.",
+        "resolvedById": "usr_admin_priya",
+        "resolvedAt": "2026-07-13T16:10:00.000Z"
+      },
+      "createdAt": "2026-07-11T09:25:00.000Z",
+      "updatedAt": "2026-07-13T16:40:00.000Z"
     }
   ],
   "disputeMessages": [
@@ -11895,6 +12409,156 @@
       "attachments": [],
       "internal": false,
       "createdAt": "2026-07-31T11:15:00.000Z"
+    },
+    {
+      "id": "dmsg_019",
+      "disputeId": "dsp_006",
+      "authorId": "usr_buyer_verde",
+      "authorRole": "buyer",
+      "body": "Six of the eight courses are covered and the room frames were shot before we dressed the table. We would like the two missing courses photographed on a Friday service, or the price adjusted to reflect what arrived.",
+      "attachments": [],
+      "internal": false,
+      "createdAt": "2026-08-02T11:15:00.000Z"
+    },
+    {
+      "id": "dmsg_020",
+      "disputeId": "dsp_006",
+      "authorId": "usr_creator_isla",
+      "authorRole": "creator",
+      "body": "Both missing courses were pulled from the menu on the second night and I was told at the pass that they would not be going out. I am happy to come back for a third service at no extra cost once they are back on.",
+      "attachments": [],
+      "internal": false,
+      "createdAt": "2026-08-03T11:15:00.000Z"
+    },
+    {
+      "id": "dmsg_021",
+      "disputeId": "dsp_006",
+      "authorId": "usr_admin_maya",
+      "authorRole": "admin",
+      "body": "Internal: delivery note does mention two courses being pulled, so this looks like a menu change rather than a shortfall. Asking the buyer to confirm before proposing that the creator returns for one service.",
+      "attachments": [],
+      "internal": true,
+      "createdAt": "2026-08-08T11:15:00.000Z"
+    },
+    {
+      "id": "dmsg_022",
+      "disputeId": "dsp_006",
+      "authorId": "usr_admin_maya",
+      "authorRole": "admin",
+      "body": "Thank you both. Verde — can you confirm whether those two courses are back on the Friday menu, and whether a return visit works for you? If it does, that is the cleanest outcome here and the creator has already offered it at no charge.",
+      "attachments": [],
+      "internal": false,
+      "createdAt": "2026-08-10T11:15:00.000Z"
+    },
+    {
+      "id": "dmsg_023",
+      "disputeId": "dsp_007",
+      "authorId": "usr_buyer_verde",
+      "authorRole": "buyer",
+      "body": "The two films we have look like an empty courtyard on a cold night. The brief asked for the space at dusk with the heaters lit, and that is the whole point of the campaign. The third film has not arrived at all.",
+      "attachments": [],
+      "internal": false,
+      "createdAt": "2026-08-06T11:15:00.000Z"
+    },
+    {
+      "id": "dmsg_024",
+      "disputeId": "dsp_007",
+      "authorId": "usr_admin_priya",
+      "authorRole": "admin",
+      "body": "Thank you — I have watched both cuts against the brief. The heaters are visibly off in each one, and the brief does call for them lit. Ava, could you let us know whether a reshoot at dusk is possible, and by when?",
+      "attachments": [],
+      "internal": false,
+      "createdAt": "2026-08-09T11:15:00.000Z"
+    },
+    {
+      "id": "dmsg_025",
+      "disputeId": "dsp_007",
+      "authorId": "usr_admin_priya",
+      "authorRole": "admin",
+      "body": "Internal: brief is explicit about the heaters and the delivery note does not flag them as unavailable. Holding for the creator; if a reshoot is offered inside a week this closes without a refund.",
+      "attachments": [],
+      "internal": true,
+      "createdAt": "2026-08-11T11:15:00.000Z"
+    },
+    {
+      "id": "dmsg_026",
+      "disputeId": "dsp_008",
+      "authorId": "usr_buyer_atlas",
+      "authorRole": "buyer",
+      "body": "We are sixteen days past the date with nothing delivered. The spring brochure goes to print at the end of the month and this property is four spreads of it.",
+      "attachments": [],
+      "internal": false,
+      "createdAt": "2026-07-26T11:15:00.000Z"
+    },
+    {
+      "id": "dmsg_027",
+      "disputeId": "dsp_008",
+      "authorId": "usr_creator_mateo",
+      "authorRole": "creator",
+      "body": "The resort moved my access twice and then closed the terrace for resurfacing during my window. I have the rooms and both restaurants shot and can deliver those now, but the frontage and the terrace need a second visit.",
+      "attachments": [],
+      "internal": false,
+      "createdAt": "2026-07-27T11:15:00.000Z"
+    },
+    {
+      "id": "dmsg_028",
+      "disputeId": "dsp_008",
+      "authorId": "usr_admin_maya",
+      "authorRole": "admin",
+      "body": "Thank you both. A partial delivery of what is already shot is worth having while we work out the rest — Mateo, please submit those on the order. I am asking a senior reviewer to look at how the remainder should be settled given the print deadline.",
+      "attachments": [],
+      "internal": false,
+      "createdAt": "2026-08-02T11:15:00.000Z"
+    },
+    {
+      "id": "dmsg_029",
+      "disputeId": "dsp_008",
+      "authorId": "usr_admin_maya",
+      "authorRole": "admin",
+      "body": "Internal: escalating. Access was genuinely obstructed by the property, so this is not a creator failure, but the buyer loses the print slot either way. Likely landing on a partial release once the shot material is submitted.",
+      "attachments": [],
+      "internal": true,
+      "createdAt": "2026-08-09T11:15:00.000Z"
+    },
+    {
+      "id": "dmsg_030",
+      "disputeId": "dsp_009",
+      "authorId": "usr_buyer_bloom",
+      "authorRole": "buyer",
+      "body": "The closing card on the first cut said \"repairs the skin barrier\" and our approved wording is \"supports the skin barrier\". We asked for it to be changed, but we want the delivered files checked against the approved list before we accept.",
+      "attachments": [],
+      "internal": false,
+      "createdAt": "2026-07-11T11:15:00.000Z"
+    },
+    {
+      "id": "dmsg_031",
+      "disputeId": "dsp_009",
+      "authorId": "usr_creator_zoe",
+      "authorRole": "creator",
+      "body": "Updated masters went out the next morning with the approved wording on all three ratios and the caption files. Happy for them to be checked line by line against the list.",
+      "attachments": [],
+      "internal": false,
+      "createdAt": "2026-07-12T11:15:00.000Z"
+    },
+    {
+      "id": "dmsg_032",
+      "disputeId": "dsp_009",
+      "authorId": "usr_admin_priya",
+      "authorRole": "admin",
+      "body": "Internal: checked all three masters and the caption files against the approved claims list supplied with the brief. Every line matches. Correction was made within a day, so there is nothing to record against the creator account.",
+      "attachments": [],
+      "internal": true,
+      "createdAt": "2026-07-12T11:15:00.000Z"
+    },
+    {
+      "id": "dmsg_033",
+      "disputeId": "dsp_009",
+      "authorId": "usr_admin_priya",
+      "authorRole": "admin",
+      "body": "Reviewed and resolved. The delivered masters match the approved claims list, and the wording was corrected within a day of being raised. The payment has been released to the creator in full. Thank you for flagging it before accepting — that is exactly the right order to do it in.",
+      "attachments": [],
+      "internal": false,
+      "createdAt": "2026-07-13T11:15:00.000Z"
     }
   ],
   "reviews": [

@@ -2930,6 +2930,8 @@ are the reason these belong on the server:
 | 19 | `submitForReview` | `portfolioService` | 4 | `POST /portfolioItems/:id/submit` |
 | 20 | `submitProposal` | `proposalService` | 6 | `POST /proposals` |
 | 21 | `getEarningsBreakdown` | `paymentService` | 6 | `GET /creator/earnings` |
+| 22 | `createDispute` | `disputeService` | 6 + N | `POST /disputes` |
+| 23 | `postMessage` | `disputeService` | 5 + N | `POST /disputes/:id/messages` |
 
 Operations 16 and 17 were added by Prompt 20 (the buyer's order workspace), and
 operation 18 by Prompt 21 (the creator's) — the mirror of operation 14, section
@@ -2946,7 +2948,11 @@ Prompt 23 (the request board and the creator's proposal flow): it is the supply
 side's entry point, and the only composite whose sequence is mostly *guards*.
 Operation 21 arrived with Prompt 25 (the creator's earnings screen): like 14, 17,
 and 18 it is a read that never writes, and it exists so that no component ever
-holds a money calculation.
+holds a money calculation. Operations 22 and 23 arrived with Prompt 26 (the
+party-facing dispute system) and are the two halves of a case before anyone
+decides it: opening one freezes an order without moving a cent, and posting on
+the thread moves the case's own status rather than the order's. The decision
+itself stays operation 8.
 
 ### 7.2 The sequences
 
@@ -3809,6 +3815,112 @@ One `JOIN` for the rows, one `GROUP BY` over the month for the series, and the
 summary's own aggregates — one round trip. The creator id is a **parameter in
 the mock only**; the endpoint takes it from the bearer token and must ignore any
 id the client sends (§9.2).
+
+---
+
+#### 22. `createDispute(orderId, { raisedById, category, description, evidenceFiles })`
+
+A party stops the order and asks BetterBlue to decide. Added by Prompt 26.
+
+The order freezes at `disputed`; the **payment does not move**. That is the whole
+shape of this operation: escrow stays `held` and every route out of it —
+release, full refund, partial refund — belongs to operation 8, which an admin
+runs. Freezing is what makes that decision possible, because neither party can
+accept, deliver, or cancel underneath it.
+
+**Eligibility follows `ORDER_STATUS_MACHINE` and nothing else** (§8): a dispute
+may be opened from `in_progress`, `delivered`, or `revision_requested`. There is
+no `completed → disputed` edge, so a finished order cannot be disputed however
+recently it completed — a problem found after accepting goes to support (§6.22).
+One live case per order.
+
+**Mock — `POST /disputes` exists, but the guards and the side effects do not,
+so:**
+
+1. `GET /orders/:orderId` — refuse a non-party with `403 forbidden`, and any
+   status outside the three above with `409 conflict`
+2. `GET /disputes?orderId=…&_page=1&_limit=100` — the one-live-case guard; a hit
+   in `open`/`under_review`/`awaiting_*`/`escalated` is `409 conflict`
+3. field rules run in the browser — `description` 60–2000 characters, `category`
+   from `DISPUTE_CATEGORY` → `422 validation_failed` with the failing field
+4. `POST /uploads` per evidence file, up to five (§5.1, purpose
+   `dispute_evidence`)
+5. `POST /disputes` → `status: 'open'`, `assignedAdminId: null`,
+   `resolution: null`, `againstId` derived as the other party
+6. `PATCH /orders/:orderId` → `{ status: 'disputed' }`
+7. `POST /notifications` → `dispute_opened` to the other party
+8. `POST /notifications` × N → `dispute_opened` to every admin holding
+   `disputes.resolve` (`notificationService.notifyAdmins`)
+9. `POST /auditLogs` → `dispute.open` with `{ orderId, category, fromStatus,
+   toStatus }`
+
+The guards and the validation run **before** anything is uploaded, so a rejected
+description never costs the member a wait on files. Steps 7–9 are swallowed on
+failure: a case nobody was told about is recoverable, a frozen order with no case
+behind it is not.
+
+MOCK-GUARD: step 2 is a read-before-write, so two tabs can both pass it. Laravel
+makes it a partial unique index on `order_id` where the status is live.
+
+MOCK-FANOUT: step 8 cannot be expressed as a query — JSON Server has no "users
+holding permission X" — so the admin accounts are read and filtered client-side
+with `hasPermission`, then written **one at a time**. Concurrent `POST`s are not
+safe against a provider that rewrites its whole database file per write; two in
+flight lose one. Laravel: `User::permission('disputes.resolve')->each(...)`.
+
+**Response** — `201 Created`, `{ dispute, order }`.
+
+> **Laravel** — one transaction: `raisedById` from the bearer token (§9.2), lock
+> the order row, insert the dispute against the unique index, move the order, and
+> dispatch the notifications and the audit entry from model listeners.
+
+---
+
+#### 23. `postMessage(disputeId, { authorId, body, attachments, internal })`
+
+A message on the case thread, and the status ping-pong that goes with it. Added
+by Prompt 26.
+
+A case parked at `awaiting_buyer` returns to `under_review` the moment the buyer
+answers — and the same for `awaiting_creator` — so the queue sorts itself and
+neither party has to wonder whether their reply landed. A message from the side
+that is *not* being waited on changes nothing: answering out of turn is allowed,
+it just does not clear the other party's ball. An admin's message never moves the
+status; admins move it explicitly (§6.16).
+
+**Mock — `POST /disputes/:id/messages` does not exist, so:**
+
+1. `GET /disputes/:disputeId` — refuse a non-party who is not an admin with
+   `403 forbidden`; refuse `internal: true` from a non-admin with `403`; refuse
+   `resolved`/`closed` with `409 conflict` (the thread is shut)
+2. field rules in the browser — `body` 2–2000 characters → `422`
+3. `POST /uploads` per attachment, up to three (§5.1, `dispute_evidence`)
+4. `GET /orders/:orderId` — for the author's role when the caller did not supply
+   one, and for the order title in the notification body
+5. `POST /disputeMessages` → `{ authorId, authorRole, body, attachments,
+   internal }`
+6. `PATCH /disputes/:disputeId` → `{ updatedAt }`, plus
+   `{ status: 'under_review' }` when the writer is the party being waited on
+   (through `assertTransition`, §8)
+7. `POST /notifications` → `dispute_message` to the other party and, when there
+   is one, the assigned admin — sequentially, for the reason given under
+   operation 22. An **internal** note emits nothing: telling a party that an
+   internal note exists leaks half its content.
+
+**Response** — `201 Created`, `{ message, dispute }`.
+
+> **`internal` is a server-side rule, not a client one.** The write side must
+> reject `internal: true` from anyone who is not an admin, and the read side must
+> never return an internal note to a party (§6.17). The client filters twice —
+> `?internal=false` in the query and again over the result before rendering — and
+> **neither is access control**: under JSON Server the note is on the wire and
+> visible in devtools. This is the single most important thing on the disputes
+> feature for the Laravel developer to get right.
+
+> **Laravel** — one transaction: author and role from the session, the status
+> move guarded by the same machine, and the notifications dispatched from a
+> model listener. Scope the thread read as
+> `when(!$user->isAdmin(), fn($q) => $q->where('internal', false))`.
 
 ---
 
