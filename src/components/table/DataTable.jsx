@@ -229,7 +229,7 @@ export default function DataTable({
             <TableFooter>
               <TableRow
                 sx={{
-                  '& td': {
+                  '& td, & th': {
                     borderBottom: 0,
                     borderTop: 2,
                     borderTopStyle: 'solid',
@@ -243,8 +243,17 @@ export default function DataTable({
                   },
                 }}
               >
-                {columns.map((column) => (
-                  <TableCell key={column.key} align={column.align ?? 'left'}>
+                {columns.map((column, index) => (
+                  <TableCell
+                    key={column.key}
+                    align={column.align ?? 'left'}
+                    // The first cell of a totals row is what the rest of the row
+                    // is *about* — "This page (20)", "13 payments held" — so it
+                    // is a row header, not another data cell. Screen readers
+                    // then announce the label with each total instead of
+                    // reading a line of bare figures (Prompt 32 §12).
+                    {...(index === 0 ? { component: 'th', scope: 'row' } : {})}
+                  >
                     {footer[column.key] ?? null}
                   </TableCell>
                 ))}

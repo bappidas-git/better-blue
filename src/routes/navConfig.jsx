@@ -307,8 +307,9 @@ export const creatorNav = Object.freeze([
  * ║ of this file if it is not there yet — Prompt 29 added it, so it is there. ║
  * ║                                                                          ║
  * ║ Enabled now: Overview, Requests and Orders (Prompt 31), Users (29),       ║
- * ║ Moderation and Reports (30), Announcements and Support (31), and          ║
- * ║ Notifications (Prompt 27's shared page, at `paths.ADMIN_NOTIFICATIONS`).  ║
+ * ║ Moderation and Reports (30), Payments, Settlements and Commissions (32),  ║
+ * ║ Announcements and Support (31), and Notifications (Prompt 27's shared     ║
+ * ║ page, at `paths.ADMIN_NOTIFICATIONS`).                                    ║
  * ╚══════════════════════════════════════════════════════════════════════════╝
  *
  * Order is deliberate — it follows what an admin does with their day: check the
@@ -407,31 +408,34 @@ export const adminNav = Object.freeze([
     key: 'finance',
     group: 'Finance',
     items: Object.freeze([
-      // Prompt 32
-      // Object.freeze({
-      //   key: 'payments',
-      //   label: 'Payments',
-      //   icon: 'solar:card-linear',
-      //   path: paths.ADMIN_PAYMENTS,
-      //   permission: PERMISSIONS.PAYMENTS_MANAGE,
-      // }),
-      // Prompt 32
-      // Object.freeze({
-      //   key: 'settlements',
-      //   label: 'Settlements',
-      //   icon: 'solar:wallet-money-linear',
-      //   path: paths.ADMIN_SETTLEMENTS,
-      //   permission: PERMISSIONS.SETTLEMENTS_PROCESS,
-      // }),
-      // Prompt 32 — commissions are read-only reporting on the same records, so
-      // they ride on `payments.manage` rather than earning a permission.
-      // Object.freeze({
-      //   key: 'commissions',
-      //   label: 'Commissions',
-      //   icon: 'solar:hand-money-linear',
-      //   path: paths.ADMIN_COMMISSIONS,
-      //   permission: PERMISSIONS.PAYMENTS_MANAGE,
-      // }),
+      Object.freeze({
+        // Prompt 32. Overview, escrow, and the ledger on one screen; an admin
+        // without `payments.manage` never sees this entry, and
+        // `AdminPageGuard` inside the page refuses the typed URL too.
+        key: 'payments',
+        label: 'Payments',
+        icon: 'solar:card-linear',
+        path: paths.ADMIN_PAYMENTS,
+        permission: PERMISSIONS.PAYMENTS_MANAGE,
+      }),
+      Object.freeze({
+        // Prompt 32. Its own permission, because reading the money and moving
+        // a creator's wages are different jobs.
+        key: 'settlements',
+        label: 'Settlements',
+        icon: 'solar:wallet-money-linear',
+        path: paths.ADMIN_SETTLEMENTS,
+        permission: PERMISSIONS.SETTLEMENTS_PROCESS,
+      }),
+      Object.freeze({
+        // Prompt 32 — commissions are read-only reporting on the same records,
+        // so they ride on `payments.manage` rather than earning a permission.
+        key: 'commissions',
+        label: 'Commissions',
+        icon: 'solar:hand-money-linear',
+        path: paths.ADMIN_COMMISSIONS,
+        permission: PERMISSIONS.PAYMENTS_MANAGE,
+      }),
     ]),
   }),
 

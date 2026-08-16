@@ -30,6 +30,12 @@ const percent = (rate) => Math.round(Number(rate ?? 0) * 100)
 export const REFUND_CONTEXT = Object.freeze({
   DISPUTE: 'after a dispute resolution',
   CANCELLATION: 'after the order was cancelled',
+  // Prompt 32: a refund issued from the finance console, which is neither of
+  // the above — no case was decided and no order was cancelled, a member of the
+  // team returned the escrow. Added rather than borrowed, because a ledger row
+  // reading "after a dispute resolution" against an order that was never
+  // disputed is a row nobody can reconcile.
+  INTERVENTION: 'issued by the BetterBlue finance team',
 })
 
 /** Appends a refund context clause when there is one. */

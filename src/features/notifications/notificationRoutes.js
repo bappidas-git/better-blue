@@ -213,8 +213,10 @@ const ADMIN_PENDING = Object.freeze([
   // the case.
   paths.ADMIN_REQUESTS, // Prompt 31
   paths.ADMIN_ORDERS, // Prompt 31
-  paths.ADMIN_PAYMENTS, // Prompt 32
-  paths.ADMIN_SETTLEMENTS, // Prompt 32
+  // Prompt 32 mounted `/admin/payments`, `/admin/settlements`, and
+  // `/admin/commissions`, so their lines are gone — an admin notification about
+  // money now lands on the finance console, and the `payout_requested` emit
+  // `requestPayout` gained in the same prompt has somewhere real to go.
   paths.ADMIN_DISPUTES, // Prompt 33
   paths.ADMIN_AFFILIATES, // Prompt 34
 ])

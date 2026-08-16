@@ -293,7 +293,7 @@ export default function AdminOverviewPage() {
           </Box>
         </Box>
 
-        {/* Section 3 — the three queues, oldest item first. */}
+        {/* Section 3 — the four queues, oldest item first. */}
         <Box>
           <Typography variant="overline" component="h2" color="text.secondary">
             Needs attention
