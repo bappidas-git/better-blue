@@ -115,6 +115,30 @@ const BUYER_SOURCE = [
     companyName: 'Harbor Lane Bakery',
     createdDaysAgo: 2,
   },
+  {
+    // The blacklisted account (Prompt 29). It has a full profile because it
+    // traded normally before the closure — an account that was never used would
+    // not be an interesting one to show a closure on.
+    key: 'meridian',
+    id: 'bpr_meridian',
+    companyName: 'Meridian Supply Co',
+    industry: 'E-commerce & Retail',
+    website: 'https://meridiansupply.test',
+    bio: 'A wholesale homeware supplier selling through marketplaces across Australia and New Zealand.',
+    location: 'Sydney, Australia',
+    createdDaysAgo: 76,
+  },
+  {
+    // The self-deactivated account (Prompt 29).
+    key: 'foundry',
+    id: 'bpr_foundry',
+    companyName: 'Foundry & Co',
+    industry: 'Professional Services',
+    website: 'https://foundryandco.test',
+    bio: 'A brand consultancy that commissioned campaign content on behalf of its retail clients.',
+    location: 'Bengaluru, India',
+    createdDaysAgo: 92,
+  },
 ]
 
 export const buyerProfiles = BUYER_SOURCE.map((source) =>

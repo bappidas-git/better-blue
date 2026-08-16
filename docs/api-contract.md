@@ -949,12 +949,38 @@ A member changing their own `role`, `accountStatus`, or `permissions` is
 **Admin status actions** — `PATCH /users/:id`
 
 ```json
-{ "accountStatus": "suspended" }
+{ "accountStatus": "suspended",
+  "statusReason": "Licensing review following an upheld report.",
+  "statusChangedAt": "2026-08-16T02:25:30.506Z",
+  "statusChangedById": "usr_admin_maya" }
 ```
 
 Legal targets: `active`, `suspended`, `blacklisted`, `deactivated`. Every status
 change also writes an audit entry (`user.suspend`, `user.blacklist`,
 `user.reactivate`) and notifies the member (`account_status_changed`) — see §7.
+
+`statusReason`, `statusChangedAt`, and `statusChangedById` are written with the
+status and read back by the admin account screen's banner. They are **absent**
+on an account that has never left `active`, not present and empty. The reason is
+mandatory (min 10 characters) for `suspended` and `blacklisted`, optional for
+`active`, and is quoted to the member verbatim in their notification.
+
+**Target rules (admin console, Prompt 29).** `users.manage` may set a status on
+**buyer and creator accounts only**, and never on the caller's own account.
+Admin and super-admin accounts are managed through `admins.manage` (§6.2 team
+operations, Prompt 36) — a `users.manage` holder attempting one is `403`.
+`deactivated` is not an admin-settable target at all: it means "the member
+closed their own account" and is written only by self-service (§9, and the
+`user.deactivate` audit verb with `meta.selfService = true`).
+
+> **Laravel authorization** — the frontend hides the controls for an invalid
+> target and the client service re-checks before it calls, but **neither is
+> access control**. The API must independently verify (a) the caller holds
+> `users.manage`, (b) `:id` is not the caller, (c) `:id` is a buyer or creator,
+> and (d) the requested status is one of the three admin-settable values, and
+> must reject anything else with `403` regardless of what the client sent.
+> A Policy (`UserPolicy@changeStatus`) plus a Form Request enum rule is the
+> shape; do not rely on the payload's shape as a proxy for the caller's rights.
 
 **Response** `200 OK` (`GET /users/usr_creator_ava`, `password` stripped)
 
@@ -2783,9 +2809,14 @@ category.update · content.restrict · creator.feature · dispute.assign
 dispute.close · dispute.resolve · moderation.approve · moderation.reject
 moderation.request_changes · order.cancel · payment.refund · payout.mark_paid
 payout.process · payout.reject · report.action · report.dismiss · report.review
-request.close · settings.update · ticket.close · ticket.reply · user.deactivate
-user.suspend · user.verify
+request.close · settings.update · ticket.close · ticket.reply · user.blacklist
+user.deactivate · user.reactivate · user.suspend · user.verify
 ```
+
+`user.blacklist` and `user.reactivate` were added by Prompt 29 alongside the
+`user.suspend` the seed already carried — the three account-status verbs are one
+family, and `user.verify` (unchanged) is what the creator badge toggle writes,
+against the **account**, with `meta = { verified, profileId }`.
 
 `user.deactivate` is the one entry a **member** writes about themselves: closing
 your own account from Settings is recorded so support can see who left, when,

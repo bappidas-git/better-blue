@@ -273,6 +273,41 @@ const AUDIT_SOURCE = [
     daysAgo: 29,
   },
   {
+    // Prompt 29. The closure behind the blacklisted buyer — same reason, same
+    // date, same actor as the account's own `statusReason` / `statusChangedAt` /
+    // `statusChangedById`, because the detail banner reads one and the audit tab
+    // reads the other and they sit on the same screen.
+    actor: ADMIN_ID.MAYA,
+    action: 'user.blacklist',
+    entityType: ENTITY_TYPE.USER,
+    entityId: buyerId('meridian'),
+    meta: {
+      fromStatus: ACCOUNT_STATUS.SUSPENDED,
+      toStatus: ACCOUNT_STATUS.BLACKLISTED,
+      reason:
+        'Repeated chargebacks after delivery and a brief that misrepresented the licence being purchased. Closed after a written warning.',
+    },
+    daysAgo: 40,
+  },
+  {
+    // Prompt 29. The one account entry a **member** writes about themselves
+    // (contract §6.26) — closing your own account from Settings is recorded so
+    // support can see who left and when, which is why `actor` is the member and
+    // `meta.selfService` is set.
+    actor: buyerId('foundry'),
+    actorRole: ROLES.BUYER,
+    action: 'user.deactivate',
+    entityType: ENTITY_TYPE.USER,
+    entityId: buyerId('foundry'),
+    meta: {
+      fromStatus: ACCOUNT_STATUS.ACTIVE,
+      toStatus: ACCOUNT_STATUS.DEACTIVATED,
+      selfService: true,
+      reason: 'Closed their own account from Settings — campaign programme wound down.',
+    },
+    daysAgo: 54,
+  },
+  {
     actor: ADMIN_ID.SUPER,
     action: 'admin.permissions.update',
     entityType: ENTITY_TYPE.USER,
@@ -500,7 +535,9 @@ const AUDIT_SOURCE = [
 export const auditLogs = AUDIT_SOURCE.map((source, index) => ({
   id: seqId('aud', index + 1),
   actorId: source.actor,
-  actorRole: ROLE_BY_ACTOR[source.actor],
+  // `ROLE_BY_ACTOR` covers the admin team; `source.actorRole` is the override
+  // for the one entry a member writes about themselves (`user.deactivate`).
+  actorRole: source.actorRole ?? ROLE_BY_ACTOR[source.actor],
   action: source.action,
   entityType: source.entityType,
   entityId: source.entityId,

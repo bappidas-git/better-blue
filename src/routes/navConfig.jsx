@@ -45,7 +45,7 @@
 // SECURITY: hiding a nav entry is not access control (00 §11). The route guard
 // and, above all, the API must enforce the same rule.
 
-import { hasAnyPermission, hasPermission } from '@/constants/permissions'
+import { hasAnyPermission, hasPermission, PERMISSIONS } from '@/constants/permissions'
 import { ROLES } from '@/constants/roles'
 
 import { paths } from './paths'
@@ -304,11 +304,10 @@ export const creatorNav = Object.freeze([
  * ║ every destination written out and **commented until its screen exists**.  ║
  * ║ The prompt that builds a screen uncomments its entry — nothing else — and ║
  * ║ adds `import { PERMISSIONS } from '@/constants/permissions'` at the top   ║
- * ║ of this file if it is not there yet (no entry needs it today, so it is    ║
- * ║ not imported: an unused import fails `npm run lint`).                     ║
+ * ║ of this file if it is not there yet — Prompt 29 added it, so it is there. ║
  * ║                                                                          ║
- * ║ Enabled now: Overview, and Notifications (Prompt 27's shared page, which  ║
- * ║ Prompt 27 already mounted at `paths.ADMIN_NOTIFICATIONS`).                ║
+ * ║ Enabled now: Overview, Users (Prompt 29), and Notifications (Prompt 27's  ║
+ * ║ shared page, mounted at `paths.ADMIN_NOTIFICATIONS`).                     ║
  * ╚══════════════════════════════════════════════════════════════════════════╝
  *
  * Order is deliberate — it follows what an admin does with their day: check the
@@ -362,14 +361,15 @@ export const adminNav = Object.freeze([
     key: 'users',
     group: 'Users',
     items: Object.freeze([
-      // Prompt 29
-      // Object.freeze({
-      //   key: 'users',
-      //   label: 'Users',
-      //   icon: 'solar:users-group-rounded-linear',
-      //   path: paths.ADMIN_USERS,
-      //   permission: PERMISSIONS.USERS_MANAGE,
-      // }),
+      Object.freeze({
+        // Prompt 29. An admin without `users.manage` never sees this entry —
+        // and `AdminPageGuard` inside the page refuses the typed URL too.
+        key: 'users',
+        label: 'Users',
+        icon: 'solar:users-group-rounded-linear',
+        path: paths.ADMIN_USERS,
+        permission: PERMISSIONS.USERS_MANAGE,
+      }),
     ]),
   }),
 
@@ -579,9 +579,11 @@ export const MORE_NAV_KEYS = Object.freeze({
   // Overview · Browse · Proposals · Orders, with More holding Earnings,
   // Disputes, Portfolio, Notifications, Profile, and Settings.
   [ROLES.CREATOR]: Object.freeze([NAV_KEY.PROFILE, NAV_KEY.SETTINGS]),
-  // Prompt 28: the console has two live destinations — Overview and
-  // Notifications — so both fit on the bar and `splitBottomNav` renders no
-  // "More" tile at all. Nothing is deferred **by name** yet on purpose: which
+  // Prompt 28: the console has three live destinations — Overview, Users
+  // (Prompt 29), and Notifications — so all three fit on the bar and
+  // `splitBottomNav` renders no "More" tile at all. Users is not deferred: a
+  // suspension is the one console action somebody does reach for on a phone.
+  // Nothing else is deferred **by name** yet on purpose either — which
   // four of the console's eventual fifteen destinations deserve a thumb slot
   // depends on which ones a given admin's permissions leave standing, and
   // overflow-by-position already handles that correctly. Prompts 29–36 should
