@@ -163,7 +163,7 @@ page reload loses one. The workflow survives it — the payment simply stays
   ├─ commissions row    (rate, base, fee)                  └─ caller ends the order
   ├─ ledger: commission (creator, −fee)
   ├─ notify creator                            partial ──► ├─ payment → partially_refunded
-  └─ AFFILIATE-HOOK (Prompt 34)                            │   (refundedAt AND releasedAt)
+  └─ AFFILIATE-HOOK → processConversion                    │   (refundedAt AND releasedAt)
         │                                                  ├─ ledger: partial_refund (buyer, +part)
         │                                                  └─ then settles the remainder exactly
         ▼                                                     as the release path does
@@ -203,6 +203,7 @@ the mock call sequences are `docs/api-contract.md` §7.2 operations 1–4 and 11
 | Cancel an order | `orderService.cancelOrder` | `POST /orders/:id/cancel` |
 | Resolve a dispute | `disputeService.resolve` | `POST /disputes/:id/resolve` |
 | Request a payout | `paymentService.requestPayout` | `POST /payouts` |
+| Request an affiliate payout | `affiliateService.requestAffiliatePayout` | `POST /affiliate/payouts` |
 
 ### Resolving a dispute (Prompt 33)
 
@@ -284,6 +285,15 @@ attempt *and* a `processing` retry, and must still be payable.
 `requested → processing | rejected`, `processing → paid`. **Only a `paid` payout
 writes its `payout` ledger row** — that is the moment money leaves the balance.
 
+Prompt 34 put a **second kind of settlement** through this same machine:
+`payouts.source` is `creator` (a creator drawing down released order earnings)
+or `affiliate` (an affiliate drawing down approved referral commission). The
+status machine, the queue, the two steps below, and the audit verbs are
+identical; only the recipient field and what `paid` closes behind it differ.
+`/admin/settlements` shows both with a source chip, and `/admin/affiliates`
+shows the affiliate ones on their own tab using the same components and the same
+service calls.
+
 Prompt 32 built the desk that works this machine (`/admin/settlements`), and it
 does so in **two deliberate steps**:
 
@@ -291,7 +301,7 @@ does so in **two deliberate steps**:
 |---|---|---|
 | Approve | `processPayout(id, { action: 'approve' })` | status → `processing`. No money. |
 | Reject | `processPayout(id, { action: 'reject', reason })` | status → `rejected`, reason stored. No money; the reservation is released by leaving `requested`. |
-| Confirm sent | `markPayoutPaid(id)` | status → `paid`, **and the `payout` ledger row** |
+| Confirm sent | `markPayoutPaid(id)` | status → `paid`, **and the `payout` ledger row**. On an affiliate payout it also settles the `approved` earnings behind it to `paid` and writes their `affiliate_commission` credits, which net the pair to zero |
 
 They are two calls rather than one because they are two different facts —
 "we accept this request" and "the bank has sent it" — and collapsing them would
@@ -371,8 +381,8 @@ negative, money arriving is positive.
 | Escrow released | `release` — creator, `+baseAmount`; `commission` — creator, `−fee` |
 | Full refund | `refund` — buyer, `+amount` |
 | Partial refund | `partial_refund` — buyer, `+refunded`; then the two release rows on the remainder |
-| Payout paid | `payout` — creator, `−amount`, written by `markPayoutPaid` |
-| Affiliate conversion | `affiliate_commission` — referrer, `+share` (Prompt 34) |
+| Payout paid | `payout` — the recipient, `−amount`, written by `markPayoutPaid` |
+| Affiliate payout paid | the `payout` row above, **plus** one `affiliate_commission` — referrer, `+share` — per settled earning (Prompt 34) |
 
 The commission is a **debit against the creator's balance**, not a credit to a
 platform account: the creator's `release` row is gross and the `commission` row

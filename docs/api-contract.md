@@ -2019,17 +2019,40 @@ changed hands. `amount = round(baseAmount × rate, 2)`.
 
 ### 6.15 `payouts`
 
-Creator settlements to a bank account.
+Settlements to a bank account. **Two kinds**, discriminated by `source`
+(Prompt 34): a creator drawing down their released order earnings, and an
+affiliate drawing down approved referral commission. Both move through the same
+status machine, the same admin queue, and the same two-step
+approve-then-confirm process — the money simply comes out of a different pocket.
 
 | Method | Path | Access | Purpose |
 |---|---|---|---|
-| `GET` | `/payouts` | Own (creator) · Admin `settlements.process` | Payout history / the settlement queue |
+| `GET` | `/payouts` | Own · Admin `settlements.process` | Payout history / the settlement queue |
 | `GET` | `/payouts/:id` | Own · Admin | One settlement |
-| `POST` | `/payouts` | Creator | **Composite** — request a payout (§7) |
+| `POST` | `/payouts` | Creator | **Composite** — request a payout (§7 operation 11) |
+| `POST` | `/affiliate/payouts` | Affiliate | **Composite** — request an affiliate payout (§7 operation 13) |
 | `PATCH` | `/payouts/:id` | Admin `settlements.process` | Advance the status |
 
-**Filters** — `creatorId` · `status` (repeatable) · `requestedAt_gte` /
-`requestedAt_lte` · `sort`: `requestedAt` (default `desc`), `amount`.
+**Filters** — `creatorId` · `userId` · `affiliateId` · `source` · `status`
+(repeatable) · `requestedAt_gte` / `requestedAt_lte` · `sort`: `requestedAt`
+(default `desc`), `amount`.
+
+**`source`** — `creator` (default) or `affiliate`:
+
+| Field | `source: "creator"` | `source: "affiliate"` |
+|---|---|---|
+| recipient | `creatorId` | `userId` |
+| linkage | — | `affiliateId` (`aff_…`) |
+| drawn from | the creator's ledger balance | `affiliateEarnings` in `approved` |
+| ledger on `paid` | one `payout` row | one `payout` row **plus** one `affiliate_commission` credit per settled earning, which net to zero |
+
+The two recipient fields are deliberately distinct rather than one shared
+column: every creator-scoped read in the product filters on `creatorId`, and an
+affiliate settlement must never be picked up by a creator's balance, earnings
+screen, or payout history — including for the members who are both.
+
+Rows written before Prompt 34 carry no `source`; readers treat its absence as
+`creator`.
 
 **Request** — `POST /payouts`
 
@@ -2046,6 +2069,7 @@ available balance and `platformSettings.general.payoutMinAmount` (50).
 ```json
 {
   "id": "pyo_004",
+  "source": "creator",
   "creatorId": "usr_creator_isla",
   "amount": 900,
   "currency": "USD",
@@ -2056,6 +2080,29 @@ available balance and `platformSettings.general.payoutMinAmount` (50).
 }
 ```
 
+An affiliate settlement, for comparison:
+
+```json
+{
+  "id": "pyo_009",
+  "source": "affiliate",
+  "userId": "usr_creator_ava",
+  "affiliateId": "aff_001",
+  "amount": 27.8,
+  "currency": "USD",
+  "method": null,
+  "status": "requested",
+  "requestedAt": "2026-08-16T10:05:00.000Z",
+  "processedAt": null
+}
+```
+
+`method` is `null` when the member has no payout details on file — an affiliate
+can be a buyer, and buyers have no bank record in this product. The finance team
+confirms the destination before the transfer, which is what the request dialog
+says. **Laravel** should make payout details a precondition of the request
+instead.
+
 **Admin transitions** — `PATCH /payouts/:id`, following `PAYOUT_STATUS_MACHINE`
 (§8): `requested → processing | rejected`, `processing → paid`.
 
@@ -2064,7 +2111,10 @@ available balance and `platformSettings.general.payoutMinAmount` (50).
 ```
 
 A `rejected` payout carries `rejectedReason`. **Only a `paid` payout writes a
-`payout` transaction** — that is the moment money leaves the balance.
+`payout` transaction** — that is the moment money leaves the balance. For an
+affiliate settlement, that same moment also moves every `approved`
+`affiliateEarnings` row behind it to `paid` and recomputes the affiliate's
+totals (§7 operation 14).
 
 `method` is a **snapshot** kept on the row, so a later change to the creator's
 bank details cannot rewrite a historical settlement.
@@ -2684,10 +2734,22 @@ Enrolled referrers. Any role may enrol.
 
 `code` matches `users.referredByCode` and is unique across the platform.
 `signups` = referrals, `conversions` = converted referrals. The three earnings
-fields are **derived** from `affiliateEarnings` by status.
+fields are **derived** from `affiliateEarnings` by status — recomputed from the
+rows on every write, never incremented (§7 operations 10 and 45).
 
-The program is gated by `platformSettings.affiliate.enabled` and
-`platformSettings.features.affiliateProgram`.
+A `suspended` profile also carries `suspendedAt` and `suspendedReason`, both
+cleared on reactivation.
+
+`clicks` is **approximate** by design: with JSON Server it is a read-then-write
+from the browser, so two visits in the same second can overwrite one another and
+a refresh counts twice. No decision anywhere in the product is taken on it.
+Laravel replaces it with an atomic `increment('clicks')`, or a `referral_clicks`
+table once the program needs real analytics.
+
+The program is gated by `platformSettings.affiliate.enabled` **and**
+`platformSettings.features.affiliateProgram` — both must be on. With either off,
+capture, enrolment, and conversion are all inert, and the nav entries and
+screens behind them say so rather than disappearing into a 404.
 
 > **Laravel** — `user_id UNIQUE`, `code UNIQUE`. Generate the code server-side;
 > a client-generated code cannot be made unique without a race (§7).
@@ -2728,11 +2790,22 @@ converted by `processConversion` (§7). No client-facing write endpoint.
 A referral converts when the referred account's first qualifying order completes
 inside `platformSettings.affiliate.attributionDays` (30). Past that window it
 `expired`. `convertedOrderId` is present exactly when `status` is `converted`.
+A row created from a click carries `capturedAt`, which is what the window is
+measured from — a code stored three weeks before signup does not restart its
+clock at signup; rows without it fall back to `createdAt`.
 
 An affiliate can never refer themselves.
 
-> **Laravel** — `referred_user_id UNIQUE` (an account is referred once), and run
-> the expiry sweep as a scheduled job rather than lazily on read.
+> **MOCK-ATTRIBUTION.** Capture is `localStorage` (`bb.referralCode`, holding
+> `{ code, at }`), because the prototype has no server to set a cookie from the
+> `/r/{code}` redirect. That makes it per-browser, per-device, and trivially
+> editable by the visitor.
+>
+> **Laravel** sets a signed, `HttpOnly`, `SameSite=Lax` cookie on
+> `GET /r/{code}` with `Max-Age = attributionDays × 86400`, and reads it during
+> registration where the browser cannot forge it. Also `referred_user_id UNIQUE`
+> (an account is referred once), and run the expiry sweep as a scheduled job
+> rather than lazily on read.
 
 ---
 
@@ -2775,7 +2848,9 @@ Commission is a share of **the platform commission BetterBlue actually earned**,
 never a share of the creator's earnings — so a refund reduces it automatically.
 
 `status` ∈ `pending` → `approved` → `paid`, or `void`. **Only a `paid` earning
-writes an `affiliate_commission` transaction.**
+writes an `affiliate_commission` transaction.** A `void` earning additionally
+carries `voidedAt` and `voidReason`; the reason is shown to the affiliate in
+full on their dashboard, so it is written for them to read.
 
 Admin transitions write `affiliate.earning.approve` / `affiliate.earning.void`
 audit entries.
@@ -2824,7 +2899,7 @@ do not rename it:
 
 ```
 admin.create · admin.permissions.update · affiliate.earning.approve
-affiliate.earning.void · affiliate.suspend · announcement.send
+affiliate.earning.void · affiliate.reactivate · affiliate.suspend · announcement.send
 category.update · content.restrict · creator.feature · dispute.assign
 dispute.close · dispute.escalate · dispute.open · dispute.request_info
 dispute.resolve · moderation.approve · moderation.reject
@@ -3032,6 +3107,11 @@ are the reason these belong on the server:
 | 41 | `escalate` | `disputeService` | 5 + N | `POST /disputes/:id/escalate` |
 | 42 | `close` | `disputeService` | 3 | `PATCH /disputes/:id` |
 | 43 | `previewSettlement` | `paymentService` | 3 | `GET /orders/:id/settlement-preview` |
+| 44 | `recordReferral` | `affiliateService` | 4 | *(inside registration)* |
+| 45 | `approveEarning` · `voidEarning` | `affiliateService` | 5 | `POST /affiliateEarnings/:id/{approve,void}` |
+| 46 | `setProfileStatus` | `affiliateService` | 4 | `PATCH /affiliateProfiles/:id` |
+| 47 | `requestAffiliatePayout` | `affiliateService` | 6 | `POST /affiliate/payouts` |
+| 48 | `settleAffiliatePayout` | `affiliateService` | 3 + 2N | *(inside operation 33)* |
 
 Operations 16 and 17 were added by Prompt 20 (the buyer's order workspace), and
 operation 18 by Prompt 21 (the creator's) — the mirror of operation 14, section
@@ -3610,50 +3690,197 @@ way the operation it previews is, computed from the server's own records.
 
 ---
 
-#### 9. `enrollAffiliate()`
+#### 9. `enroll(userId, { name })`
 
-A member joins the referral program.
+A member joins the referral program. Implemented by Prompt 34.
 
 **Mock:**
 
-1. `GET /affiliateProfiles?userId=:id` — guard "not already enrolled"
-2. Generate a code from the display name + `utils/id.js`, then
-   `GET /affiliateProfiles?code=:code` — a **best-effort** uniqueness check
-3. `POST /affiliateProfiles` — `status: 'active'`, counters at `0`
+1. `GET /platformSettings` → refuse with `403` unless **both**
+   `affiliate.enabled` and `features.affiliateProgram` are on
+2. `GET /affiliateProfiles?userId=:id` — guard "not already enrolled" (`409`)
+3. Generate a readable code from the display name — `Verde Kitchen` →
+   `VERDE-K7` — then `GET /affiliateProfiles?code=:code`, up to six candidates:
+   a **best-effort** uniqueness check
+4. `POST /affiliateProfiles` — `status: 'active'`, counters at `0`
 
 **Laravel — `POST /affiliate/enroll` → `{ affiliateProfile }`**
 
 The **server** generates the code, with `code UNIQUE` and `user_id UNIQUE`
-guaranteeing what step 2 can only hope for. Also gate on
-`platformSettings.affiliate.enabled`.
+guaranteeing what step 3 can only hope for.
 
 ---
 
-#### 10. `processConversion(orderId)`
+#### 10. `processConversion(order, { commissionAmount })`
 
-Fires when an order completes. Attributes the sale to a referrer.
+Fires when an order settles. Attributes the sale to a referrer. Implemented by
+Prompt 34, from the single `AFFILIATE-HOOK` line in
+`paymentService.settleEscrow` — **after** the money has settled.
 
 **Mock:**
 
-1. `GET /orders/:id` → `buyerId`
-2. `GET /users/:buyerId` → `referredByCode`; stop if absent
-3. `GET /affiliateProfiles?code=:code` → stop unless `status === 'active'`
-4. `GET /affiliateReferrals?referredUserId=:buyerId` → guard `pending` and
-   within `attributionDays` of `createdAt`
-5. `GET /commissions?orderId=:id` → the platform commission actually earned
-6. `GET /platformSettings` → `affiliate.commissionRate`
+1. `GET /platformSettings` → stop unless the program is on
+2. `GET /affiliateReferrals?referredUserId=:buyerId&status=pending` → stop if
+   there is none
+3. `GET /affiliateProfiles/:affiliateId` → stop unless `status === 'active'`
+4. Attribution window: stop and `PATCH` the referral to `expired` when
+   `now − (capturedAt ?? createdAt) > attributionDays`
+5. `GET /orders?buyerId=:buyerId&status=completed` → stop if the buyer has any
+   completed order **other than this one**. The hook fires before the order is
+   stamped `completed` (`completeOrder` releases, then completes), so the count
+   deliberately excludes this order's own id either way
+6. `GET /affiliateEarnings?orderId=:id` → stop if anything already accrued
 7. `PATCH /affiliateReferrals/:id` →
    `{ status: 'converted', convertedOrderId, convertedAt }`
 8. `POST /affiliateEarnings` —
-   `amount = round(commission.amount × rate, 2)`, `status: 'pending'`
-9. `PATCH /affiliateProfiles/:id` → `{ conversions + 1, pendingEarnings + amount }`
-   and `POST /notifications` — `affiliate_conversion`
+   `amount = round(commissionAmount × rate, 2)`, `status: 'pending'`
+9. `PATCH /affiliateProfiles/:id` → `conversions + 1` and the three earnings
+   totals **recomputed** from the rows, then `POST /notifications` —
+   `affiliate_conversion`
+
+`commissionAmount` is passed in by the hook so the share is taken from the exact
+number that settled; a caller that omits it falls back to
+`GET /commissions?orderId=:id`.
+
+**This operation never throws.** Every failure resolves to `null` with a logged
+warning — money has already moved by the time it runs, and a referral is worth
+nothing next to a settlement that must not be rolled back. That contract is what
+lets the hook be a single unguarded-looking line inside the payment path.
 
 **Laravel — internal.** No public endpoint: a queued listener on the
 `OrderCompleted` event. `UNIQUE (affiliate_id, order_id)` prevents a double
-accrual, and the derived totals on `affiliateProfiles` are recomputed rather
-than incremented. Expose only `POST /affiliateReferrals/:id/convert` for an
-admin correction.
+accrual — the guard step 6 can only approximate — and the derived totals on
+`affiliateProfiles` are recomputed rather than incremented. Expose only
+`POST /affiliateReferrals/:id/convert` for an admin correction.
+
+---
+
+#### 44. `recordReferral({ code, referredUserId, role, capturedAt })`
+
+Turns a captured referral code into a `pending` referral — the signup half of
+attribution, called by `authService.register` (§2.1). Implemented by Prompt 34.
+
+**Mock:**
+
+1. `GET /platformSettings` → stop unless the program is on
+2. `GET /affiliateProfiles?code=:code` → stop unless `status === 'active'`, and
+   stop if the affiliate is the account that just signed up (no self-referral)
+3. `GET /affiliateReferrals?referredUserId=:id` → stop if the account already
+   has one (an account is referred **once**)
+4. `POST /affiliateReferrals` — `status: 'pending'`, plus `capturedAt` when the
+   click time is known, then `PATCH /affiliateProfiles/:id` → `signups + 1`
+
+**Buyers only.** Commission comes out of the platform commission on a
+*purchase*, so a referred creator is recorded on the account
+(`users.referredByCode`) but accrues nothing and gets no referral row.
+
+Like operation 10, it **never throws**: the account has already been created by
+the time it runs, and a referral must not be able to fail the registration that
+earned it.
+
+**Laravel — inside `POST /auth/register`**, in the same transaction, reading the
+attribution cookie rather than a client-supplied code. `referred_user_id UNIQUE`
+does what step 3 approximates.
+
+---
+
+#### 45. `approveEarning(id, { actor })` · `voidEarning(id, { reason, actor })`
+
+An admin decides on accrued commission (`affiliates.manage`). Implemented by
+Prompt 34.
+
+**Mock (approve):**
+
+1. `GET /affiliateEarnings/:id` → `409` unless `pending`
+2. `PATCH /affiliateEarnings/:id` → `{ status: 'approved', approvedAt }`
+3. `GET /affiliateEarnings?affiliateId=:id` + `PATCH /affiliateProfiles/:id` —
+   the three totals **recomputed from the rows**, never incremented
+4. `POST /notifications` — the affiliate is told it is payable
+5. `POST /auditLogs` — `affiliate.earning.approve`
+
+**Void** is the same shape with a **required reason**: `422` without one,
+`409` on an earning that is already `paid` (money cannot be un-paid by an edit)
+or already `void`. It stores `voidedAt` + `voidReason`, tells the affiliate what
+the reason says, and audits `affiliate.earning.void`.
+
+Both are offered in batch on the admin queue. The batch is **sequential and
+exhaustive** — every item attempted, one failure never aborting the rest, and
+the outcome reported per item.
+
+**Laravel — `POST /affiliateEarnings/:id/approve` · `/void`** → `{ earning }`,
+with the totals recomputed by the same job the conversion uses.
+
+---
+
+#### 46. `setProfileStatus(id, { status, reason, actor })`
+
+An admin suspends or reactivates an affiliate account (`affiliates.manage`).
+Implemented by Prompt 34.
+
+**Mock:** `GET /affiliateProfiles/:id` (`409` if it is already in that status) →
+`PATCH` the status with `suspendedAt` / `suspendedReason` (both cleared on
+reactivation) → `POST /notifications` → `POST /auditLogs` —
+`affiliate.suspend` / `affiliate.reactivate`.
+
+A suspended code stops capturing and stops accruing **immediately**: every
+capture path resolves the code through a lookup that requires `active`.
+Commission already earned is untouched — removing that is operation 45's job,
+and conflating the two would make a suspension irreversible in practice.
+
+**Laravel — `PATCH /affiliateProfiles/:id`**, gated on `affiliates.manage`.
+
+---
+
+#### 47. `requestAffiliatePayout(userId, { amount })`
+
+An affiliate withdraws approved commission. Implemented by Prompt 34.
+
+**Mock:**
+
+1. `GET /affiliateProfiles?userId=:id` → `404` when not enrolled, `403` when
+   suspended
+2. `GET /affiliateEarnings?affiliateId=:id` → sum the `approved` rows
+3. `GET /payouts?affiliateId=:id&source=affiliate` → subtract anything already
+   `requested` or `processing`, so a balance cannot be requested twice
+4. `GET /platformSettings` → `affiliate.payoutMinAmount` (25)
+5. `GET /creatorProfiles?userId=:id` → snapshot `payoutMethod` where there is
+   one; `null` for a buyer-only affiliate
+6. `POST /payouts` — `source: 'affiliate'`, `userId`, `affiliateId`,
+   `status: 'requested'`, then `POST /notifications`
+
+**The request is always the whole approved balance.** A creator's balance is one
+fungible number they can take any slice of; an affiliate's is a set of discrete,
+individually approved records that each settle whole. A part-payment would leave
+a payout that no set of earnings adds up to, and the affiliate's own table would
+stop reconciling with the total above it. `amount` is accepted for symmetry with
+operation 11 and must equal the derived balance; the balance is re-derived here
+either way and is the authority.
+
+**Laravel — `POST /affiliate/payouts` → `{ payout }`**, with the balance
+computed server-side and payout details required as a precondition.
+
+---
+
+#### 48. `settleAffiliatePayout(payout)`
+
+Closes the commission behind a confirmed affiliate settlement. Fires from
+operation 33 (`markPayoutPaid`) and does nothing at all for a creator payout.
+Implemented by Prompt 34.
+
+**Mock:** `GET /affiliateEarnings?affiliateId=:id&status=approved` → per row,
+`PATCH` it to `paid` **and** `POST /transactions` an `affiliate_commission`
+credit → recompute the profile totals.
+
+The credits net against the negative `payout` row operation 33 writes, so an
+affiliate's ledger balances to zero across the pair — which is what keeps a
+member who is *both* a creator and an affiliate from seeing referral money
+appear in, or vanish from, their creator balance.
+
+Like operations 10 and 44, it **never throws**: the transfer has already been
+confirmed by the time it runs. A failure leaves the earnings `approved`, which
+an admin resolves by re-confirming.
+
+**Laravel — inside `POST /payouts/:id/paid`**, in the same transaction.
 
 ---
 

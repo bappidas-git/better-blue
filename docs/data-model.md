@@ -601,26 +601,40 @@ reporting.
 
 ### `payouts` — 4
 
-Creator settlements to a bank account, covering every `PAYOUT_STATUS`
-(`requested`, `processing`, `paid`, `rejected`).
+Settlements to a bank account, covering every `PAYOUT_STATUS` (`requested`,
+`processing`, `paid`, `rejected`). Since Prompt 34 the collection holds **two
+kinds** of settlement, told apart by `source`: creator earnings, and affiliate
+commission.
 
 | Field | Type | Notes |
 |---|---|---|
 | `id` | string | `pyo_…` |
-| `creatorId` | FK → `users.id` | |
-| `amount` | decimal | + `currency`; never below `platformSettings.general.payoutMinAmount` |
-| `method` | object | `{ type: 'bank', accountName, accountMasked }` snapshot |
+| `source` | enum | `PAYOUT_SOURCE` — `creator` (seeded rows, and the default when absent) or `affiliate` |
+| `creatorId` | FK → `users.id` | the recipient of a `creator` payout; **absent** on an affiliate one |
+| `userId` | FK → `users.id` | the recipient of an `affiliate` payout; absent on a creator one |
+| `affiliateId` | FK → `affiliateProfiles.id` | `affiliate` payouts only |
+| `amount` | decimal | + `currency`; never below the applicable payout minimum — `general.payoutMinAmount` for a creator, `affiliate.payoutMinAmount` for an affiliate |
+| `method` | object? | `{ type: 'bank', accountName, accountMasked }` snapshot; `null` when the member has no payout details (a buyer-only affiliate) |
 | `status` | enum | `PAYOUT_STATUS` |
 | `requestedAt` | datetime | |
 | `processedAt` | datetime | `null` while `requested` |
 | `rejectedReason` | string? | present on rejected payouts |
 
 Only a `paid` payout writes a `payout` transaction — that is the moment money
-leaves the balance.
+leaves the balance. A `paid` **affiliate** payout additionally moves every
+`approved` `affiliateEarnings` row behind it to `paid` and writes one
+`affiliate_commission` credit per row, which net the pair to zero on the
+member's ledger.
 
-**MySQL** `payouts` — index `(creator_id, status)`; the method snapshot is kept
-on the row so a later change to the creator's bank details cannot rewrite a
-historical settlement.
+**Two recipient columns, not one.** Every creator-scoped read in the product
+filters on `creatorId`; an affiliate settlement must never be picked up by a
+creator's balance, earnings screen, or payout history — including for the
+members who are both, which several seeded accounts are.
+
+**MySQL** `payouts` — index `(creator_id, status)` and `(affiliate_id, status)`;
+a `CHECK` that exactly one of `creator_id` / `user_id` is set, matched to
+`source`. The method snapshot is kept on the row so a later change to the
+member's bank details cannot rewrite a historical settlement.
 
 ### `disputes` — 5
 
@@ -837,9 +851,14 @@ whose referral never converted, one suspended.
 | `userId` | FK → `users.id` | any role may enrol |
 | `code` | string | the referral code; matches `users.referredByCode` |
 | `status` | enum | `AFFILIATE_PROFILE_STATUS` |
-| `clicks`, `signups`, `conversions` | int | `signups` = referrals, `conversions` = converted referrals |
-| `pendingEarnings`, `approvedEarnings`, `paidEarnings` | decimal | **derived** |
+| `clicks`, `signups`, `conversions` | int | `signups` = referrals, `conversions` = converted referrals. `clicks` is **approximate** — see below |
+| `pendingEarnings`, `approvedEarnings`, `paidEarnings` | decimal | **derived** — recomputed from the earnings rows on every write, never incremented |
 | `enrolledAt` | datetime | before any referral it owns |
+| `suspendedAt`, `suspendedReason` | datetime?, string? | written on suspension, cleared on reactivation |
+
+`clicks` is read-then-written from the browser, so two visits in the same second
+can overwrite one another and a refresh counts twice. Nothing in the product
+takes a decision on it; Laravel replaces it with an atomic increment.
 
 **MySQL** `affiliate_profiles` — `user_id` UNIQUE, `code VARCHAR(32) UNIQUE`;
 the earnings columns are caches over `affiliate_earnings`.
@@ -854,11 +873,15 @@ the earnings columns are caches over `affiliate_earnings`.
 | `status` | enum | `REFERRAL_STATUS` |
 | `convertedOrderId` | FK? → `orders.id` | present exactly when `converted` |
 | `createdAt` | datetime | the referred account's signup |
+| `capturedAt` | datetime? | when the link was clicked, on rows created from a live capture — what the attribution window is measured from |
 | `convertedAt` | datetime | `null` until conversion |
 
-A referral converts when the referred account's first qualifying order
-completes inside `platformSettings.affiliate.attributionDays` (30). Past that
-window it expires.
+A referral converts when the referred account's **first** qualifying order
+completes inside `platformSettings.affiliate.attributionDays` (30), measured
+from `capturedAt` where there is one and `createdAt` otherwise. Past that
+window it expires. Only buyers get a referral row: commission comes out of the
+platform commission on a purchase, so a referred creator is recorded on the
+account (`users.referredByCode`) but accrues nothing.
 
 **MySQL** `affiliate_referrals` — UNIQUE `referred_user_id` (an account is
 referred once); index `(affiliate_id, status)`.
@@ -876,6 +899,7 @@ Commission accrued per qualifying order, covering every
 | `status` | enum | `AFFILIATE_EARNING_STATUS` |
 | `createdAt` | datetime | the order's completion |
 | `approvedAt`, `paidAt` | datetime | `null` until reached |
+| `voidedAt`, `voidReason` | datetime?, string? | present on a `void` earning; the reason is shown to the affiliate verbatim |
 
 Commission is a share of **the platform commission BetterBlue actually
 earned**, never a share of the creator's earnings — so a refund reduces it

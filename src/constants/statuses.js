@@ -135,6 +135,47 @@ export const PAYOUT_STATUS = Object.freeze({
   REJECTED: 'rejected',
 })
 
+/**
+ * What a `payouts` row is settling (`payouts.source`). Added by Prompt 34: the
+ * affiliate program pays commission out through the **same** settlement queue
+ * creators are paid through, so one collection carries both and this field says
+ * which is which (`docs/data-model.md`, contract §6.15).
+ *
+ * A `creator` payout draws on a creator's ledger balance and carries
+ * `creatorId`; an `affiliate` payout settles approved `affiliateEarnings` and
+ * carries `userId` + `affiliateId` instead, so nothing creator-scoped can ever
+ * pick one up by accident.
+ *
+ * Deliberately **not** in `STATUS_ENUMS` — like `VISIBILITY` and
+ * `MODERATION_SUBJECT` it discriminates a record rather than tracking its
+ * lifecycle, and it never renders through `StatusChip`.
+ */
+export const PAYOUT_SOURCE = Object.freeze({
+  CREATOR: 'creator',
+  AFFILIATE: 'affiliate',
+})
+
+/** Label per {@link PAYOUT_SOURCE} value — the chip on the settlement queues. */
+export const PAYOUT_SOURCE_META = Object.freeze({
+  [PAYOUT_SOURCE.CREATOR]: Object.freeze({
+    label: 'Creator earnings',
+    shortLabel: 'Creator',
+    icon: 'solar:user-id-linear',
+    description: 'Settles a creator’s released order earnings.',
+  }),
+  [PAYOUT_SOURCE.AFFILIATE]: Object.freeze({
+    label: 'Affiliate commission',
+    shortLabel: 'Affiliate',
+    icon: 'solar:users-group-rounded-linear',
+    description: 'Settles approved referral commission from the affiliate program.',
+  }),
+})
+
+/** The source of a payout row, defaulting to `creator` for rows written before Prompt 34. */
+export function payoutSourceOf(payout) {
+  return payout?.source === PAYOUT_SOURCE.AFFILIATE ? PAYOUT_SOURCE.AFFILIATE : PAYOUT_SOURCE.CREATOR
+}
+
 export const AFFILIATE_PROFILE_STATUS = Object.freeze({
   ACTIVE: 'active',
   SUSPENDED: 'suspended',

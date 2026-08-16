@@ -25,6 +25,9 @@ import {
   AFFILIATE_EARNING_STATUS,
   ORDER_STATUS,
   PAYMENT_STATUS,
+  // Aliased: `PAYOUT_SOURCE` is already the name of this module's scenario
+  // table of creator payouts, which predates the enum by two prompts.
+  PAYOUT_SOURCE as PAYOUT_SOURCE_ENUM,
   PAYOUT_STATUS,
   TRANSACTION_TYPE,
 } from '../../src/constants/statuses.js'
@@ -381,6 +384,12 @@ PAYOUT_SOURCE.forEach((source) => {
 
   const payout = compact({
     id: seqId('pyo', payoutSequence),
+    // Prompt 34: `payouts` carries two kinds of settlement now — creator
+    // earnings and affiliate commission — and every row says which it is rather
+    // than being identified by which id field happens to be filled in. Seeded
+    // rows are all creator settlements; affiliate ones are created live by
+    // `affiliateService.requestAffiliatePayout`.
+    source: PAYOUT_SOURCE_ENUM.CREATOR,
     creatorId: beneficiary,
     amount: source.amount,
     currency: CURRENCY,

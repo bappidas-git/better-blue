@@ -1,15 +1,17 @@
+import { Icon } from '@iconify/react'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Checkbox from '@mui/material/Checkbox'
+import Chip from '@mui/material/Chip'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 
 import StatusChip from '@/components/data-display/StatusChip'
 import DataTable from '@/components/table/DataTable'
-import { PAYOUT_STATUS } from '@/constants/statuses'
+import { PAYOUT_SOURCE, PAYOUT_SOURCE_META, PAYOUT_STATUS, payoutSourceOf } from '@/constants/statuses'
 import { AgeBadge, EntityRefChip } from '@/features/admin/shared'
 import {
   SETTLEMENT_SLA,
@@ -35,6 +37,31 @@ import { EMPTY_PLACEHOLDER, formatCurrency, formatDate } from '@/utils/formatter
 /** Money is set in tabular numerals so a column of it lines up digit for digit. */
 const MONEY_SX = { fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }
 
+/**
+ * What kind of settlement a row is (Prompt 34). `payouts` carries two now —
+ * creator earnings and affiliate commission — and they are approved and paid the
+ * same way but come out of different pockets, so the chip is on every row rather
+ * than only on the newer kind: a queue where the absence of a label is the label
+ * is a queue somebody eventually misreads.
+ */
+function SourceChip({ payout }) {
+  const source = payoutSourceOf(payout)
+  const meta = PAYOUT_SOURCE_META[source]
+
+  return (
+    <Tooltip title={meta.description}>
+      <Chip
+        size="small"
+        variant="outlined"
+        color={source === PAYOUT_SOURCE.AFFILIATE ? 'secondary' : 'default'}
+        icon={<Icon icon={meta.icon} width={14} aria-hidden="true" />}
+        label={meta.shortLabel}
+        sx={{ fontSize: '0.6875rem', '& .MuiChip-icon': { ml: 0.75 } }}
+      />
+    </Tooltip>
+  )
+}
+
 /** The action set for a row, decided by where the payout is in its machine. */
 function RowActions({ payout, onApprove, onReject, onMarkPaid, busy }) {
   if (payout.status === PAYOUT_STATUS.REQUESTED) {
@@ -45,7 +72,7 @@ function RowActions({ payout, onApprove, onReject, onMarkPaid, busy }) {
           variant="contained"
           onClick={() => onApprove(payout)}
           disabled={busy}
-          aria-label={`Approve ${formatCurrency(payout.amount, payout.currency)} for ${payout.creator?.name ?? 'this creator'}`}
+          aria-label={`Approve ${formatCurrency(payout.amount, payout.currency)} for ${payout.creator?.name ?? 'this member'}`}
         >
           Approve
         </Button>
@@ -55,7 +82,7 @@ function RowActions({ payout, onApprove, onReject, onMarkPaid, busy }) {
           color="error"
           onClick={() => onReject(payout)}
           disabled={busy}
-          aria-label={`Reject ${formatCurrency(payout.amount, payout.currency)} for ${payout.creator?.name ?? 'this creator'}`}
+          aria-label={`Reject ${formatCurrency(payout.amount, payout.currency)} for ${payout.creator?.name ?? 'this member'}`}
         >
           Reject
         </Button>
@@ -71,7 +98,7 @@ function RowActions({ payout, onApprove, onReject, onMarkPaid, busy }) {
           variant="contained"
           onClick={() => onMarkPaid(payout)}
           disabled={busy}
-          aria-label={`Mark ${formatCurrency(payout.amount, payout.currency)} for ${payout.creator?.name ?? 'this creator'} as paid`}
+          aria-label={`Mark ${formatCurrency(payout.amount, payout.currency)} for ${payout.creator?.name ?? 'this member'} as paid`}
         >
           Mark paid
         </Button>
@@ -149,7 +176,7 @@ export default function SettlementQueue({
                   onChange={() => onToggle?.(row.id)}
                   disabled={busy}
                   inputProps={{
-                    'aria-label': `Select ${formatCurrency(row.amount, row.currency)} for ${row.creator?.name ?? 'this creator'}`,
+                    'aria-label': `Select ${formatCurrency(row.amount, row.currency)} for ${row.creator?.name ?? 'this member'}`,
                   }}
                 />
               ) : null,
@@ -158,7 +185,9 @@ export default function SettlementQueue({
       : []),
     {
       key: 'creator',
-      label: 'Creator',
+      // "Member", not "Creator": since Prompt 34 an affiliate settlement sits
+      // in the same queue, and the person waiting is not always a creator.
+      label: 'Member',
       render: (row) => (
         <Stack spacing={0.5} sx={{ minWidth: 0 }}>
           {row.creator?.id ? (
@@ -178,6 +207,12 @@ export default function SettlementQueue({
           </Typography>
         </Stack>
       ),
+    },
+    {
+      key: 'source',
+      label: 'Source',
+      width: 130,
+      render: (row) => <SourceChip payout={row} />,
     },
     {
       key: 'amount',
@@ -246,7 +281,7 @@ export default function SettlementQueue({
               disabled={busy}
               sx={{ mt: -1, ml: -1 }}
               inputProps={{
-                'aria-label': `Select ${formatCurrency(row.amount, row.currency)} for ${row.creator?.name ?? 'this creator'}`,
+                'aria-label': `Select ${formatCurrency(row.amount, row.currency)} for ${row.creator?.name ?? 'this member'}`,
               }}
             />
           ) : null}
@@ -260,16 +295,17 @@ export default function SettlementQueue({
             </Stack>
 
             <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.25 }}>
-              {row.creator?.name ?? 'Creator'}
+              {row.creator?.name ?? 'Member'}
             </Typography>
             <Typography variant="caption" color="text.secondary" component="p">
               {payoutMethodLabel(row.method) ?? 'No payout method on file'} · requested{' '}
               {formatDate(row.requestedAt)}
             </Typography>
 
-            <Box sx={{ mt: 1 }}>
+            <Stack direction="row" spacing={1} sx={{ mt: 1 }} useFlexGap flexWrap="wrap">
               <StatusChip status={row.status} size="sm" />
-            </Box>
+              <SourceChip payout={row} />
+            </Stack>
 
             {row.status === PAYOUT_STATUS.REJECTED && row.rejectedReason ? (
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -294,7 +330,7 @@ export default function SettlementQueue({
 
   return (
     <DataTable
-      ariaLabel="Creator settlements"
+      ariaLabel="Settlement queue"
       columns={columns}
       rows={rows}
       loading={loading}

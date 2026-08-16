@@ -423,10 +423,14 @@ async function loadOldestPayouts(limit) {
   })
   if (items.length === 0) return items
 
-  const creators = await userService.listByIds(items.map((payout) => payout.creatorId)).catch(() => [])
-  const nameById = new Map(creators.map((user) => [user.id, user.name]))
+  // Prompt 34: an affiliate commission settlement is a `payouts` row too, and
+  // carries `userId` rather than `creatorId` (`payouts.source`). The queue shows
+  // whoever is waiting, whichever kind of row it is.
+  const recipientOf = (payout) => payout.creatorId ?? payout.userId
+  const people = await userService.listByIds(items.map(recipientOf)).catch(() => [])
+  const nameById = new Map(people.map((user) => [user.id, user.name]))
 
-  return items.map((payout) => ({ ...payout, creatorName: nameById.get(payout.creatorId) ?? null }))
+  return items.map((payout) => ({ ...payout, creatorName: nameById.get(recipientOf(payout)) ?? null }))
 }
 
 /**

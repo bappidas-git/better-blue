@@ -362,6 +362,33 @@ const SCENARIO_SOURCE = [
     createdDaysAgo: 26,
   },
   {
+    // Prompt 34 §9 — the brief behind the convertible-referral fixture. A small,
+    // ordinary product shoot for the business that arrived through Ava's
+    // referral link: it exists to be *completed live*, so nothing about it is
+    // unusual except who introduced the buyer.
+    key: 'awarded_fernwood_pastry',
+    buyer: 'fernwood',
+    status: REQUEST_STATUS.AWARDED,
+    category: CATEGORY_ID.FOOD_BEVERAGE,
+    contentType: PHOTO,
+    title: 'Product photography for our autumn pastry range',
+    description:
+      'Twelve photos of our autumn pastry range for the menu boards, our delivery listings, and social. Shooting happens in our Portland site before opening, and we will have every item plated and ready.',
+    quantity: 12,
+    orientation: ORIENTATION.SQUARE,
+    usageRights: USAGE_RIGHTS.WEBSITE,
+    brandGuidelines:
+      'Warm natural light, visible texture, plain linen surfaces. Nothing over-styled — it should look like the counter.',
+    dos: 'One overhead and one 45-degree frame per item. Leave square crops safe for delivery listings.',
+    donts: 'No props we do not own, no heavy colour grading, no visible branding from other cafés.',
+    referenceUrls: ['https://fernwoodbakery.test/brand/menu-board-spec'],
+    budgetType: BUDGET_TYPE.FIXED,
+    budgetMin: 640,
+    budgetMax: 640,
+    deadlineInDays: 5,
+    createdDaysAgo: 10,
+  },
+  {
     key: 'awarded_atlas_hotel',
     buyer: 'atlas',
     status: REQUEST_STATUS.AWARDED,

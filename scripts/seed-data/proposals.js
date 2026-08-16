@@ -258,6 +258,20 @@ const AWARD_PROPOSALS = {
       'Shade accuracy is the whole job here, so I will shoot to a colour chart and match your existing product page profile. Swatches across a range of skin tones, one macro frame per shade, no warming filters anywhere.',
     alsoDeclined: ['chloe'],
   },
+  // Prompt 34 §9 — the accepted offer behind the convertible-referral order.
+  // Priced modestly on purpose: at the seeded 20% commission and 10% affiliate
+  // share, completing it accrues $12.80, which is comfortably readable in the
+  // dashboards the live pipeline check walks through.
+  awarded_fernwood_pastry: {
+    creator: 'yuki',
+    price: 640,
+    deliveryDays: 6,
+    revisions: 2,
+    awardDaysAgo: 8,
+    message:
+      'Pastry is mostly about texture and steam, so I shoot close and let the light do the work. Twelve items, overhead and 45 degrees on each, delivered square-safe for your listings and menu boards.',
+    alsoDeclined: ['noah'],
+  },
   awarded_atlas_hotel: {
     creator: 'isla',
     price: 1520,

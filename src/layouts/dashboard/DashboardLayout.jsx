@@ -26,6 +26,7 @@ import { orderService } from '@/services/orderService'
 import { portfolioService } from '@/services/portfolioService'
 import { proposalService } from '@/services/proposalService'
 import { requestService } from '@/services/requestService'
+import { settingsService, SETTINGS_FALLBACK } from '@/services/settingsService'
 import { durations, easing } from '@/theme/motionTokens'
 import { storage } from '@/utils/storage'
 
@@ -115,7 +116,18 @@ export default function DashboardLayout() {
     setMoreOpen(false)
   }, [pathname, isDesktop])
 
-  const entries = useMemo(() => getNavForUser(user), [user])
+  // Prompt 34: a nav entry can be gated on a platform feature flag, so the
+  // shell needs the flags. `settingsService` caches them for a minute and every
+  // dashboard screen reads the same cache, so this is one request per session
+  // rather than one per navigation — and it never blocks the nav, which falls
+  // back to the bundled defaults until the settings land (`isNavItemVisible`).
+  const { data: settings } = useApiQuery(
+    () => settingsService.getSettings().catch(() => SETTINGS_FALLBACK),
+    []
+  )
+  const features = settings?.features
+
+  const entries = useMemo(() => getNavForUser(user, features), [features, user])
   const items = useMemo(() => flattenNavEntries(entries), [entries])
   const { primary, more } = useMemo(
     () => splitBottomNav(items, getMoreNavKeys(user?.role)),
