@@ -151,8 +151,16 @@ export default function LoginPage() {
                   required
                   {...form.fieldProps('password')}
                 />
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                  <Link component={RouterLink} to={paths.FORGOT_PASSWORD} variant="body2">
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <Link
+                    component={RouterLink}
+                    to={paths.FORGOT_PASSWORD}
+                    variant="body2"
+                    // A standalone control rather than a link inside a
+                    // sentence, so it gets a real tap target (00 §13). The
+                    // padding replaces the margin the wrapper used to add.
+                    sx={{ display: 'inline-flex', alignItems: 'center', minHeight: 44, px: 0.5 }}
+                  >
                     Forgot your password?
                   </Link>
                 </Box>

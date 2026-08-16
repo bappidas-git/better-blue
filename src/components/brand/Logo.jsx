@@ -104,8 +104,15 @@ export default function Logo({ variant = 'full', size = 32, asLink = false }) {
       sx={{
         display: 'inline-flex',
         alignItems: 'center',
+        justifyContent: 'center',
         textDecoration: 'none',
         borderRadius: 1,
+        // The mark is 28px in the mobile top bar, which is a 28px tap target
+        // for the one link that gets you home (00 §13). The hit area grows to
+        // 44px; the artwork does not — the SVG keeps whatever `size` it was
+        // given and stays centred in the box.
+        minHeight: 44,
+        minWidth: 44,
       }}
     >
       {svg}

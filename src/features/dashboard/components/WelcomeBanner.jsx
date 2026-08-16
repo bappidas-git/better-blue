@@ -136,7 +136,9 @@ export default function WelcomeBanner({
             onClick={dismiss}
             aria-label="Dismiss welcome message"
             size="small"
-            sx={{ flexShrink: 0, width: 36, height: 36, color: 'text.secondary' }}
+            // 44px, not 36 — this is the only control on the banner and it sits
+            // at the top of every dashboard on a phone (00 §13).
+            sx={{ flexShrink: 0, width: 44, height: 44, color: 'text.secondary' }}
           >
             <Icon icon="tabler:x" width={18} />
           </IconButton>

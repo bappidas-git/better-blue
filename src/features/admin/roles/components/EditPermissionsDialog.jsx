@@ -109,7 +109,7 @@ export default function EditPermissionsDialog({ open, onClose, admin, onSubmit }
 
               {added.length > 0 ? (
                 <Box>
-                  <Typography variant="caption" sx={{ fontWeight: 700, color: 'success.main' }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: 'success.dark' }}>
                     Granting
                   </Typography>
                   <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap" sx={{ mt: 0.5 }}>
