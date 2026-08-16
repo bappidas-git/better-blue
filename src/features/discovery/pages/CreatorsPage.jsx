@@ -7,6 +7,7 @@ import Container from '@mui/material/Container'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 
+import { visuallyHidden } from '@mui/utils'
 import PaginationControl from '@/components/data-display/PaginationControl'
 import EmptyState from '@/components/feedback/EmptyState'
 import ErrorState from '@/components/feedback/ErrorState'
@@ -295,6 +296,14 @@ export default function CreatorsPage() {
             sx={{ mb: 2 }}
           >
             {countLabel}
+          </Typography>
+
+          {/* Names the results region in the outline, so the page reads
+              h1 → h2 → the card's own h3 rather than skipping a level
+              (00 §13). Visually hidden: the count line above already says
+              this to anyone who can see it. */}
+          <Typography component="h2" sx={visuallyHidden}>
+            Creators
           </Typography>
 
           {renderGrid()}

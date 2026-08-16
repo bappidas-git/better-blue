@@ -3,7 +3,9 @@ import { useMemo, useState } from 'react'
 import { Icon } from '@iconify/react'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
+import Typography from '@mui/material/Typography'
 
+import { visuallyHidden } from '@mui/utils'
 import MediaLightbox from '@/components/data-display/MediaLightbox'
 import EmptyState from '@/components/feedback/EmptyState'
 import ErrorState from '@/components/feedback/ErrorState'
@@ -306,6 +308,13 @@ export default function CreatorPortfolioPage() {
 
     return (
       <Box sx={gridSx}>
+        {/* Names the grid in the outline, so the page reads h1 → h2 → each
+            card's own h3 rather than skipping a level (00 §13). Visually
+            hidden — the filter chips above already label it on screen. */}
+        <Typography component="h2" sx={visuallyHidden}>
+          Portfolio items
+        </Typography>
+
         {visible.map((item, index) => (
           <PortfolioManageCard
             key={item.id}

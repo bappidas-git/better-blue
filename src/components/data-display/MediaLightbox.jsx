@@ -256,6 +256,10 @@ export default function MediaLightbox({
                   component="img"
                   src={item.src}
                   alt=""
+                  // The strip scrolls: a gallery of twenty is twenty thumbnails
+                  // wide and most of them start off-screen. The active frame
+                  // above is deliberately *not* lazy — it is what was opened.
+                  loading="lazy"
                   sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               )}

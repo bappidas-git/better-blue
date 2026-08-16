@@ -12,6 +12,7 @@ import Typography from '@mui/material/Typography'
 import FormTextField from '@/components/inputs/FormTextField'
 import CurrencyField from '@/components/inputs/CurrencyField'
 import ResponsiveDialog from '@/components/layout/ResponsiveDialog'
+import { focusFieldById } from '@/hooks/useForm'
 import { formatCurrency } from '@/utils/formatters'
 
 // Returning escrow to a buyer, from the finance console — Prompt 32 §4.2.
@@ -109,7 +110,12 @@ export default function RefundDialog({ open, payment, onClose, onSubmit }) {
 
   const handleSubmit = async () => {
     setTouched(true)
-    if (!canSubmit) return
+    if (!canSubmit) {
+      // Amount first, then reason — the order the dialog asks for them.
+      if (amountCheck.error) focusFieldById('refund-amount')
+      else if (reasonError) focusFieldById('refund-reason')
+      return
+    }
 
     setSubmitting(true)
     setFailure(null)

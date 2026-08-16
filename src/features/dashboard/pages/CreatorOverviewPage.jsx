@@ -1,10 +1,12 @@
+import { useCallback } from 'react'
+
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
-import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
+import { useNavigate } from 'react-router-dom'
 
 import ErrorState from '@/components/feedback/ErrorState'
 import { useAuth } from '@/context/AuthContext'
@@ -18,7 +20,9 @@ import QuickActions from '@/features/dashboard/components/QuickActions'
 import StatCardGrid from '@/features/dashboard/components/StatCardGrid'
 import ThemedLineChart from '@/features/dashboard/components/ThemedLineChart'
 import WelcomeBanner from '@/features/dashboard/components/WelcomeBanner'
+import { getNotificationPath } from '@/features/notifications/notificationRoutes'
 import useApiQuery from '@/hooks/useApiQuery'
+import useNotifications from '@/hooks/useNotifications'
 import DashboardPage from '@/layouts/dashboard/DashboardPage'
 import { paths } from '@/routes/paths'
 import { creatorDashboardService } from '@/services/creatorDashboardService'
@@ -104,6 +108,8 @@ function SectionError({ error, onRetry, title, message }) {
 
 export default function CreatorOverviewPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
+  const { markRead } = useNotifications()
 
   const {
     data: overview,
@@ -113,6 +119,17 @@ export default function CreatorOverviewPage() {
   } = useApiQuery(() => creatorDashboardService.getOverview(user?.id, { user }), [user?.id], {
     enabled: Boolean(user?.id),
   })
+
+  // Same two moves as the bell (Prompt 27): navigate first — the read flag is
+  // bookkeeping and nobody should wait on a PATCH for the screen to move — and
+  // let a failed mark-read leave the row unread rather than raise a toast.
+  const openActivity = useCallback(
+    (item) => {
+      navigate(getNotificationPath(item, user?.role))
+      if (item.read === false) markRead(item.id).catch(() => {})
+    },
+    [markRead, navigate, user?.role]
+  )
 
   const availability = useCreatorAvailability(overview?.profile, {
     activeOrders: overview?.activeOrders ?? 0,
@@ -377,19 +394,17 @@ export default function CreatorOverviewPage() {
                 <Typography variant="h6" component="h2" sx={{ fontSize: '1.0625rem', mb: 0.5 }}>
                   Recent activity
                 </Typography>
-                {/* TODO(Prompt 27): rows become links into the notification
-                    centre. Until that screen exists there is nowhere to send
-                    anyone, so the feed stays read-only and says why. */}
-                <Tooltip title="Opening an update from here arrives with the notification centre">
-                  <Box>
-                    <ActivityFeed
-                      loading={isLoading}
-                      items={overview?.recentActivity ?? []}
-                      emptyTitle="Nothing has happened yet"
-                      emptyDescription="Proposals, orders, deliveries, and payouts will show up here."
-                    />
-                  </Box>
-                </Tooltip>
+                {/* Prompt 27 built the notification centre, so the rows are
+                    live: each one resolves through `getNotificationPath` to the
+                    record it is about — the order, the proposal, the payout —
+                    rather than to a list the reader would have to search. */}
+                <ActivityFeed
+                  loading={isLoading}
+                  items={overview?.recentActivity ?? []}
+                  onItemClick={openActivity}
+                  emptyTitle="Nothing has happened yet"
+                  emptyDescription="Proposals, orders, deliveries, and payouts will show up here."
+                />
               </CardContent>
             </Card>
           )}

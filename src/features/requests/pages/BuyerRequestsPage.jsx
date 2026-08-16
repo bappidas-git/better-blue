@@ -6,8 +6,10 @@ import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
+import Typography from '@mui/material/Typography'
 import { Link as RouterLink } from 'react-router-dom'
 
+import { visuallyHidden } from '@mui/utils'
 import PaginationControl from '@/components/data-display/PaginationControl'
 import EmptyState from '@/components/feedback/EmptyState'
 import ErrorState from '@/components/feedback/ErrorState'
@@ -236,6 +238,13 @@ export default function BuyerRequestsPage() {
         <EmptyState {...emptyState} />
       ) : (
         <>
+          {/* Names the list in the outline, so the page reads h1 → h2 → each
+              card's own h3 rather than skipping a level (00 §13). Visually
+              hidden — the tabs above already label it on screen. */}
+          <Typography component="h2" sx={visuallyHidden}>
+            Your requests
+          </Typography>
+
           <Stack component="ul" spacing={2} sx={{ listStyle: 'none', m: 0, p: 0 }}>
             {items.map((request) => (
               <Box

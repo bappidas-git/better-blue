@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography'
 
 import FormTextField from '@/components/inputs/FormTextField'
 import ResponsiveDialog from '@/components/layout/ResponsiveDialog'
+import { focusFieldById } from '@/hooks/useForm'
 import { ROLES } from '@/constants/roles'
 import { DISPUTE_MESSAGE_MAX, canRequestInfo } from '@/services/disputeService'
 
@@ -60,7 +61,10 @@ export default function RequestInfoDialog({ open, dispute, parties, onClose, onS
 
   const submit = useCallback(async () => {
     setTouched(true)
-    if (!canSubmit) return
+    if (!canSubmit) {
+      if (messageError) focusFieldById('request-info-message')
+      return
+    }
 
     setSubmitting(true)
     setFailure(null)
@@ -71,7 +75,7 @@ export default function RequestInfoDialog({ open, dispute, parties, onClose, onS
     } finally {
       setSubmitting(false)
     }
-  }, [canSubmit, from, onSubmit, trimmed])
+  }, [canSubmit, from, messageError, onSubmit, trimmed])
 
   const option = (role, label, person) => (
     <FormControlLabel

@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography'
 
 import FormTextField from '@/components/inputs/FormTextField'
 import ResponsiveDialog from '@/components/layout/ResponsiveDialog'
+import { focusFieldById } from '@/hooks/useForm'
 import { DISPUTE_MESSAGE_MAX } from '@/services/disputeService'
 
 // Handing a case to a senior reviewer — Prompt 33 §4.3.
@@ -43,7 +44,12 @@ export default function EscalateDialog({ open, onClose, onSubmit }) {
 
   const submit = useCallback(async () => {
     setTouched(true)
-    if (!canSubmit) return
+    if (!canSubmit) {
+      // The message is revealed *and* the cursor lands on the field it belongs
+      // to, rather than leaving the reader to find it (00 §12).
+      if (noteError) focusFieldById('escalation-note')
+      return
+    }
 
     setSubmitting(true)
     setFailure(null)
@@ -54,7 +60,7 @@ export default function EscalateDialog({ open, onClose, onSubmit }) {
     } finally {
       setSubmitting(false)
     }
-  }, [canSubmit, onSubmit, trimmed])
+  }, [canSubmit, noteError, onSubmit, trimmed])
 
   return (
     <ResponsiveDialog

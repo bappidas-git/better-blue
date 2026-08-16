@@ -1,12 +1,12 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
-import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
+import { useNavigate } from 'react-router-dom'
 
 import ErrorState from '@/components/feedback/ErrorState'
 import { useAuth } from '@/context/AuthContext'
@@ -16,6 +16,7 @@ import ChartCard from '@/features/dashboard/components/ChartCard'
 import OnboardingChecklist from '@/features/dashboard/components/OnboardingChecklist'
 import QuickActions from '@/features/dashboard/components/QuickActions'
 import StatCardGrid from '@/features/dashboard/components/StatCardGrid'
+import { getNotificationPath } from '@/features/notifications/notificationRoutes'
 import { ORDER_TAB, ordersTabQuery } from '@/features/orders/utils/buyerOrderFilters'
 import {
   REQUEST_TAB,
@@ -24,6 +25,7 @@ import {
 import ThemedBarChart from '@/features/dashboard/components/ThemedBarChart'
 import WelcomeBanner from '@/features/dashboard/components/WelcomeBanner'
 import useApiQuery from '@/hooks/useApiQuery'
+import useNotifications from '@/hooks/useNotifications'
 import DashboardPage from '@/layouts/dashboard/DashboardPage'
 import { paths } from '@/routes/paths'
 import { buyerDashboardService } from '@/services/buyerDashboardService'
@@ -97,6 +99,8 @@ function SectionError({ error, onRetry, title, message }) {
 
 export default function BuyerOverviewPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
+  const { markRead } = useNotifications()
 
   const {
     data: overview,
@@ -106,6 +110,17 @@ export default function BuyerOverviewPage() {
   } = useApiQuery(() => buyerDashboardService.getOverview(user?.id), [user?.id], {
     enabled: Boolean(user?.id),
   })
+
+  // Same two moves as the bell (Prompt 27): navigate first — the read flag is
+  // bookkeeping and nobody should wait on a PATCH for the screen to move — and
+  // let a failed mark-read leave the row unread rather than raise a toast.
+  const openActivity = useCallback(
+    (item) => {
+      navigate(getNotificationPath(item, user?.role))
+      if (item.read === false) markRead(item.id).catch(() => {})
+    },
+    [markRead, navigate, user?.role]
+  )
 
   const completeness = useMemo(
     () => getBuyerProfileCompleteness(overview?.profile, user),
@@ -330,19 +345,17 @@ export default function BuyerOverviewPage() {
                 >
                   Recent activity
                 </Typography>
-                {/* TODO(Prompt 27): rows become links into the notification
-                    centre. Until that screen exists there is nowhere to send
-                    anyone, so the feed stays read-only and says why. */}
-                <Tooltip title="Opening an update from here arrives with the notification centre">
-                  <Box>
-                    <ActivityFeed
-                      loading={isLoading}
-                      items={overview?.recentActivity ?? []}
-                      emptyTitle="Nothing has happened yet"
-                      emptyDescription="Proposals, deliveries, and payment updates will show up here."
-                    />
-                  </Box>
-                </Tooltip>
+                {/* Prompt 27 built the notification centre, so the rows are
+                    live: each one resolves through `getNotificationPath` to the
+                    record it is about — the order, the request, the receipt —
+                    rather than to a list the reader would have to search. */}
+                <ActivityFeed
+                  loading={isLoading}
+                  items={overview?.recentActivity ?? []}
+                  onItemClick={openActivity}
+                  emptyTitle="Nothing has happened yet"
+                  emptyDescription="Proposals, deliveries, and payment updates will show up here."
+                />
               </CardContent>
             </Card>
           )}

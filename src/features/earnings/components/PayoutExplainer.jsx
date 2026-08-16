@@ -140,7 +140,11 @@ export default function PayoutExplainer({ defaultOpen = false }) {
           <Box aria-hidden="true" sx={{ display: 'flex', color: 'primary.main' }}>
             <Icon icon="solar:question-circle-linear" width={22} />
           </Box>
-          <Typography variant="subtitle2" component="h3" sx={{ flexGrow: 1 }}>
+          {/* An `h2`, not an `h3`: this disclosure is a top-level section of
+              the earnings page, and its siblings there ("Net earnings",
+              "Earnings by order") are `h2`s. As an `h3` it made the page skip
+              from its `h1` straight to level 3 (00 §13). */}
+          <Typography variant="subtitle2" component="h2" sx={{ flexGrow: 1 }}>
             How payouts work
           </Typography>
           <Box
