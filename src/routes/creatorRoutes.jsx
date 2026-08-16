@@ -16,9 +16,10 @@ import { paths } from './paths'
 //
 // Prompt 23 added the request board and the proposal manager, plus a stub for
 // the order detail route; Prompt 24 replaced that stub with the real order
-// workspace and mounted the orders list beside it.
+// workspace and mounted the orders list beside it; Prompt 25 added the earnings
+// and payouts screen.
 //
-// Paths still reserved in ./paths.js: CREATOR_EARNINGS, CREATOR_DISPUTES,
+// Paths still reserved in ./paths.js: CREATOR_DISPUTES,
 // CREATOR_DISPUTE_DETAIL_PATTERN, CREATOR_NOTIFICATIONS.
 
 const CreatorOverviewPage = lazy(
@@ -35,6 +36,9 @@ const CreatorOrderDetailPage = lazy(
 const CreatorPortfolioPage = lazy(
   () => import('@/features/portfolio/pages/CreatorPortfolioPage')
 )
+const CreatorEarningsPage = lazy(
+  () => import('@/features/earnings/pages/CreatorEarningsPage')
+)
 const CreatorProfilePage = lazy(
   () => import('@/features/creatorAccount/pages/CreatorProfilePage')
 )
@@ -50,6 +54,7 @@ export const creatorRoutes = [
   { path: paths.CREATOR_ORDERS, element: <CreatorOrdersPage /> },
   { path: paths.CREATOR_ORDER_DETAIL_PATTERN, element: <CreatorOrderDetailPage /> },
   { path: paths.CREATOR_PORTFOLIO, element: <CreatorPortfolioPage /> },
+  { path: paths.CREATOR_EARNINGS, element: <CreatorEarningsPage /> },
   { path: paths.CREATOR_PROFILE, element: <CreatorProfilePage /> },
   { path: paths.CREATOR_SETTINGS, element: <CreatorSettingsPage /> },
   // Keeps the whole `/creator` subtree guarded — see buyerRoutes.jsx.

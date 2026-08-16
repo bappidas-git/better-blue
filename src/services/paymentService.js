@@ -20,6 +20,8 @@
 // naming what was written and what was not. Laravel wraps the whole sequence in
 // `DB::transaction()` and this paragraph goes away.
 
+import dayjs from 'dayjs'
+
 import { appConfig } from '@/config/appConfig'
 import { NOTIFICATION_TYPE } from '@/constants/notificationTypes'
 import { isAdminRole } from '@/constants/roles'
@@ -118,6 +120,25 @@ const BALANCE_BEARING_TYPES = new Set([
 
 /** Ledger types that make up a creator's lifetime earnings. */
 const EARNING_TYPES = new Set([TRANSACTION_TYPE.RELEASE, TRANSACTION_TYPE.COMMISSION])
+
+/**
+ * Columns on the earnings screen's chart — a full trailing year, including the
+ * current partial month (Prompt 25 §4.2). The creator overview's own chart is
+ * six (`creatorDashboardService.EARNINGS_MONTHS`); this one is the financial
+ * centre and shows the whole year the accountant asks about.
+ */
+export const EARNINGS_BREAKDOWN_MONTHS = 12
+
+/**
+ * Orders that carry money for a creator: the four in which escrow is held, plus
+ * the completed ones whose escrow has been released. `pending_payment`,
+ * `cancelled`, and `refunded` are deliberately absent — nothing is, or ever
+ * will be, owed to the creator on them.
+ */
+const EARNING_ORDER_STATUSES = Object.freeze([
+  ...ESCROW_HELD_ORDER_STATUSES,
+  ORDER_STATUS.COMPLETED,
+])
 
 const nowIso = () => new Date().toISOString()
 
@@ -353,6 +374,46 @@ async function settleEscrow({ order, payment, baseAmount, rate, settledAt }) {
     transactions: [releaseRow, commissionRow],
     settledAt,
   }
+}
+
+/**
+ * The last `months` calendar months as empty buckets, oldest first. `key` is
+ * `YYYY-MM` for matching a row's `createdAt`; `label` is what the axis prints.
+ *
+ * Deliberately the same shape `creatorDashboardService` builds for the overview
+ * chart, so the two series are the same data at two lengths rather than two
+ * calculations that could drift.
+ */
+function emptyMonthBuckets(now, months) {
+  const thisMonth = dayjs(now ?? undefined).startOf('month')
+
+  return Array.from({ length: months }, (unused, index) => {
+    const month = thisMonth.subtract(months - 1 - index, 'month')
+    return { key: month.format('YYYY-MM'), label: month.format('MMM'), amount: 0 }
+  })
+}
+
+/**
+ * The newest payment per order, from one page of payment rows.
+ *
+ * An order can carry several payments — a decline leaves its failed record
+ * behind and a retry adds another (`docs/payments.md` §5) — and the live one is
+ * always the most recent.
+ */
+function latestPaymentByOrder(rows = []) {
+  const byOrder = new Map()
+  rows.forEach((payment) => {
+    const current = byOrder.get(payment.orderId)
+    if (!current || Date.parse(payment.createdAt) >= Date.parse(current.createdAt)) {
+      byOrder.set(payment.orderId, payment)
+    }
+  })
+  return byOrder
+}
+
+/** The date an earnings row is filed under: when it settled, else when it started. */
+function earningsRowDate(order) {
+  return order.completedAt ?? order.activatedAt ?? order.createdAt ?? null
 }
 
 export const paymentService = Object.freeze({
@@ -950,6 +1011,155 @@ export const paymentService = Object.freeze({
       pendingPayouts,
       balance,
       currency: ledger.items[0]?.currency ?? appConfig.defaultCurrency,
+    }
+  },
+
+  /**
+   * **Everything `/creator/earnings` prints**, computed here so no component
+   * ever does money arithmetic (Prompt 25 §7): the four summary figures, one
+   * row per order that carries money, the totals under them, and a year of
+   * monthly net earnings for the chart.
+   *
+   * The three views reconcile by construction because they are folded from the
+   * same three reads:
+   *
+   * - the **summary** is {@link getEarningsSummary}, untouched — the tiles here
+   *   and the tile on the creator overview are literally the same call;
+   * - a **row's** `net` is `orders.creatorEarnings`, the figure frozen when the
+   *   proposal was accepted, which is also what the `release`/`commission` pair
+   *   nets to on the ledger (`docs/payments.md` §7);
+   * - a **month's** `amount` is that same pair, bucketed by `createdAt`, so the
+   *   chart sums to `lifetime` across the months it covers.
+   *
+   * MOCK-AGGREGATE: four list calls, each capped at {@link FOLD_LIMIT} rows
+   * (contract §4.1) — comfortably above any seeded creator, and gone the moment
+   * Laravel answers this with one query. A creator past that ceiling would see
+   * a truncated breakdown, which is why the returned `truncated` flag exists
+   * rather than the screen quietly showing a short list.
+   *
+   * @param {string} creatorId `usr_…`
+   * @param {object} [options]
+   * @param {Date|string} [options.now] injectable clock for the month buckets
+   * @param {number} [options.months={@link EARNINGS_BREAKDOWN_MONTHS}] chart length
+   * @returns {Promise<{summary: object, rows: object[], totals: object,
+   *   monthly: Array<{key: string, label: string, amount: number}>,
+   *   monthlyPeak: object|null, payoutMinimum: number, currency: string,
+   *   truncated: boolean}>}
+   *
+   * **Future endpoint:** `GET /creator/earnings` — one authenticated request
+   * returning this exact object, with the rows joined and the series grouped in
+   * SQL. The creator id is a parameter in the mock only; the endpoint takes it
+   * from the bearer token and ignores anything the client sends (§9.2).
+   */
+  async getEarningsBreakdown(creatorId, { now, months = EARNINGS_BREAKDOWN_MONTHS } = {}) {
+    const [summary, settings] = await Promise.all([
+      paymentService.getEarningsSummary(creatorId),
+      settingsService.getSettings().catch(() => SETTINGS_FALLBACK),
+    ])
+
+    const payoutMinimum = Number(
+      settings?.general?.payoutMinAmount ?? SETTINGS_FALLBACK.general.payoutMinAmount
+    )
+
+    const empty = {
+      summary,
+      rows: [],
+      totals: { count: 0, gross: 0, commissionAmount: 0, net: 0 },
+      monthly: emptyMonthBuckets(now, months),
+      monthlyPeak: null,
+      payoutMinimum,
+      currency: summary.currency,
+      truncated: false,
+    }
+    if (!creatorId) return empty
+
+    const [orderPage, ledger] = await Promise.all([
+      orders.list({
+        page: 1,
+        limit: FOLD_LIMIT,
+        sort: 'createdAt',
+        order: SORT_ORDER.DESC,
+        filters: { creatorId, status: [...EARNING_ORDER_STATUSES] },
+      }),
+      transactions.list({ page: 1, limit: FOLD_LIMIT, filters: { userId: creatorId } }),
+    ])
+
+    // MOCK-JOIN: orders carry no payment status and `_expand` is banned
+    // (00 §10), so the escrow state of each row comes from one batched read.
+    // Without it a completed order that was partially refunded would be printed
+    // as a plain release, which is the one place these two records disagree.
+    const orderIds = orderPage.items.map((order) => order.id)
+    const paymentPage = orderIds.length
+      ? await payments.list({
+          page: 1,
+          limit: FOLD_LIMIT,
+          sort: 'createdAt',
+          order: SORT_ORDER.ASC,
+          filters: { orderId: orderIds },
+        })
+      : { items: [] }
+    const paymentByOrder = latestPaymentByOrder(paymentPage.items)
+
+    const rows = orderPage.items
+      .map((order) => {
+        const gross = round2(order.price)
+        const rate = Number.isFinite(Number(order.commissionRate))
+          ? Number(order.commissionRate)
+          : null
+        const commissionAmount = Number.isFinite(Number(order.commissionAmount))
+          ? round2(order.commissionAmount)
+          : applyRate(gross, rate ?? 0)
+        const net = Number.isFinite(Number(order.creatorEarnings))
+          ? round2(order.creatorEarnings)
+          : subtractMoney(gross, commissionAmount)
+
+        return {
+          id: order.id,
+          orderId: order.id,
+          title: order.title,
+          orderStatus: order.status,
+          escrowStatus: paymentByOrder.get(order.id)?.status ?? null,
+          isSettled: order.status === ORDER_STATUS.COMPLETED,
+          settledAt: earningsRowDate(order),
+          gross,
+          commissionRate: rate,
+          commissionAmount,
+          net,
+          currency: order.currency ?? summary.currency,
+        }
+      })
+      .sort((a, b) => Date.parse(b.settledAt ?? 0) - Date.parse(a.settledAt ?? 0))
+
+    const totals = {
+      count: rows.length,
+      gross: sumMoney(rows.map((row) => row.gross)),
+      commissionAmount: sumMoney(rows.map((row) => row.commissionAmount)),
+      net: sumMoney(rows.map((row) => row.net)),
+    }
+
+    const monthly = emptyMonthBuckets(now, months)
+    const bucketByKey = new Map(monthly.map((bucket) => [bucket.key, bucket]))
+    ledger.items
+      .filter((row) => EARNING_TYPES.has(row.type))
+      .forEach((row) => {
+        const bucket = bucketByKey.get(dayjs(row.createdAt).format('YYYY-MM'))
+        // `commission` rows are negative, so a release and its fee net to what
+        // the creator actually kept that month.
+        if (bucket) bucket.amount = sumMoney([bucket.amount, row.amount])
+      })
+
+    const monthlyPeak = monthly.reduce(
+      (best, month) => (best === null || month.amount > best.amount ? month : best),
+      null
+    )
+
+    return {
+      ...empty,
+      rows,
+      totals,
+      monthly,
+      monthlyPeak: monthlyPeak && monthlyPeak.amount > 0 ? monthlyPeak : null,
+      truncated: orderPage.total > orderPage.items.length || ledger.total > ledger.items.length,
     }
   },
 

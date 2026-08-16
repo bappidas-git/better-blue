@@ -505,7 +505,7 @@
       "avatarUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23E5E2EC%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%23171223%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3EAM%3C%2Ftext%3E%3C%2Fsvg%3E",
       "phone": "+1 512 555 0110",
       "createdAt": "2026-04-23T10:15:00.000Z",
-      "lastLoginAt": "2026-08-14T08:30:00.000Z",
+      "lastLoginAt": "2026-08-16T00:12:58.214Z",
       "notificationPrefs": {
         "marketplace": {
           "inApp": true
@@ -10824,7 +10824,7 @@
     {
       "id": "txn_085",
       "type": "payout",
-      "payoutId": "pyo_001",
+      "payoutId": "pyo_002",
       "userId": "usr_creator_ava",
       "amount": -1200,
       "description": "Payout to bank account **** 4821",
@@ -11484,6 +11484,21 @@
     {
       "id": "pyo_001",
       "creatorId": "usr_creator_ava",
+      "amount": 500,
+      "currency": "USD",
+      "method": {
+        "type": "bank",
+        "accountName": "Ava Martinez",
+        "accountMasked": "**** 4821"
+      },
+      "status": "rejected",
+      "requestedAt": "2026-07-05T09:40:00.000Z",
+      "processedAt": "2026-07-07T11:00:00.000Z",
+      "rejectedReason": "The account name on file did not match the bank record, so the transfer was returned. The balance is untouched — update the payout method on your profile and request it again."
+    },
+    {
+      "id": "pyo_002",
+      "creatorId": "usr_creator_ava",
       "amount": 1200,
       "currency": "USD",
       "method": {
@@ -11496,7 +11511,21 @@
       "processedAt": "2026-07-24T11:00:00.000Z"
     },
     {
-      "id": "pyo_002",
+      "id": "pyo_003",
+      "creatorId": "usr_creator_ava",
+      "amount": 600,
+      "currency": "USD",
+      "method": {
+        "type": "bank",
+        "accountName": "Ava Martinez",
+        "accountMasked": "**** 4821"
+      },
+      "status": "processing",
+      "requestedAt": "2026-08-09T09:40:00.000Z",
+      "processedAt": "2026-08-11T11:00:00.000Z"
+    },
+    {
+      "id": "pyo_004",
       "creatorId": "usr_creator_chloe",
       "amount": 400,
       "currency": "USD",
@@ -11511,7 +11540,7 @@
       "rejectedReason": "Payouts are on hold while the account is under Trust & Safety review. The balance stays available and the request can be made again once the review closes."
     },
     {
-      "id": "pyo_003",
+      "id": "pyo_005",
       "creatorId": "usr_creator_liam",
       "amount": 1500,
       "currency": "USD",
@@ -11525,7 +11554,7 @@
       "processedAt": "2026-08-10T11:00:00.000Z"
     },
     {
-      "id": "pyo_004",
+      "id": "pyo_006",
       "creatorId": "usr_creator_isla",
       "amount": 900,
       "currency": "USD",
@@ -14092,7 +14121,7 @@
       "actorRole": "admin",
       "action": "payout.reject",
       "entityType": "payout",
-      "entityId": "pyo_002",
+      "entityId": "pyo_004",
       "meta": {
         "amount": 400,
         "toStatus": "rejected",
@@ -14106,7 +14135,7 @@
       "actorRole": "admin",
       "action": "payout.process",
       "entityType": "payout",
-      "entityId": "pyo_003",
+      "entityId": "pyo_005",
       "meta": {
         "amount": 1500,
         "fromStatus": "requested",

@@ -5,6 +5,7 @@ import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableContainer from '@mui/material/TableContainer'
+import TableFooter from '@mui/material/TableFooter'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import TableSortLabel from '@mui/material/TableSortLabel'
@@ -47,6 +48,9 @@ import TableSkeleton from '@/components/feedback/skeletons/TableSkeleton'
  * @param {(sort: {key: string, direction: 'asc'|'desc'}) => void} [props.onSortChange] sort handler
  * @param {{page: number, pageSize: number, total: number, onPageChange: Function}} [props.pagination]
  *   props forwarded to `PaginationControl` — omit to hide paging
+ * @param {Object<string, React.ReactNode>} [props.footer] a totals row, keyed by column
+ *   key — desktop only, because the mobile layout renders its own summary card.
+ *   Added by Prompt 25 for the earnings breakdown; omit it and nothing changes.
  * @param {(row: object) => void} [props.onRowClick] row activation handler (mouse + Enter/Space)
  * @param {(row: object) => React.ReactNode} props.renderMobileCard card renderer used below md — required
  * @param {'auto'|'table'|'cards'} [props.layout='auto'] force a layout instead of following the viewport
@@ -65,6 +69,7 @@ export default function DataTable({
   sort,
   onSortChange,
   pagination,
+  footer,
   onRowClick,
   renderMobileCard,
   layout = 'auto',
@@ -220,6 +225,32 @@ export default function DataTable({
               </TableRow>
             ))}
           </TableBody>
+          {footer ? (
+            <TableFooter>
+              <TableRow
+                sx={{
+                  '& td': {
+                    borderBottom: 0,
+                    borderTop: 2,
+                    borderTopStyle: 'solid',
+                    borderTopColor: 'divider',
+                    // A totals row is read, not skimmed: it keeps the body's
+                    // type size and colour rather than the muted footer default.
+                    color: 'text.primary',
+                    fontSize: (theme) => theme.typography.body2.fontSize,
+                    fontWeight: 700,
+                    bgcolor: 'background.default',
+                  },
+                }}
+              >
+                {columns.map((column) => (
+                  <TableCell key={column.key} align={column.align ?? 'left'}>
+                    {footer[column.key] ?? null}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableFooter>
+          ) : null}
         </Table>
       </TableContainer>
     )

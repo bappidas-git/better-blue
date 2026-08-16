@@ -359,12 +359,34 @@ reporting reads. This matches the seeded ledger exactly (`scripts/seed-data/fina
 | `available` | `balance − pendingPayouts`, floored at zero |
 | `paidOut` | payouts in `paid` |
 
+`paymentService.getEarningsBreakdown(creatorId)` is the screen-shaped version of
+the same money (contract §7 operation 21, Prompt 25). It returns that summary
+untouched, plus one row per order that carries money, the totals under them, the
+payout minimum, and twelve months of net earnings bucketed from the ledger. It
+exists so that **nothing above the services layer performs money arithmetic**:
+the tiles, the per-order table, and the chart on `/creator/earnings` reconcile
+because they are three folds of the same reads rather than three calculations.
+
+A row's `net` is `orders.creatorEarnings`, which is also what its `release` and
+`commission` rows net to — so the table and the ledger cannot drift. A row's
+escrow chip comes from the **payment**, not the order status, because a completed
+order that was partially refunded is the one case where those two disagree.
+
 `requestPayout(creatorId, { amount })` guards the amount against
 `platformSettings.general.payoutMinAmount` (seeded `50`) and `available`, both
 reported as `validation_failed` with `details.amount`. It snapshots the
 creator's `payoutMethod` onto the payout row so a later change of bank details
 cannot rewrite history, and writes **no ledger row** — money leaves the balance
 only when finance marks the payout `paid`.
+
+**The same money cannot be withdrawn twice.** A `requested` payout is subtracted
+from `available` the moment the row exists, and `requestPayout` re-derives
+`available` from the ledger on every call rather than trusting a figure a screen
+is holding — so a second request for the amount just withdrawn is a
+`validation_failed`, whether it comes from a stale tab, a double click, or a
+crafted request. The earnings screen re-reads both after a successful
+withdrawal, so the button it offers is disabled for the same reason the service
+would have refused it.
 
 > **SECURITY** — the balance is computed in the browser and JSON Server checks
 > nothing. This is the clearest "never trust the client" case in the whole API
