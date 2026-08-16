@@ -24,6 +24,7 @@ import CardSkeleton from '@/components/feedback/skeletons/CardSkeleton'
 import { useConfirm } from '@/components/feedback/ConfirmDialogProvider'
 import { useToast } from '@/components/feedback/ToastProvider'
 import StickyActionBar from '@/components/layout/StickyActionBar'
+import { AUDIT_ACTION } from '@/constants/auditActions'
 import { PERMISSIONS } from '@/constants/permissions'
 import { ROLES } from '@/constants/roles'
 import { ACCOUNT_STATUS, STATUS_META } from '@/constants/statuses'
@@ -71,23 +72,34 @@ const TAB = Object.freeze({
   AUDIT: 'audit',
 })
 
-/** How an audit verb reads in a sentence. Unknown verbs print themselves. */
+/**
+ * How an audit verb reads in a sentence. Unknown verbs print themselves.
+ *
+ * Keyed off `AUDIT_ACTION` since Prompt 36 — the account tab shows the handful
+ * of verbs that land on a `user` record, and spelling them here rather than
+ * importing the constants was how `admin.suspend` came to be missing from the
+ * list the day it was added.
+ */
 const AUDIT_LABEL = Object.freeze({
-  'user.suspend': 'Account suspended',
-  'user.blacklist': 'Account blacklisted',
-  'user.reactivate': 'Account reactivated',
-  'user.verify': 'Verification updated',
-  'user.deactivate': 'Account closed by the member',
-  'admin.create': 'Admin account created',
-  'admin.permissions.update': 'Permissions changed',
+  [AUDIT_ACTION.USER_SUSPEND]: 'Account suspended',
+  [AUDIT_ACTION.USER_BLACKLIST]: 'Account blacklisted',
+  [AUDIT_ACTION.USER_REACTIVATE]: 'Account reactivated',
+  [AUDIT_ACTION.USER_VERIFY]: 'Verification updated',
+  [AUDIT_ACTION.USER_DEACTIVATE]: 'Account closed by the member',
+  [AUDIT_ACTION.ADMIN_CREATE]: 'Admin account created',
+  [AUDIT_ACTION.ADMIN_PERMISSIONS_UPDATE]: 'Permissions changed',
+  [AUDIT_ACTION.ADMIN_SUSPEND]: 'Team access suspended',
+  [AUDIT_ACTION.ADMIN_REACTIVATE]: 'Team access restored',
 })
 
 /** Tone per verb, so a suspension and a reinstatement do not look identical. */
 const AUDIT_TONE = Object.freeze({
-  'user.suspend': 'warning',
-  'user.blacklist': 'error',
-  'user.reactivate': 'success',
-  'user.verify': 'info',
+  [AUDIT_ACTION.USER_SUSPEND]: 'warning',
+  [AUDIT_ACTION.USER_BLACKLIST]: 'error',
+  [AUDIT_ACTION.USER_REACTIVATE]: 'success',
+  [AUDIT_ACTION.USER_VERIFY]: 'info',
+  [AUDIT_ACTION.ADMIN_SUSPEND]: 'warning',
+  [AUDIT_ACTION.ADMIN_REACTIVATE]: 'success',
 })
 
 /**

@@ -1015,6 +1015,82 @@ An admin record additionally carries `permissions` (keys from
 Errors: `403` `forbidden` (editing another account, or escalating your own
 role) · `404` `not_found` · `409` `conflict` (email taken) · `422`.
 
+#### Admin team operations (Prompt 36)
+
+The console's team screen (`/admin/admins`) is a **composite** over `/users`,
+the same way the account directory is: one target endpoint per intention, each
+of which the mock stack assembles client-side in `adminTeamService`.
+
+| Method | Path | Access | Purpose |
+|---|---|---|---|
+| `GET` | `/admin/admins` | `admins.manage` | The team, with activity aggregates |
+| `POST` | `/admin/admins` | `admins.manage` | Create an admin and invite them |
+| `PATCH` | `/admin/admins/:id/permissions` | `admins.manage` | Replace the grant |
+| `PATCH` | `/admin/admins/:id/status` | `admins.manage` | Suspend / reinstate |
+
+**`GET /admin/admins`** — `users` filtered to `admin` + `super_admin`, each row
+carrying `permissions` plus two derived figures:
+
+```json
+{ "items": [ { "id": "usr_admin_priya", "name": "Priya Raman",
+  "email": "priya.raman@betterblue.test", "role": "admin",
+  "accountStatus": "active", "permissions": ["moderation.review", "…"],
+  "lastActiveAt": "2026-08-15T09:00:00.000Z", "actionsThisMonth": 4 } ],
+  "total": 6 }
+```
+
+`actionsThisMonth` counts `auditLogs` rows by that actor since the first of the
+current month; `null` means the count could not be read and is **not** rendered
+as `0`. MOCK-AGGREGATE: one counted read per member client-side; Laravel answers
+it with one `GROUP BY actor_id`.
+
+**`POST /admin/admins`** — `{ name, email, permissions[] }` → `201` with the
+created account. At least one permission is required (`422` otherwise), the
+address must be free (`409` otherwise), and `role` is always `admin`: v1 creates
+no super admins (see the protection rules below).
+
+> **Laravel** — the mock generates a readable one-time password
+> (`BB-Temp-XKZ4`) and returns it in the response body, because JSON Server has
+> no mail: it is the stand-in for the invitation email and the console shows it
+> exactly once. **The real endpoint must not do this.** Create the account with
+> no credential, email a signed, expiring invitation link, and let the invitee
+> set their own password. No API response should ever carry a password.
+
+**`PATCH /admin/admins/:id/permissions`** — `{ permissions: [...] }`, the
+**complete** new array rather than a delta: the array *is* the grant, and a
+delta protocol lets two clients disagree about the resulting state. The audit
+entry carries both the diff and both sides (`meta.added`, `meta.removed`,
+`meta.from`, `meta.to`).
+
+**`PATCH /admin/admins/:id/status`** — `{ status, reason }`, where `status` is
+`active` or `suspended` only. `blacklisted` is a marketplace judgement about a
+member and is not applicable to a colleague; `deactivated` is self-service.
+Suspension writes `statusReason` / `statusChangedAt` / `statusChangedById` on
+the account exactly as §6.2's member actions do, and takes effect at sign-in and
+on the next `GET /auth/me` (§2.3).
+
+**Protection rules — server-enforced, not merely hidden.** All three mutations
+reject:
+
+1. **the caller acting on themselves** — losing your own console access is the
+   one mistake with no in-app recovery;
+2. **any action on a `super_admin`** — v1 ships exactly one, seeded, and nothing
+   in the console creates, edits, or suspends one. Promotion is deliberately
+   out-of-band (a migration or an artisan command), so the platform cannot lock
+   itself out of itself;
+3. **a caller who is not a `super_admin`** — the console's Platform section is
+   role-gated as well as permission-gated (§9).
+
+Suspended admins keep everything: the account, the permission array, and every
+audit line they wrote. There is no delete, here or anywhere in this contract.
+
+> **Laravel authorization** — repeat all three rules in a Policy
+> (`AdminPolicy@manage`) and re-check them in the controller. The console hides
+> the controls and `adminTeamService` re-checks before it calls, but both run in
+> the browser and prove nothing (§9.1). Permission changes take effect for the
+> target on their next token resolution; if you need them to be immediate,
+> revoke the target's tokens in the same transaction.
+
 ---
 
 ### 6.3 `buyerProfiles`
@@ -2921,6 +2997,15 @@ Entries are written as a side effect of the admin actions in §7.
 `createdAt_gte` / `createdAt_lte` · `search` (`action`) ·
 `sort`: `createdAt` (default `desc`).
 
+**The explorer's query (Prompt 36).** `/admin/audit-logs` composes exactly those
+parameters — actor, action namespace, entity type, date range, and an entity id —
+plus `page` / `limit` (50 a page). The namespace filter is expanded client-side
+into *every action in that namespace* (`?ns=dispute` → `action=dispute.assign&
+action=dispute.close&…`) because the provider has no prefix matching; the
+server-side version is `WHERE action LIKE 'dispute.%'`, which is why the
+vocabulary below is worth keeping in one place. Responses are enriched with the
+actor's name (`GET /users?id=…`, one read per page); Laravel eager-loads it.
+
 **Response** `200 OK`
 
 ```json
@@ -2936,22 +3021,51 @@ Entries are written as a side effect of the admin actions in §7.
 }
 ```
 
-`action` is dot-namespaced `domain.verb`. The seeded vocabulary — extend it,
-do not rename it:
+`action` is dot-namespaced `domain.verb`. **Since Prompt 36 the vocabulary lives
+in `src/constants/auditActions.js`** — one frozen `AUDIT_ACTION` map that every
+service, every screen, and the seed script import from. No raw action literal
+remains anywhere in `src/` or `scripts/` (grep-verifiable), which is what makes
+the explorer's namespace filter complete by construction: a verb that is not in
+that file cannot be written, and therefore cannot be missing from a filter.
+Extend it, do not rename — the trail is append-only and a renamed verb orphans
+every entry already written under the old spelling.
 
 ```
-admin.create · admin.permissions.update · affiliate.earning.approve
-affiliate.earning.void · affiliate.reactivate · affiliate.suspend · announcement.send
-category.activate · category.create · category.deactivate · category.reorder
-category.update · content.restrict · creator.feature · dispute.assign
-dispute.close · dispute.escalate · dispute.open · dispute.request_info
-dispute.resolve · moderation.approve · moderation.reject
-moderation.request_changes · order.cancel · order.note · payment.refund
-payout.mark_paid · payout.process · payout.reject · report.action
-report.dismiss · report.review · request.close · settings.update
-ticket.close · ticket.reopen · ticket.reply · ticket.resolve · user.blacklist
-user.deactivate · user.reactivate · user.suspend · user.verify
+admin.create · admin.permissions.update · admin.reactivate · admin.suspend
+affiliate.earning.approve · affiliate.earning.void · affiliate.reactivate
+affiliate.suspend · announcement.send · category.activate · category.create
+category.deactivate · category.reorder · category.update · content.restrict
+creator.feature · dispute.assign · dispute.close · dispute.escalate
+dispute.open · dispute.request_info · dispute.resolve · moderation.approve
+moderation.claim · moderation.open · moderation.reject
+moderation.request_changes · moderation.restrict · order.cancel · order.note
+payment.refund · payment.release · payout.mark_paid · payout.process
+payout.reject · report.action · report.dismiss · report.review · request.close
+settings.update · ticket.close · ticket.reopen · ticket.reply · ticket.resolve
+user.blacklist · user.deactivate · user.reactivate · user.suspend · user.verify
 ```
+
+Prompt 36 added five verbs and corrected one mapping. `admin.suspend` and
+`admin.reactivate` complete the `admin.*` family alongside the seeded
+`admin.create` and `admin.permissions.update` — they are the team screen's
+offboarding pair, and they are deliberately *not* `user.suspend`: suspending a
+colleague and suspending a member are different decisions under different
+permissions, and an investigator filtering "what happened to the team" should
+not have to read every member suspension to find them. `moderation.claim` and
+`moderation.open` closed the two gaps Prompt 36's coverage sweep found — taking
+a case out of the queue, and opening one against published content, were both
+unrecorded (see `docs/audit-log-coverage.md`). The correction: a `reviewed`
+report outcome was writing `report.action`, which read in the trail as an action
+taken; it now writes the seeded `report.review`, and `report.action` means what
+its name says.
+
+The `admin.*` verbs carry the fullest `meta` after `dispute.resolve`:
+
+| Action | `meta` |
+|---|---|
+| `admin.create` | `{ name, email, role, permissionCount, permissions[] }` |
+| `admin.permissions.update` | `{ name, added[], removed[], from[], to[] }` — the diff **and** both sides, so the entry answers "what could they do before, and after" without a second lookup |
+| `admin.suspend` / `admin.reactivate` | `{ name, fromStatus, toStatus, reason?, permissions[] }` — the grant recorded at the moment access was withdrawn |
 
 Prompt 35 completed the `category.*` family. `category.update` was seeded;
 `category.create`, `category.activate`, `category.deactivate`, and
@@ -3002,10 +3116,26 @@ still not audited here.
 the detail behind the action (`{ fromStatus, toStatus, reason }`, `{ amount }`,
 `{ added, removed }`, …).
 
+**Immutability, verified.** `auditService` exposes `list`, `getById`, and `log`
+— and nothing else. There is no update path and no delete path in the product to
+call, at any permission level: the whole of `src/` reaches `auditLogs` through
+that service (grep-verified, Prompt 36), the explorer at `/admin/audit-logs` is
+read-only by construction, and the trail is the one collection with no admin
+affordance to change a row.
+
+**Retention.** The mock stack keeps every entry indefinitely — `db.json` is
+regenerated by the seed, never pruned — and the explorer says so on the screen
+rather than implying a policy it does not have. Production applies one: archive
+by month, retain for the statutory period, then purge in bulk from a scheduled
+job. A purge is a data-lifecycle operation run against the database, **never an
+endpoint and never a button**; nothing a console user does may remove an entry.
+
 > **Laravel** — grant no `UPDATE`/`DELETE` on this table at the database-user
-> level, not just in application code. `meta JSON`; index
-> `(actor_id, created_at DESC)`, `(entity_type, entity_id)`,
-> `(action, created_at DESC)`. Partition or archive by month once it grows.
+> level, not just in application code (the archive job runs as a different,
+> privileged user). `meta JSON`; index `(actor_id, created_at DESC)`,
+> `(entity_type, entity_id)`, `(action, created_at DESC)`. Partition or archive
+> by month once it grows. Enforce `audit.view` on both endpoints — the trail
+> names members, quotes internal notes, and reconstructs money decisions.
 
 ---
 

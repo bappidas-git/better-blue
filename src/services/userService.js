@@ -14,6 +14,7 @@
 
 import dayjs from 'dayjs'
 
+import { AUDIT_ACTION } from '@/constants/auditActions'
 import { NOTIFICATION_TYPE } from '@/constants/notificationTypes'
 import { ROLES } from '@/constants/roles'
 import { ACCOUNT_STATUS, STATUS_META } from '@/constants/statuses'
@@ -93,22 +94,17 @@ export const STATUS_REASON_MIN_LENGTH = 10
 export const STATUS_REASON_MAX_LENGTH = 500
 
 /**
- * Audit verbs for account actions, from the contract's vocabulary (§6.26).
- * `user.verify` is the seeded spelling for the creator badge — extend the
- * vocabulary, never rename it.
+ * Which verb each destination status is recorded under.
+ *
+ * Prompt 36 moved the four account verbs into `constants/auditActions.js` — the
+ * one vocabulary every service and the seed now read — and this map is what is
+ * left of the local copy: the status → verb decision, which is genuinely this
+ * service's.
  */
-export const USER_AUDIT_ACTION = Object.freeze({
-  SUSPEND: 'user.suspend',
-  BLACKLIST: 'user.blacklist',
-  REACTIVATE: 'user.reactivate',
-  VERIFY: 'user.verify',
-})
-
-/** Which verb each destination status is recorded under. */
 const AUDIT_ACTION_BY_STATUS = Object.freeze({
-  [ACCOUNT_STATUS.SUSPENDED]: USER_AUDIT_ACTION.SUSPEND,
-  [ACCOUNT_STATUS.BLACKLISTED]: USER_AUDIT_ACTION.BLACKLIST,
-  [ACCOUNT_STATUS.ACTIVE]: USER_AUDIT_ACTION.REACTIVATE,
+  [ACCOUNT_STATUS.SUSPENDED]: AUDIT_ACTION.USER_SUSPEND,
+  [ACCOUNT_STATUS.BLACKLISTED]: AUDIT_ACTION.USER_BLACKLIST,
+  [ACCOUNT_STATUS.ACTIVE]: AUDIT_ACTION.USER_REACTIVATE,
 })
 
 /**
@@ -692,7 +688,7 @@ export const userService = Object.freeze({
         await auditService.log({
           actorId: actor.id,
           actorRole: actor.role ?? ROLES.ADMIN,
-          action: USER_AUDIT_ACTION.VERIFY,
+          action: AUDIT_ACTION.USER_VERIFY,
           entityType: 'user',
           entityId: updated.userId,
           meta: { verified: next, profileId },

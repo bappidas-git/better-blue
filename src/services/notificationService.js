@@ -10,6 +10,7 @@ import {
   allowsInAppCategory,
   isMandatoryNotification,
 } from '@/constants/notificationTypes'
+import { AUDIT_ACTION } from '@/constants/auditActions'
 import { hasPermission } from '@/constants/permissions'
 import { ADMIN_ROLES, ROLES } from '@/constants/roles'
 import { ACCOUNT_STATUS } from '@/constants/statuses'
@@ -429,7 +430,7 @@ export const notificationService = Object.freeze({
         await auditService.log({
           actorId: actor.id,
           actorRole: actor.role,
-          action: 'announcement.send',
+          action: AUDIT_ACTION.ANNOUNCEMENT_SEND,
           entityType: 'platform_settings',
           meta: { title: safeTitle, body: safeBody, audience, recipientCount: total, sent, failed },
         })
@@ -463,7 +464,7 @@ export const notificationService = Object.freeze({
     const result = await auditService.list({
       page,
       limit,
-      filters: { action: 'announcement.send' },
+      filters: { action: AUDIT_ACTION.ANNOUNCEMENT_SEND },
     })
 
     return {

@@ -127,6 +127,17 @@ export { affiliateService } from './affiliateService'
 export { settingsService, SETTINGS_FALLBACK } from './settingsService'
 export { auditService } from './auditService'
 export { adminService } from './adminService'
+export {
+  adminTeamService,
+  ADMIN_SETTABLE_TEAM_STATUSES,
+  SUPER_ADMIN_POLICY,
+  TEAM_REASON_MAX_LENGTH,
+  TEAM_REASON_MIN_LENGTH,
+  TEAM_ROLES,
+  TEMP_PASSWORD_PREFIX,
+  canManageAdmin,
+  diffPermissions,
+} from './adminTeamService'
 
 /* Uploads ----------------------------------------------------------------- */
 export {

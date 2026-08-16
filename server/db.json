@@ -180,6 +180,84 @@
       ]
     },
     {
+      "id": "usr_admin_theo",
+      "email": "theo.almeida@betterblue.test",
+      "password": "Password123!",
+      "role": "admin",
+      "accountStatus": "active",
+      "name": "Theo Almeida",
+      "avatarUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23FDF2F8%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%23BE185D%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3ETA%3C%2Ftext%3E%3C%2Fsvg%3E",
+      "createdAt": "2026-07-19T10:15:00.000Z",
+      "lastLoginAt": "2026-08-13T08:30:00.000Z",
+      "notificationPrefs": {
+        "marketplace": {
+          "inApp": true
+        },
+        "orders": {
+          "inApp": true
+        },
+        "payments": {
+          "inApp": true
+        },
+        "disputes": {
+          "inApp": true
+        },
+        "moderation": {
+          "inApp": true
+        },
+        "affiliate": {
+          "inApp": true
+        },
+        "system": {
+          "inApp": true
+        }
+      },
+      "permissions": [
+        "moderation.review"
+      ]
+    },
+    {
+      "id": "usr_admin_sofia",
+      "email": "sofia.delgado@betterblue.test",
+      "password": "Password123!",
+      "role": "admin",
+      "accountStatus": "suspended",
+      "name": "Sofia Delgado",
+      "avatarUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23F5F3FF%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%237C3AED%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3ESD%3C%2Ftext%3E%3C%2Fsvg%3E",
+      "createdAt": "2026-06-01T10:15:00.000Z",
+      "lastLoginAt": "2026-08-02T08:30:00.000Z",
+      "statusReason": "Left the BetterBlue team at the end of their contract. Console access withdrawn; their record and past decisions are kept.",
+      "statusChangedAt": "2026-08-03T11:20:00.000Z",
+      "statusChangedById": "usr_super",
+      "notificationPrefs": {
+        "marketplace": {
+          "inApp": true
+        },
+        "orders": {
+          "inApp": true
+        },
+        "payments": {
+          "inApp": true
+        },
+        "disputes": {
+          "inApp": true
+        },
+        "moderation": {
+          "inApp": true
+        },
+        "affiliate": {
+          "inApp": true
+        },
+        "system": {
+          "inApp": true
+        }
+      },
+      "permissions": [
+        "support.manage",
+        "reports.manage"
+      ]
+    },
+    {
       "id": "usr_buyer_verde",
       "email": "buyer@betterblue.test",
       "password": "Password123!",
@@ -15106,6 +15184,44 @@
       "id": "aud_004",
       "actorId": "usr_super",
       "actorRole": "super_admin",
+      "action": "admin.create",
+      "entityType": "user",
+      "entityId": "usr_admin_sofia",
+      "meta": {
+        "name": "Sofia Delgado",
+        "email": "sofia.delgado@betterblue.test",
+        "role": "admin",
+        "permissionCount": 2,
+        "permissions": [
+          "support.manage",
+          "reports.manage"
+        ]
+      },
+      "createdAt": "2026-06-01T15:45:00.000Z"
+    },
+    {
+      "id": "aud_005",
+      "actorId": "usr_super",
+      "actorRole": "super_admin",
+      "action": "admin.create",
+      "entityType": "user",
+      "entityId": "usr_admin_theo",
+      "meta": {
+        "name": "Theo Almeida",
+        "email": "theo.almeida@betterblue.test",
+        "role": "admin",
+        "permissionCount": 2,
+        "permissions": [
+          "moderation.review",
+          "content.manage"
+        ]
+      },
+      "createdAt": "2026-07-19T15:45:00.000Z"
+    },
+    {
+      "id": "aud_006",
+      "actorId": "usr_super",
+      "actorRole": "super_admin",
       "action": "settings.update",
       "entityType": "platform_settings",
       "entityId": "platformSettings",
@@ -15118,7 +15234,7 @@
       "createdAt": "2026-05-10T15:45:00.000Z"
     },
     {
-      "id": "aud_005",
+      "id": "aud_007",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "category.update",
@@ -15132,7 +15248,7 @@
       "createdAt": "2026-05-18T15:45:00.000Z"
     },
     {
-      "id": "aud_006",
+      "id": "aud_008",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "user.verify",
@@ -15145,7 +15261,7 @@
       "createdAt": "2026-04-26T15:45:00.000Z"
     },
     {
-      "id": "aud_007",
+      "id": "aud_009",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "user.verify",
@@ -15158,7 +15274,7 @@
       "createdAt": "2026-04-27T15:45:00.000Z"
     },
     {
-      "id": "aud_008",
+      "id": "aud_010",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "user.verify",
@@ -15171,7 +15287,7 @@
       "createdAt": "2026-04-28T15:45:00.000Z"
     },
     {
-      "id": "aud_009",
+      "id": "aud_011",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "user.verify",
@@ -15184,7 +15300,7 @@
       "createdAt": "2026-05-02T15:45:00.000Z"
     },
     {
-      "id": "aud_010",
+      "id": "aud_012",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "creator.feature",
@@ -15197,7 +15313,7 @@
       "createdAt": "2026-06-11T15:45:00.000Z"
     },
     {
-      "id": "aud_011",
+      "id": "aud_013",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "creator.feature",
@@ -15210,7 +15326,7 @@
       "createdAt": "2026-06-12T15:45:00.000Z"
     },
     {
-      "id": "aud_012",
+      "id": "aud_014",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "moderation.approve",
@@ -15223,7 +15339,7 @@
       "createdAt": "2026-06-21T00:20:00.000Z"
     },
     {
-      "id": "aud_013",
+      "id": "aud_015",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "moderation.approve",
@@ -15236,7 +15352,7 @@
       "createdAt": "2026-07-22T00:20:00.000Z"
     },
     {
-      "id": "aud_014",
+      "id": "aud_016",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "moderation.approve",
@@ -15249,7 +15365,7 @@
       "createdAt": "2026-07-29T00:20:00.000Z"
     },
     {
-      "id": "aud_015",
+      "id": "aud_017",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "moderation.request_changes",
@@ -15262,7 +15378,7 @@
       "createdAt": "2026-07-29T00:20:00.000Z"
     },
     {
-      "id": "aud_016",
+      "id": "aud_018",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "moderation.request_changes",
@@ -15275,7 +15391,7 @@
       "createdAt": "2026-08-01T00:20:00.000Z"
     },
     {
-      "id": "aud_017",
+      "id": "aud_019",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "moderation.reject",
@@ -15288,7 +15404,7 @@
       "createdAt": "2026-07-30T00:20:00.000Z"
     },
     {
-      "id": "aud_018",
+      "id": "aud_020",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "moderation.reject",
@@ -15301,7 +15417,7 @@
       "createdAt": "2026-08-03T00:20:00.000Z"
     },
     {
-      "id": "aud_019",
+      "id": "aud_021",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "content.restrict",
@@ -15315,7 +15431,7 @@
       "createdAt": "2026-07-04T12:20:00.000Z"
     },
     {
-      "id": "aud_020",
+      "id": "aud_022",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "report.action",
@@ -15328,7 +15444,7 @@
       "createdAt": "2026-07-04T12:20:00.000Z"
     },
     {
-      "id": "aud_021",
+      "id": "aud_023",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "report.review",
@@ -15341,7 +15457,7 @@
       "createdAt": "2026-07-13T15:45:00.000Z"
     },
     {
-      "id": "aud_022",
+      "id": "aud_024",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "report.dismiss",
@@ -15354,7 +15470,7 @@
       "createdAt": "2026-08-10T15:45:00.000Z"
     },
     {
-      "id": "aud_023",
+      "id": "aud_025",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "user.suspend",
@@ -15368,7 +15484,7 @@
       "createdAt": "2026-07-16T15:45:00.000Z"
     },
     {
-      "id": "aud_024",
+      "id": "aud_026",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "user.blacklist",
@@ -15382,7 +15498,7 @@
       "createdAt": "2026-07-05T15:45:00.000Z"
     },
     {
-      "id": "aud_025",
+      "id": "aud_027",
       "actorId": "usr_buyer_foundry",
       "actorRole": "buyer",
       "action": "user.deactivate",
@@ -15397,7 +15513,7 @@
       "createdAt": "2026-06-21T15:45:00.000Z"
     },
     {
-      "id": "aud_026",
+      "id": "aud_028",
       "actorId": "usr_super",
       "actorRole": "super_admin",
       "action": "admin.permissions.update",
@@ -15413,7 +15529,7 @@
       "createdAt": "2026-06-17T15:45:00.000Z"
     },
     {
-      "id": "aud_027",
+      "id": "aud_029",
       "actorId": "usr_super",
       "actorRole": "super_admin",
       "action": "admin.permissions.update",
@@ -15428,7 +15544,49 @@
       "createdAt": "2026-06-30T15:45:00.000Z"
     },
     {
-      "id": "aud_028",
+      "id": "aud_030",
+      "actorId": "usr_super",
+      "actorRole": "super_admin",
+      "action": "admin.permissions.update",
+      "entityType": "user",
+      "entityId": "usr_admin_theo",
+      "meta": {
+        "name": "Theo Almeida",
+        "added": [],
+        "removed": [
+          "content.manage"
+        ],
+        "from": [
+          "moderation.review",
+          "content.manage"
+        ],
+        "to": [
+          "moderation.review"
+        ]
+      },
+      "createdAt": "2026-08-01T15:45:00.000Z"
+    },
+    {
+      "id": "aud_031",
+      "actorId": "usr_super",
+      "actorRole": "super_admin",
+      "action": "admin.suspend",
+      "entityType": "user",
+      "entityId": "usr_admin_sofia",
+      "meta": {
+        "name": "Sofia Delgado",
+        "fromStatus": "active",
+        "toStatus": "suspended",
+        "reason": "Left the BetterBlue team at the end of their contract. Console access withdrawn; their record and past decisions are kept.",
+        "permissions": [
+          "support.manage",
+          "reports.manage"
+        ]
+      },
+      "createdAt": "2026-08-03T15:45:00.000Z"
+    },
+    {
+      "id": "aud_032",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "dispute.assign",
@@ -15441,7 +15599,7 @@
       "createdAt": "2026-07-06T15:45:00.000Z"
     },
     {
-      "id": "aud_029",
+      "id": "aud_033",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "dispute.resolve",
@@ -15454,7 +15612,7 @@
       "createdAt": "2026-07-12T15:45:00.000Z"
     },
     {
-      "id": "aud_030",
+      "id": "aud_034",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "payment.refund",
@@ -15467,7 +15625,7 @@
       "createdAt": "2026-07-12T15:45:00.000Z"
     },
     {
-      "id": "aud_031",
+      "id": "aud_035",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "dispute.assign",
@@ -15480,7 +15638,7 @@
       "createdAt": "2026-07-20T15:45:00.000Z"
     },
     {
-      "id": "aud_032",
+      "id": "aud_036",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "dispute.resolve",
@@ -15493,7 +15651,7 @@
       "createdAt": "2026-07-27T15:45:00.000Z"
     },
     {
-      "id": "aud_033",
+      "id": "aud_037",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "payment.refund",
@@ -15506,7 +15664,7 @@
       "createdAt": "2026-07-27T15:45:00.000Z"
     },
     {
-      "id": "aud_034",
+      "id": "aud_038",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "dispute.assign",
@@ -15519,7 +15677,7 @@
       "createdAt": "2026-07-25T15:45:00.000Z"
     },
     {
-      "id": "aud_035",
+      "id": "aud_039",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "dispute.resolve",
@@ -15532,7 +15690,7 @@
       "createdAt": "2026-07-31T15:45:00.000Z"
     },
     {
-      "id": "aud_036",
+      "id": "aud_040",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "dispute.close",
@@ -15545,7 +15703,7 @@
       "createdAt": "2026-08-02T15:45:00.000Z"
     },
     {
-      "id": "aud_037",
+      "id": "aud_041",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "dispute.assign",
@@ -15558,7 +15716,7 @@
       "createdAt": "2026-07-28T15:45:00.000Z"
     },
     {
-      "id": "aud_038",
+      "id": "aud_042",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "order.cancel",
@@ -15570,7 +15728,7 @@
       "createdAt": "2026-07-24T15:45:00.000Z"
     },
     {
-      "id": "aud_039",
+      "id": "aud_043",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "request.close",
@@ -15582,7 +15740,7 @@
       "createdAt": "2026-07-05T15:45:00.000Z"
     },
     {
-      "id": "aud_040",
+      "id": "aud_044",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "payout.process",
@@ -15596,7 +15754,7 @@
       "createdAt": "2026-07-22T15:45:00.000Z"
     },
     {
-      "id": "aud_041",
+      "id": "aud_045",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "payout.mark_paid",
@@ -15609,7 +15767,7 @@
       "createdAt": "2026-07-24T15:45:00.000Z"
     },
     {
-      "id": "aud_042",
+      "id": "aud_046",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "payout.reject",
@@ -15623,7 +15781,7 @@
       "createdAt": "2026-07-21T15:45:00.000Z"
     },
     {
-      "id": "aud_043",
+      "id": "aud_047",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "payout.process",
@@ -15637,7 +15795,7 @@
       "createdAt": "2026-08-10T15:45:00.000Z"
     },
     {
-      "id": "aud_044",
+      "id": "aud_048",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "affiliate.earning.approve",
@@ -15650,7 +15808,7 @@
       "createdAt": "2026-06-23T15:45:00.000Z"
     },
     {
-      "id": "aud_045",
+      "id": "aud_049",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "affiliate.suspend",
@@ -15663,7 +15821,7 @@
       "createdAt": "2026-07-30T15:45:00.000Z"
     },
     {
-      "id": "aud_046",
+      "id": "aud_050",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "affiliate.earning.void",
@@ -15676,7 +15834,7 @@
       "createdAt": "2026-07-30T15:45:00.000Z"
     },
     {
-      "id": "aud_047",
+      "id": "aud_051",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "ticket.reply",
@@ -15688,7 +15846,7 @@
       "createdAt": "2026-08-05T15:45:00.000Z"
     },
     {
-      "id": "aud_048",
+      "id": "aud_052",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "ticket.reply",
@@ -15700,7 +15858,7 @@
       "createdAt": "2026-08-04T15:45:00.000Z"
     },
     {
-      "id": "aud_049",
+      "id": "aud_053",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "ticket.close",
@@ -15713,7 +15871,7 @@
       "createdAt": "2026-07-24T15:45:00.000Z"
     },
     {
-      "id": "aud_050",
+      "id": "aud_054",
       "actorId": "usr_super",
       "actorRole": "super_admin",
       "action": "settings.update",
@@ -15728,7 +15886,7 @@
       "createdAt": "2026-08-02T15:45:00.000Z"
     },
     {
-      "id": "aud_051",
+      "id": "aud_055",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "announcement.send",

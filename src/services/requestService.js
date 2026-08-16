@@ -9,6 +9,7 @@
 // Keep it that way when extending these three.
 
 import { appConfig } from '@/config/appConfig'
+import { AUDIT_ACTION } from '@/constants/auditActions'
 import { NOTIFICATION_TYPE } from '@/constants/notificationTypes'
 import { REQUEST_STATUS_MACHINE } from '@/constants/stateMachines'
 import {
@@ -1008,7 +1009,7 @@ export const requestService = Object.freeze({
         await auditService.log({
           actorId: actor.id,
           actorRole: actor.role,
-          action: 'request.close',
+          action: AUDIT_ACTION.REQUEST_CLOSE,
           entityType: 'request',
           entityId: request.id,
           meta: {

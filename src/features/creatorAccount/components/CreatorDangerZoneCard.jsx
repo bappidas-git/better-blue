@@ -14,6 +14,7 @@ import { alpha } from '@mui/material/styles'
 
 import { useConfirm } from '@/components/feedback/ConfirmDialogProvider'
 import { useToast } from '@/components/feedback/ToastProvider'
+import { AUDIT_ACTION } from '@/constants/auditActions'
 import { ACCOUNT_STATUS } from '@/constants/statuses'
 import { useAuth } from '@/context/AuthContext'
 import useApiQuery from '@/hooks/useApiQuery'
@@ -38,9 +39,6 @@ import { formatNumber } from '@/utils/formatters'
 //
 // SECURITY: this guard is UX (00 §11). The Laravel API must run the same check
 // before it will accept the status change.
-
-/** Audit verb for a member deactivating their own account (contract §6.26). */
-const AUDIT_ACTION = 'user.deactivate'
 
 export default function CreatorDangerZoneCard() {
   const { user, logout } = useAuth()
@@ -85,7 +83,7 @@ export default function CreatorDangerZoneCard() {
         await auditService.log({
           actorId: user.id,
           actorRole: user.role,
-          action: AUDIT_ACTION,
+          action: AUDIT_ACTION.USER_DEACTIVATE,
           entityType: 'user',
           entityId: user.id,
           meta: {

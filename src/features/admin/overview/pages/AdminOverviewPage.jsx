@@ -1,11 +1,15 @@
+import { Icon } from '@iconify/react'
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import { Link as RouterLink } from 'react-router-dom'
 
 import ErrorState from '@/components/feedback/ErrorState'
+import { PERMISSIONS } from '@/constants/permissions'
 import { useAuth } from '@/context/AuthContext'
 import AttentionQueues from '@/features/admin/overview/components/AttentionQueues'
 import AuditFeed from '@/features/admin/overview/components/AuditFeed'
@@ -17,6 +21,8 @@ import ThemedLineChart from '@/features/dashboard/components/ThemedLineChart'
 import WelcomeBanner from '@/features/dashboard/components/WelcomeBanner'
 import useApiQuery from '@/hooks/useApiQuery'
 import DashboardPage from '@/layouts/dashboard/DashboardPage'
+import { PermissionGate } from '@/routes/guards'
+import { paths } from '@/routes/paths'
 import { adminService } from '@/services/adminService'
 import { formatCurrency, formatNumber } from '@/utils/formatters'
 
@@ -337,8 +343,20 @@ export default function AdminOverviewPage() {
             ) : (
               <AuditFeed items={auditItems ?? []} loading={auditLoading} />
             )}
-            {/* TODO(Prompt 36): a "View the full audit log" link to
-                `paths.ADMIN_AUDIT`, gated on `PERMISSIONS.AUDIT_VIEW`. */}
+            {/* Prompt 36, replacing this line's TODO. Gated on `audit.view`:
+                the card above is a summary anybody in the console may see, and
+                the explorer behind this button is not. */}
+            <PermissionGate permission={PERMISSIONS.AUDIT_VIEW}>
+              <Button
+                component={RouterLink}
+                to={paths.ADMIN_AUDIT}
+                size="small"
+                endIcon={<Icon icon="tabler:arrow-right" width={16} aria-hidden="true" />}
+                sx={{ mt: 1 }}
+              >
+                View the full audit log
+              </Button>
+            </PermissionGate>
           </CardContent>
         </Card>
       </Stack>

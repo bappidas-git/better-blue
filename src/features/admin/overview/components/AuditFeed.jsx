@@ -6,6 +6,10 @@ import { alpha } from '@mui/material/styles'
 
 import EmptyState from '@/components/feedback/EmptyState'
 import ListSkeleton from '@/components/feedback/skeletons/ListSkeleton'
+import {
+  getAuditVisual,
+  humanizeAuditAction,
+} from '@/features/admin/audit/utils/auditVocabulary'
 import { EntityRefChip } from '@/features/admin/shared'
 import { formatRelativeTime } from '@/utils/formatters'
 
@@ -20,91 +24,10 @@ import { formatRelativeTime } from '@/utils/formatters'
 //
 // SECURITY: the trail is append-only and is never edited or deleted from any
 // screen, at any permission level (00 §14, contract §6.26).
-
-/**
- * Icon and tint per action *domain* — the part before the first dot. Keyed by
- * domain rather than by full action so a new verb in an existing domain
- * (`user.reactivate`, `payout.retry`) inherits a sensible look instead of
- * falling back, and `getAuditVisual` never returns undefined.
- */
-const DOMAIN_VISUALS = Object.freeze({
-  admin: { icon: 'solar:shield-user-linear', tone: 'primary', noun: 'an admin account' },
-  user: { icon: 'solar:user-linear', tone: 'primary', noun: 'a member' },
-  creator: { icon: 'solar:user-id-linear', tone: 'primary', noun: 'a creator' },
-  moderation: { icon: 'tabler:shield-check', tone: 'warning', noun: 'submitted content' },
-  content: { icon: 'solar:gallery-linear', tone: 'warning', noun: 'published content' },
-  report: { icon: 'solar:flag-linear', tone: 'warning', noun: 'a report' },
-  dispute: { icon: 'solar:shield-warning-linear', tone: 'error', noun: 'a dispute' },
-  payment: { icon: 'solar:card-linear', tone: 'info', noun: 'a payment' },
-  payout: { icon: 'solar:wallet-money-linear', tone: 'success', noun: 'a settlement' },
-  affiliate: { icon: 'solar:users-group-rounded-linear', tone: 'success', noun: 'an affiliate' },
-  order: { icon: 'solar:box-linear', tone: 'info', noun: 'an order' },
-  request: { icon: 'solar:clipboard-list-linear', tone: 'info', noun: 'a request' },
-  category: { icon: 'solar:widget-4-linear', tone: 'primary', noun: 'a category' },
-  settings: { icon: 'solar:settings-linear', tone: 'primary', noun: 'platform settings' },
-  announcement: { icon: 'solar:megaphone-linear', tone: 'primary', noun: 'an announcement' },
-  ticket: { icon: 'solar:chat-round-line-linear', tone: 'info', noun: 'a support ticket' },
-})
-
-const FALLBACK_VISUAL = Object.freeze({
-  icon: 'solar:history-linear',
-  tone: 'primary',
-  noun: 'a record',
-})
-
-/** Icon, palette key, and object noun for an action's domain — never `undefined`. */
-function getAuditVisual(action) {
-  return DOMAIN_VISUALS[String(action ?? '').split('.')[0]] ?? FALLBACK_VISUAL
-}
-
-/**
- * Whole actions the rule below cannot build a readable sentence for. Keyed by
- * the full action and used verbatim — no object is appended.
- */
-const ACTION_PHRASES = Object.freeze({
-  'payout.mark_paid': 'marked a settlement as paid',
-  'moderation.request_changes': 'requested changes on submitted content',
-})
-
-/**
- * Verbs the mechanical past tense gets wrong. Add to this only when the rule
- * produces something embarrassing; the regular cases (`approve`, `suspend`,
- * `verify`, `process`, …) belong to the rule, because the action vocabulary is
- * open and every later prompt adds to it.
- */
-const IRREGULAR_VERBS = Object.freeze({
-  send: 'sent',
-  reply: 'replied to',
-})
-
-/**
- * `report.dismiss` → `dismissed a report`, `admin.permissions.update` →
- * `updated permissions`. A vocabulary that is dot-namespaced by design
- * (contract §6.26) reads badly on screen, so the verb is lifted out of the last
- * segment and past-tensed, and its object is whatever sits between the domain
- * and the verb — falling back to the domain's own noun when there is nothing.
- */
-function humanizeAuditAction(action) {
-  if (ACTION_PHRASES[action]) return ACTION_PHRASES[action]
-
-  const segments = String(action ?? '').split('.').filter(Boolean)
-  if (segments.length === 0) return 'acted'
-
-  const raw = segments[segments.length - 1]
-  const middle = segments.slice(1, -1).join(' ').replace(/_/g, ' ')
-
-  // "process" → "processed", "approve" → "approved", "verify" → "verified".
-  const verb = raw.replace(/_/g, ' ')
-  const past =
-    IRREGULAR_VERBS[raw] ??
-    (/e$/.test(verb)
-      ? `${verb}d`
-      : /[^aeiou]y$/.test(verb)
-        ? `${verb.slice(0, -1)}ied`
-        : `${verb}ed`)
-
-  return `${past} ${middle || getAuditVisual(action).noun}`
-}
+//
+// Prompt 36 moved the icon/tone table and the past-tense rule this file used to
+// carry into `features/admin/audit/utils/auditVocabulary.js`, so this card and
+// the full audit explorer read every entry the same way.
 
 function AuditRow({ entry, isLast }) {
   const visual = getAuditVisual(entry.action)

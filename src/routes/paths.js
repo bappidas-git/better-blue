@@ -108,7 +108,7 @@ export const paths = Object.freeze({
   ADMIN_ROLES: '/admin/roles',
   ADMIN_SETTINGS: '/admin/settings',
   ADMIN_CATEGORIES: '/admin/categories',
-  ADMIN_AUDIT: '/admin/audit',
+  ADMIN_AUDIT: '/admin/audit-logs',
   ADMIN_NOTIFICATIONS: '/admin/notifications',
   /** Guarded splat for the admin subtree — see `BUYER_CATCH_ALL`. */
   ADMIN_CATCH_ALL: '/admin/*',

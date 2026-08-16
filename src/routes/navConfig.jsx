@@ -322,11 +322,15 @@ export const creatorNav = Object.freeze([
  * ║ adds `import { PERMISSIONS } from '@/constants/permissions'` at the top   ║
  * ║ of this file if it is not there yet — Prompt 29 added it, so it is there. ║
  * ║                                                                          ║
- * ║ Enabled now: Overview, Requests and Orders (Prompt 31), Disputes (33),    ║
+ * ║ **Prompt 36 resolved the last of them: no commented entries remain.**     ║
+ * ║ Every destination Prompt 28 laid out now has a screen behind it.          ║
+ * ║                                                                          ║
+ * ║ Enabled: Overview, Requests and Orders (Prompt 31), Disputes (33),        ║
  * ║ Users (29), Moderation and Reports (30), Payments, Settlements and        ║
- * ║ Commissions (32), Announcements and Support (31), Notifications           ║
- * ║ (Prompt 27's shared page, at `paths.ADMIN_NOTIFICATIONS`), and Platform's ║
- * ║ Settings and Categories (35).                                             ║
+ * ║ Commissions (32), Affiliates (34), Announcements and Support (31),        ║
+ * ║ Notifications (Prompt 27's shared page, at `paths.ADMIN_NOTIFICATIONS`),  ║
+ * ║ and Platform's Settings and Categories (35) plus Admin team, Roles, and   ║
+ * ║ Audit log (36).                                                           ║
  * ╚══════════════════════════════════════════════════════════════════════════╝
  *
  * Order is deliberate — it follows what an admin does with their day: check the
@@ -545,33 +549,38 @@ export const adminNav = Object.freeze([
         roles: [ROLES.SUPER_ADMIN],
         permission: PERMISSIONS.CATEGORIES_MANAGE,
       }),
-      // Prompt 36
-      // Object.freeze({
-      //   key: 'admins',
-      //   label: 'Admin team',
-      //   icon: 'solar:shield-user-linear',
-      //   path: paths.ADMIN_ADMINS,
-      //   roles: [ROLES.SUPER_ADMIN],
-      //   permission: PERMISSIONS.ADMINS_MANAGE,
-      // }),
-      // Prompt 36
-      // Object.freeze({
-      //   key: 'roles',
-      //   label: 'Roles',
-      //   icon: 'solar:key-square-linear',
-      //   path: paths.ADMIN_ROLES,
-      //   roles: [ROLES.SUPER_ADMIN],
-      //   permission: PERMISSIONS.ADMINS_MANAGE,
-      // }),
-      // Prompt 36
-      // Object.freeze({
-      //   key: 'audit',
-      //   label: 'Audit log',
-      //   icon: 'solar:history-linear',
-      //   path: paths.ADMIN_AUDIT,
-      //   roles: [ROLES.SUPER_ADMIN],
-      //   permission: PERMISSIONS.AUDIT_VIEW,
-      // }),
+      Object.freeze({
+        // Prompt 36. Below the two configuration screens because who is on the
+        // team changes less often than a rate does — and above Roles, which is
+        // the reference you open *from* here when deciding what to grant.
+        key: 'admins',
+        label: 'Admin team',
+        icon: 'solar:shield-user-linear',
+        path: paths.ADMIN_ADMINS,
+        roles: [ROLES.SUPER_ADMIN],
+        permission: PERMISSIONS.ADMINS_MANAGE,
+      }),
+      Object.freeze({
+        // Prompt 36. Documentation rather than a control, so it sits under the
+        // screen it documents and shares its permission: somebody who cannot
+        // manage the team has no decision to make against this matrix.
+        key: 'roles',
+        label: 'Roles',
+        icon: 'solar:key-square-linear',
+        path: paths.ADMIN_ROLES,
+        roles: [ROLES.SUPER_ADMIN],
+        permission: PERMISSIONS.ADMINS_MANAGE,
+      }),
+      Object.freeze({
+        // Prompt 36. Last in the group and last in the console, which is right
+        // for a screen nobody opens until they need to know what happened.
+        key: 'audit',
+        label: 'Audit log',
+        icon: 'solar:history-linear',
+        path: paths.ADMIN_AUDIT,
+        roles: [ROLES.SUPER_ADMIN],
+        permission: PERMISSIONS.AUDIT_VIEW,
+      }),
     ]),
   }),
 ])
