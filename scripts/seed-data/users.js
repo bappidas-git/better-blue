@@ -33,6 +33,11 @@ export const ADMIN_ID = Object.freeze({
   MAYA: 'usr_admin_maya',
   DANIEL: 'usr_admin_daniel',
   PRIYA: 'usr_admin_priya',
+  // Prompt 36 added the last two so the team screen and the permission matrix
+  // demonstrate the range the model actually allows: an admin with a single
+  // permission, and one who has been offboarded.
+  THEO: 'usr_admin_theo',
+  SOFIA: 'usr_admin_sofia',
 })
 
 /** Affiliate codes referenced by `referredByCode` and `affiliateProfiles`. */
@@ -113,6 +118,38 @@ const ADMIN_SOURCE = [
     ],
     createdDaysAgo: 115,
     lastLoginDaysAgo: 0.9,
+  },
+  {
+    // Prompt 36. **The narrowest account the model allows**, and the one the
+    // permission story is worth checking against: signing in as Theo should
+    // produce a console with exactly one section in it, with every other admin
+    // URL answering with the refusal card rather than a screen.
+    id: 'usr_admin_theo',
+    name: 'Theo Almeida',
+    email: 'theo.almeida@betterblue.test',
+    role: ROLES.ADMIN,
+    permissions: [PERMISSIONS.MODERATION_REVIEW],
+    createdDaysAgo: 26,
+    lastLoginDaysAgo: 1.1,
+  },
+  {
+    // Prompt 36. An offboarded admin: suspended, not deleted. Their audit
+    // entries, their name on past decisions, and their permission array all
+    // survive — which is the whole reason team accounts are never removed
+    // (00 §9). The team table renders them with a `suspended` StatusChip and
+    // offers "Reinstate".
+    id: 'usr_admin_sofia',
+    name: 'Sofia Delgado',
+    email: 'sofia.delgado@betterblue.test',
+    role: ROLES.ADMIN,
+    permissions: [PERMISSIONS.SUPPORT_MANAGE, PERMISSIONS.REPORTS_MANAGE],
+    accountStatus: ACCOUNT_STATUS.SUSPENDED,
+    statusReason:
+      'Left the BetterBlue team at the end of their contract. Console access withdrawn; their record and past decisions are kept.',
+    statusChangedDaysAgo: 11,
+    statusChangedById: 'usr_super',
+    createdDaysAgo: 74,
+    lastLoginDaysAgo: 12,
   },
 ]
 

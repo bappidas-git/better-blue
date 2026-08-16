@@ -66,6 +66,14 @@ export default function FormSelect({
       disabled={disabled}
       inputRef={inputRef}
       sx={sx}
+      // A placeholder is rendered *inside* the field while the value is still
+      // empty, and MUI only floats the label when it thinks the field is empty —
+      // so without this the two draw on top of each other ("Actor" over
+      // "Anyone"). Pinned only when there is a placeholder to collide with, so
+      // every other select keeps its resting label. Found by Prompt 36's audit
+      // filters; it fixes the same overlap on every placeholder select already
+      // shipped (moderation decisions, raise-dispute, portfolio item, contact).
+      InputLabelProps={placeholder ? { shrink: true } : undefined}
       SelectProps={{
         multiple,
         displayEmpty: Boolean(placeholder) && !multiple,

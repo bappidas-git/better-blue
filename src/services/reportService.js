@@ -7,6 +7,7 @@
 // reports queue calls — dismiss, or action, where actioning a portfolio item
 // opens the moderation case it belongs in (contract §7, operation 28).
 
+import { AUDIT_ACTION } from '@/constants/auditActions'
 import { REPORT_REASONS, REPORT_SUBJECT, REPORT_DETAILS_MAX } from '@/constants/reports'
 import { ROLES } from '@/constants/roles'
 import { MODERATION_SUBJECT, REPORT_STATUS } from '@/constants/statuses'
@@ -46,6 +47,20 @@ export const REPORT_RESOLUTIONS = Object.freeze([
   REPORT_STATUS.ACTIONED,
   REPORT_STATUS.DISMISSED,
 ])
+
+/**
+ * Which verb each outcome is recorded under (contract §6.26).
+ *
+ * Prompt 36's coverage sweep: all three outcomes are in the seeded vocabulary,
+ * but `reviewed` was writing `report.action` — so a triage that explicitly
+ * decided *not* to act yet read in the trail as one that had. One map, three
+ * verbs, and the audit explorer's filter now separates them.
+ */
+const REPORT_AUDIT_ACTION = Object.freeze({
+  [REPORT_STATUS.REVIEWED]: AUDIT_ACTION.REPORT_REVIEW,
+  [REPORT_STATUS.ACTIONED]: AUDIT_ACTION.REPORT_ACTION,
+  [REPORT_STATUS.DISMISSED]: AUDIT_ACTION.REPORT_DISMISS,
+})
 
 /** Cap on one board read — see the note on `listReportBoard`. */
 const BOARD_LIMIT = 100
@@ -251,7 +266,7 @@ export const reportService = Object.freeze({
       auditService.log({
         actorId: actor.id,
         actorRole: actor.role ?? ROLES.ADMIN,
-        action: status === REPORT_STATUS.DISMISSED ? 'report.dismiss' : 'report.action',
+        action: REPORT_AUDIT_ACTION[status] ?? AUDIT_ACTION.REPORT_ACTION,
         entityType: 'report',
         entityId: reportId,
         meta: {

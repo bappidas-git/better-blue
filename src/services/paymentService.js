@@ -23,6 +23,7 @@
 import dayjs from 'dayjs'
 
 import { appConfig } from '@/config/appConfig'
+import { AUDIT_ACTION } from '@/constants/auditActions'
 import { NOTIFICATION_TYPE } from '@/constants/notificationTypes'
 import { PERMISSIONS } from '@/constants/permissions'
 import { isAdminRole } from '@/constants/roles'
@@ -1016,7 +1017,7 @@ export const paymentService = Object.freeze({
       })
 
       await auditIfAdmin(actor, {
-        action: 'payment.release',
+        action: AUDIT_ACTION.PAYMENT_RELEASE,
         entityType: 'payment',
         entityId: payment.id,
         meta: {
@@ -1164,7 +1165,7 @@ export const paymentService = Object.freeze({
       ])
 
       await auditIfAdmin(actor, {
-        action: 'payment.refund',
+        action: AUDIT_ACTION.PAYMENT_REFUND,
         entityType: 'payment',
         entityId: payment.id,
         meta: { orderId, amount: requested, full: isFull, reason },
@@ -2008,7 +2009,7 @@ export const paymentService = Object.freeze({
     // `approve`/`paid`; adding those would leave two verbs for one event and an
     // audit trail that has to be searched twice.
     await auditIfAdmin(actor, {
-      action: isApproval ? 'payout.process' : 'payout.reject',
+      action: isApproval ? AUDIT_ACTION.PAYOUT_PROCESS : AUDIT_ACTION.PAYOUT_REJECT,
       entityType: 'payout',
       entityId: payout.id,
       meta: {
@@ -2093,7 +2094,7 @@ export const paymentService = Object.freeze({
       })
 
       await auditIfAdmin(actor, {
-        action: 'payout.mark_paid',
+        action: AUDIT_ACTION.PAYOUT_MARK_PAID,
         entityType: 'payout',
         entityId: payout.id,
         meta: {

@@ -1,12 +1,13 @@
 import { useCallback, useMemo, useState } from 'react'
 
 import { Icon } from '@iconify/react'
+import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
-import { useNavigate } from 'react-router-dom'
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
 
 import FilterChipGroup from '@/components/inputs/FilterChipGroup'
 import FormDateField from '@/components/inputs/FormDateField'
@@ -14,6 +15,7 @@ import SearchInput from '@/components/inputs/SearchInput'
 import SortSelect from '@/components/inputs/SortSelect'
 import { useToast } from '@/components/feedback/ToastProvider'
 import { PERMISSIONS } from '@/constants/permissions'
+import { ROLES } from '@/constants/roles'
 import { STATUS_META } from '@/constants/statuses'
 import { useAuth } from '@/context/AuthContext'
 import { AdminPageGuard } from '@/features/admin/shared'
@@ -237,6 +239,34 @@ export default function AdminUsersPage() {
         </Tabs>
 
         <Stack spacing={{ xs: 2, md: 2.5 }}>
+          {readOnly ? (
+            // Prompt 36. The team tab has always been read-only here (team
+            // accounts are managed on their own screen, with their own
+            // permission); until now it said so only by having no buttons. The
+            // link is gated twice over — `SuperAdminRoute` refuses the
+            // destination to anybody else, so offering it to an admin who
+            // cannot open it would be a dead end (00 §13).
+            <Alert
+              severity="info"
+              icon={<Icon icon="solar:shield-user-linear" width={22} />}
+              action={
+                actor?.role === ROLES.SUPER_ADMIN ? (
+                  <Button
+                    component={RouterLink}
+                    to={paths.ADMIN_ADMINS}
+                    size="small"
+                    endIcon={<Icon icon="tabler:arrow-right" width={16} aria-hidden="true" />}
+                  >
+                    Admin team
+                  </Button>
+                ) : null
+              }
+            >
+              Team accounts are listed here but managed on the Admin team screen — permissions,
+              suspension, and adding a colleague all live there.
+            </Alert>
+          ) : null}
+
           <Stack
             direction={{ xs: 'column', lg: 'row' }}
             spacing={1.5}

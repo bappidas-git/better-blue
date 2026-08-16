@@ -12,6 +12,7 @@
 // release in this module: a dispute resolved in the creator's favour and a buyer
 // accepting a delivery must settle identically, including the commission record.
 
+import { AUDIT_ACTION } from '@/constants/auditActions'
 import { NOTIFICATION_TYPE } from '@/constants/notificationTypes'
 import { PERMISSIONS } from '@/constants/permissions'
 import { isAdminRole, ROLES } from '@/constants/roles'
@@ -138,38 +139,38 @@ const QUEUE_JOIN_LIMIT = 100
  * admin-only, and the marker is what says so on screen.
  */
 const DISPUTE_EVENT_STYLE = Object.freeze({
-  'dispute.open': Object.freeze({
+  [AUDIT_ACTION.DISPUTE_OPEN]: Object.freeze({
     icon: 'solar:shield-warning-linear',
     tone: 'warning',
     title: ({ category }) => `Dispute opened${category ? ` — ${String(category).replace(/_/g, ' ')}` : ''}`,
     description: () => '',
   }),
-  'dispute.assign': Object.freeze({
+  [AUDIT_ACTION.DISPUTE_ASSIGN]: Object.freeze({
     icon: 'solar:user-check-linear',
     tone: 'info',
     title: ({ previousAdminId }) => (previousAdminId ? 'Reassigned' : 'Picked up for review'),
     description: () => '',
   }),
-  'dispute.request_info': Object.freeze({
+  [AUDIT_ACTION.DISPUTE_REQUEST_INFO]: Object.freeze({
     icon: 'solar:chat-round-dots-linear',
     tone: 'warning',
     title: ({ from }) => `Information requested from the ${from ?? 'other party'}`,
     description: () => '',
   }),
-  'dispute.escalate': Object.freeze({
+  [AUDIT_ACTION.DISPUTE_ESCALATE]: Object.freeze({
     icon: 'solar:double-alt-arrow-up-linear',
     tone: 'error',
     internal: true,
     title: () => 'Escalated to a senior reviewer',
     description: ({ note }) => note ?? '',
   }),
-  'dispute.resolve': Object.freeze({
+  [AUDIT_ACTION.DISPUTE_RESOLVE]: Object.freeze({
     icon: 'solar:shield-check-linear',
     tone: 'success',
     title: ({ outcome }) => `Decided — ${String(outcome ?? '').replace(/_/g, ' ') || 'resolved'}`,
     description: ({ note }) => note ?? '',
   }),
-  'dispute.close': Object.freeze({
+  [AUDIT_ACTION.DISPUTE_CLOSE]: Object.freeze({
     icon: 'solar:archive-linear',
     tone: 'neutral',
     title: () => 'Case closed',
@@ -802,7 +803,7 @@ export const disputeService = Object.freeze({
       await auditService.log({
         actorId: raisedById,
         actorRole: raisedById === order.buyerId ? ROLES.BUYER : ROLES.CREATOR,
-        action: 'dispute.open',
+        action: AUDIT_ACTION.DISPUTE_OPEN,
         entityType: 'dispute',
         entityId: dispute.id,
         meta: { orderId: order.id, category, fromStatus: order.status, toStatus: disputedStatus },
@@ -1106,13 +1107,13 @@ export const disputeService = Object.freeze({
 
     // The opening is on the record itself whether or not an audit line survived
     // for it, so a case always has a beginning on screen.
-    if (!timeline.some((entry) => entry.action === 'dispute.open')) {
-      const opening = DISPUTE_EVENT_STYLE['dispute.open']
+    if (!timeline.some((entry) => entry.action === AUDIT_ACTION.DISPUTE_OPEN)) {
+      const opening = DISPUTE_EVENT_STYLE[AUDIT_ACTION.DISPUTE_OPEN]
       timeline.unshift({
         id: `${record.id}-opened`,
         at: record.createdAt,
         actorId: record.raisedById,
-        action: 'dispute.open',
+        action: AUDIT_ACTION.DISPUTE_OPEN,
         internal: false,
         title: opening.title({ category: record.category }),
         description: '',
@@ -1300,7 +1301,7 @@ export const disputeService = Object.freeze({
     await auditQuietly({
       actorId: actor?.id ?? adminId,
       actorRole: actor?.role ?? ROLES.ADMIN,
-      action: 'dispute.assign',
+      action: AUDIT_ACTION.DISPUTE_ASSIGN,
       entityType: 'dispute',
       entityId: dispute.id,
       meta: {
@@ -1389,7 +1390,7 @@ export const disputeService = Object.freeze({
     await auditQuietly({
       actorId: actor?.id,
       actorRole: actor?.role ?? ROLES.ADMIN,
-      action: 'dispute.request_info',
+      action: AUDIT_ACTION.DISPUTE_REQUEST_INFO,
       entityType: 'dispute',
       entityId: dispute.id,
       meta: { orderId: dispute.orderId, from, fromStatus: dispute.status, toStatus: nextStatus },
@@ -1459,7 +1460,7 @@ export const disputeService = Object.freeze({
     await auditQuietly({
       actorId: actor?.id,
       actorRole: actor?.role ?? ROLES.ADMIN,
-      action: 'dispute.escalate',
+      action: AUDIT_ACTION.DISPUTE_ESCALATE,
       entityType: 'dispute',
       entityId: dispute.id,
       meta: { orderId: dispute.orderId, fromStatus: dispute.status, toStatus: nextStatus, note: text },
@@ -1716,7 +1717,7 @@ export const disputeService = Object.freeze({
     await auditQuietly({
       actorId: actor?.id,
       actorRole: actor?.role ?? ROLES.ADMIN,
-      action: 'dispute.resolve',
+      action: AUDIT_ACTION.DISPUTE_RESOLVE,
       entityType: 'dispute',
       entityId: dispute.id,
       meta: {
@@ -1793,7 +1794,7 @@ export const disputeService = Object.freeze({
     await auditQuietly({
       actorId: actor?.id,
       actorRole: actor?.role ?? ROLES.ADMIN,
-      action: 'dispute.close',
+      action: AUDIT_ACTION.DISPUTE_CLOSE,
       entityType: 'dispute',
       entityId: dispute.id,
       meta: {

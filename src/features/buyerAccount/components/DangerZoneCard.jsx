@@ -11,6 +11,7 @@ import { alpha } from '@mui/material/styles'
 
 import { useConfirm } from '@/components/feedback/ConfirmDialogProvider'
 import { useToast } from '@/components/feedback/ToastProvider'
+import { AUDIT_ACTION } from '@/constants/auditActions'
 import { ACCOUNT_STATUS } from '@/constants/statuses'
 import { useAuth } from '@/context/AuthContext'
 import { auditService } from '@/services/auditService'
@@ -28,9 +29,6 @@ import { userService } from '@/services/userService'
 // The action writes an audit entry with the member as their own actor. Buyer
 // activity is not normally audited (contract §6.26), but an account leaving the
 // platform is exactly the kind of event support needs a record of.
-
-/** Audit verb for a member deactivating their own account (contract §6.26). */
-const AUDIT_ACTION = 'user.deactivate'
 
 export default function DangerZoneCard() {
   const { user, logout } = useAuth()
@@ -63,7 +61,7 @@ export default function DangerZoneCard() {
         await auditService.log({
           actorId: user.id,
           actorRole: user.role,
-          action: AUDIT_ACTION,
+          action: AUDIT_ACTION.USER_DEACTIVATE,
           entityType: 'user',
           entityId: user.id,
           meta: {

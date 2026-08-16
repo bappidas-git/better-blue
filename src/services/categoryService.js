@@ -4,6 +4,7 @@
 // so they are cached in memory for the session and fall back to the bundled
 // list when the API cannot be reached.
 
+import { AUDIT_ACTION } from '@/constants/auditActions'
 import { CATEGORIES_FALLBACK } from '@/constants/categoriesFallback'
 import { ROLES } from '@/constants/roles'
 import { ID_PREFIX } from '@/utils/id'
@@ -276,7 +277,7 @@ export const categoryService = Object.freeze({
       sortOrder,
     })
 
-    await logCategoryAction(actor, 'category.create', created, {
+    await logCategoryAction(actor, AUDIT_ACTION.CATEGORY_CREATE, created, {
       name: created.name,
       slug: created.slug,
     })
@@ -314,7 +315,7 @@ export const categoryService = Object.freeze({
 
     const updated = await this.update(id, next)
 
-    await logCategoryAction(actor, 'category.update', updated, {
+    await logCategoryAction(actor, AUDIT_ACTION.CATEGORY_UPDATE, updated, {
       changes: Object.keys(next).map((key) => ({
         key,
         from: previous?.[key],
@@ -346,7 +347,7 @@ export const categoryService = Object.freeze({
 
     await logCategoryAction(
       actor,
-      active ? 'category.activate' : 'category.deactivate',
+      active ? AUDIT_ACTION.CATEGORY_ACTIVATE : AUDIT_ACTION.CATEGORY_DEACTIVATE,
       updated,
       { name: updated.name, ...(usage ? { usage } : {}) }
     )
@@ -387,7 +388,7 @@ export const categoryService = Object.freeze({
     await this.update(moved.id, { sortOrder: neighbour.sortOrder })
     await this.update(neighbour.id, { sortOrder: moved.sortOrder })
 
-    await logCategoryAction(actor, 'category.reorder', moved, {
+    await logCategoryAction(actor, AUDIT_ACTION.CATEGORY_REORDER, moved, {
       name: moved.name,
       direction,
       from: moved.sortOrder,

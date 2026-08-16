@@ -6,6 +6,7 @@
 // behind `useFeatureFlag` — so they are cached briefly and read through
 // accessors that always have an answer.
 
+import { AUDIT_ACTION } from '@/constants/auditActions'
 import { REJECTION_REASONS } from '@/constants/policy'
 import { ROLES } from '@/constants/roles'
 
@@ -243,7 +244,7 @@ export const settingsService = Object.freeze({
         await auditService.log({
           actorId: actor.id,
           actorRole: actor.role ?? ROLES.SUPER_ADMIN,
-          action: 'settings.update',
+          action: AUDIT_ACTION.SETTINGS_UPDATE,
           entityType: SETTINGS_ENTITY_TYPE,
           entityId: SETTINGS_ENTITY_ID,
           meta: {

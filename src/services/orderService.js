@@ -6,6 +6,7 @@
 // ends it early. Everything in between — funding, releasing, refunding — is
 // `paymentService`, because it moves money (`docs/payments.md`).
 
+import { AUDIT_ACTION } from '@/constants/auditActions'
 import { NOTIFICATION_TYPE } from '@/constants/notificationTypes'
 import { isAdminRole, ROLES } from '@/constants/roles'
 import {
@@ -990,7 +991,7 @@ export const orderService = Object.freeze({
         await auditService.log({
           actorId,
           actorRole: byRole ?? ROLES.ADMIN,
-          action: 'order.cancel',
+          action: AUDIT_ACTION.ORDER_CANCEL,
           entityType: 'order',
           entityId: orderId,
           meta: { fromStatus: order.status, reason, refunded: refund?.refundedAmount ?? 0 },
@@ -1208,7 +1209,7 @@ export const orderService = Object.freeze({
       limit: FOLD_LIMIT,
       sort: 'createdAt',
       order: SORT_ORDER.ASC,
-      filters: { action: 'order.note', entityType: 'order', entityId: orderId },
+      filters: { action: AUDIT_ACTION.ORDER_NOTE, entityType: 'order', entityId: orderId },
     })
     return items
   },
@@ -1253,7 +1254,7 @@ export const orderService = Object.freeze({
     return auditService.log({
       actorId: actor.id,
       actorRole: actor.role ?? ROLES.ADMIN,
-      action: 'order.note',
+      action: AUDIT_ACTION.ORDER_NOTE,
       entityType: 'order',
       entityId: order.id,
       meta: { note: body, orderStatus: order.status },

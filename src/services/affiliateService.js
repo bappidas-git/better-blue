@@ -28,6 +28,7 @@
 // the flag, the attribution window, and — above all — the *idempotency* of a
 // conversion independently.
 
+import { AUDIT_ACTION } from '@/constants/auditActions'
 import { NOTIFICATION_TYPE } from '@/constants/notificationTypes'
 import { ROLES } from '@/constants/roles'
 import {
@@ -756,7 +757,7 @@ export const affiliateService = Object.freeze({
     }
 
     await auditQuietly(actor, {
-      action: 'affiliate.earning.approve',
+      action: AUDIT_ACTION.AFFILIATE_EARNING_APPROVE,
       entityType: 'affiliate_earning',
       entityId: earning.id,
       meta: {
@@ -836,7 +837,7 @@ export const affiliateService = Object.freeze({
     }
 
     await auditQuietly(actor, {
-      action: 'affiliate.earning.void',
+      action: AUDIT_ACTION.AFFILIATE_EARNING_VOID,
       entityType: 'affiliate_earning',
       entityId: earning.id,
       meta: {
@@ -919,7 +920,7 @@ export const affiliateService = Object.freeze({
     })
 
     await auditQuietly(actor, {
-      action: isSuspending ? 'affiliate.suspend' : 'affiliate.reactivate',
+      action: isSuspending ? AUDIT_ACTION.AFFILIATE_SUSPEND : AUDIT_ACTION.AFFILIATE_REACTIVATE,
       entityType: 'affiliate_profile',
       entityId: profile.id,
       meta: {

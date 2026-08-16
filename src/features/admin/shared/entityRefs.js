@@ -41,6 +41,17 @@ const ENTITY_META = Object.freeze({
 const FALLBACK_META = Object.freeze({ icon: 'solar:widget-2-linear', label: 'Record' })
 
 /**
+ * Every type the console knows, as `{ value, label }` — the entity filter on the
+ * audit explorer (Prompt 36) is built from this rather than from a second list
+ * that would drift out of step with `ENTITY_META`.
+ */
+export const ENTITY_TYPE_OPTIONS = Object.freeze(
+  Object.entries(ENTITY_META).map(([value, meta]) =>
+    Object.freeze({ value, label: meta.label })
+  )
+)
+
+/**
  * Icon and label for `type`, never `undefined`.
  *
  * @param {string} [type] an entity type
@@ -112,10 +123,19 @@ export function resolveEntityPath(type, id) {
     // is decided — so this chip deep-links rather than landing on the queue.
     case 'dispute':
       return paths.adminDisputeDetail(id)
-    // case 'affiliate_profile':                                           // Prompt 34
-    // case 'affiliate_earning': return paths.ADMIN_AFFILIATES             // Prompt 34
-    // case 'category':          return paths.ADMIN_CATEGORIES             // Prompt 35
-    // case 'platform_settings': return paths.ADMIN_SETTINGS               // Prompt 35
+    // Prompt 36 uncommented the last four, which is the whole of this file's
+    // comment gate resolved: every screen they point at now exists. Affiliates
+    // and settings have no per-record route — a profile and an earning are read
+    // on the affiliate console, and the settings singleton *is* its screen — so
+    // all four land on the list that holds them, the shape `report` and
+    // `request` already take.
+    case 'affiliate_profile':
+    case 'affiliate_earning':
+      return paths.ADMIN_AFFILIATES
+    case 'category':
+      return paths.ADMIN_CATEGORIES
+    case 'platform_settings':
+      return paths.ADMIN_SETTINGS
     default:
       return undefined
   }

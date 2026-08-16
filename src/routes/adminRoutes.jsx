@@ -100,6 +100,15 @@ const AdminSettingsPage = lazy(() => import('@/features/admin/settings/pages/Adm
 const AdminCategoriesPage = lazy(
   () => import('@/features/admin/settings/pages/AdminCategoriesPage')
 )
+// Prompt 36 — governance, joining the same wrapper rather than repeating the
+// check. All three are super-admin only: managing the team and reading the
+// trail are the two things that must stay with the account that owns the
+// platform, and the roles matrix documents both. Each still carries its own
+// `AdminPageGuard` inside (`admins.manage`, `audit.view`), which is what keeps
+// the permission story honest if the role gate is ever relaxed.
+const AdminAdminsPage = lazy(() => import('@/features/admin/roles/pages/AdminAdminsPage'))
+const AdminRolesPage = lazy(() => import('@/features/admin/roles/pages/AdminRolesPage'))
+const AdminAuditPage = lazy(() => import('@/features/admin/audit/pages/AdminAuditPage'))
 const NotificationsPage = lazy(
   () => import('@/features/notifications/pages/NotificationsPage')
 )
@@ -132,6 +141,9 @@ export const adminRoutes = [
     children: [
       { path: paths.ADMIN_SETTINGS, element: <AdminSettingsPage /> },
       { path: paths.ADMIN_CATEGORIES, element: <AdminCategoriesPage /> },
+      { path: paths.ADMIN_ADMINS, element: <AdminAdminsPage /> },
+      { path: paths.ADMIN_ROLES, element: <AdminRolesPage /> },
+      { path: paths.ADMIN_AUDIT, element: <AdminAuditPage /> },
     ],
   },
   // Keeps the whole `/admin` subtree guarded — see buyerRoutes.jsx.

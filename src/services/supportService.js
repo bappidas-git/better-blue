@@ -1,6 +1,7 @@
 // The support inbox — `docs/api-contract.md` §6.22. Reachable by signed-out
 // visitors, so `name` and `email` live on the ticket itself.
 
+import { AUDIT_ACTION } from '@/constants/auditActions'
 import { ADMIN_ROLES } from '@/constants/roles'
 import { TICKET_STATUS } from '@/constants/statuses'
 import { ID_PREFIX } from '@/utils/id'
@@ -35,10 +36,10 @@ export const OPEN_TICKET_STATUSES = Object.freeze([TICKET_STATUS.OPEN, TICKET_ST
  * than renaming any of it.
  */
 export const TICKET_ACTION = Object.freeze({
-  [TICKET_STATUS.RESOLVED]: Object.freeze({ action: 'ticket.resolve', label: 'Resolved' }),
-  [TICKET_STATUS.CLOSED]: Object.freeze({ action: 'ticket.close', label: 'Closed' }),
-  [TICKET_STATUS.OPEN]: Object.freeze({ action: 'ticket.reopen', label: 'Reopened' }),
-  [TICKET_STATUS.PENDING]: Object.freeze({ action: 'ticket.reply', label: 'Awaiting the member' }),
+  [TICKET_STATUS.RESOLVED]: Object.freeze({ action: AUDIT_ACTION.TICKET_RESOLVE, label: 'Resolved' }),
+  [TICKET_STATUS.CLOSED]: Object.freeze({ action: AUDIT_ACTION.TICKET_CLOSE, label: 'Closed' }),
+  [TICKET_STATUS.OPEN]: Object.freeze({ action: AUDIT_ACTION.TICKET_REOPEN, label: 'Reopened' }),
+  [TICKET_STATUS.PENDING]: Object.freeze({ action: AUDIT_ACTION.TICKET_REPLY, label: 'Awaiting the member' }),
 })
 
 /** A reply, in the shape the seeded tickets already store. */
@@ -251,7 +252,7 @@ export const supportService = Object.freeze({
       await auditService.log({
         actorId: actor.id,
         actorRole: actor.role ?? ADMIN_ROLES[0],
-        action: 'ticket.reply',
+        action: AUDIT_ACTION.TICKET_REPLY,
         entityType: 'support_ticket',
         entityId: id,
         meta: { status, fromStatus: ticket.status },
@@ -307,7 +308,7 @@ export const supportService = Object.freeze({
       await auditService.log({
         actorId: actor.id,
         actorRole: actor.role ?? ADMIN_ROLES[0],
-        action: TICKET_ACTION[status]?.action ?? 'ticket.reply',
+        action: TICKET_ACTION[status]?.action ?? AUDIT_ACTION.TICKET_REPLY,
         entityType: 'support_ticket',
         entityId: id,
         meta: { status, fromStatus: ticket.status, ...(text ? { note: text } : {}) },

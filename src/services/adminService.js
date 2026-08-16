@@ -615,6 +615,52 @@ export const adminService = Object.freeze({
 
     return items.map((entry) => ({ ...entry, actorName: nameById.get(entry.actorId) ?? null }))
   },
+
+  /**
+   * **The audit explorer's page** (Prompt 36 §4.4) — a filtered slice of the
+   * trail with every actor resolved to a name.
+   *
+   * The same actor-resolution as {@link adminService.getRecentAuditActivity},
+   * over an arbitrary page rather than the newest eight: one extra read for the
+   * whole page (`GET /users?id=…`), not one per row. An actor whose account
+   * cannot be read resolves to `null` rather than failing the page — a member
+   * who closed their own account still wrote the `user.deactivate` entry, and
+   * the row must still render (§13).
+   *
+   * **Nothing here writes.** The trail is append-only at every permission level
+   * (contract §6.26): there is no update path in `auditService` to call, and the
+   * Laravel migration grants the database user no `UPDATE`/`DELETE` on the table.
+   *
+   * **Future endpoint:** `GET /auditLogs?…` with the actor eager-loaded, gated
+   * on `audit.view`.
+   *
+   * @param {import('./api/listAdapter').ListParams} [params] `page`, `limit`,
+   *   and the filters in contract §6.26 — `actorId`, `action` (repeatable),
+   *   `entityType`, `entityId`, `createdAt_gte`/`createdAt_lte`
+   * @returns {Promise<import('./api/listAdapter').ListResult>} newest first,
+   *   each row carrying `actorName`
+   */
+  async listAuditEntries(params = {}) {
+    const result = await auditService.list(params)
+    if (result.items.length === 0) return result
+
+    const actors = await userService
+      .listByIds(result.items.map((entry) => entry.actorId))
+      .catch(() => [])
+    const byId = new Map(actors.map((user) => [user.id, user]))
+
+    return {
+      ...result,
+      items: result.items.map((entry) => {
+        const actor = byId.get(entry.actorId)
+        return {
+          ...entry,
+          actorName: actor?.name ?? null,
+          actorRole: entry.actorRole ?? actor?.role ?? null,
+        }
+      }),
+    }
+  },
 })
 
 export default adminService

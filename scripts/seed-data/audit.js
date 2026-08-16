@@ -20,6 +20,7 @@ import {
   TICKET_STATUS,
 } from '../../src/constants/statuses.js'
 import { REJECTION_REASON_CODE } from '../../src/constants/policy.js'
+import { AUDIT_ACTION } from '../../src/constants/auditActions.js'
 import { PERMISSIONS } from '../../src/constants/permissions.js'
 import { CATEGORY_ID } from '../../src/constants/categoriesFallback.js'
 import { ENTITY_TYPE, addDays, addHours, daysAgo, seqId } from '../seed-utils.js'
@@ -56,13 +57,15 @@ const ROLE_BY_ACTOR = {
   [ADMIN_ID.MAYA]: ROLES.ADMIN,
   [ADMIN_ID.DANIEL]: ROLES.ADMIN,
   [ADMIN_ID.PRIYA]: ROLES.ADMIN,
+  [ADMIN_ID.THEO]: ROLES.ADMIN,
+  [ADMIN_ID.SOFIA]: ROLES.ADMIN,
 }
 
 const AUDIT_SOURCE = [
   /* --- Platform setup ----------------------------------------------------- */
   {
     actor: ADMIN_ID.SUPER,
-    action: 'admin.create',
+    action: AUDIT_ACTION.ADMIN_CREATE,
     entityType: ENTITY_TYPE.USER,
     entityId: ADMIN_ID.MAYA,
     meta: { name: 'Maya Chen', role: ROLES.ADMIN, permissionCount: 10 },
@@ -70,7 +73,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.SUPER,
-    action: 'admin.create',
+    action: AUDIT_ACTION.ADMIN_CREATE,
     entityType: ENTITY_TYPE.USER,
     entityId: ADMIN_ID.DANIEL,
     meta: { name: 'Daniel Okafor', role: ROLES.ADMIN, permissionCount: 5 },
@@ -78,15 +81,47 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.SUPER,
-    action: 'admin.create',
+    action: AUDIT_ACTION.ADMIN_CREATE,
     entityType: ENTITY_TYPE.USER,
     entityId: ADMIN_ID.PRIYA,
     meta: { name: 'Priya Raman', role: ROLES.ADMIN, permissionCount: 4 },
     daysAgo: 115,
   },
   {
+    // Prompt 36. The team screen's second demo account: hired mid-life,
+    // offboarded later (see `admin.suspend` below).
     actor: ADMIN_ID.SUPER,
-    action: 'settings.update',
+    action: AUDIT_ACTION.ADMIN_CREATE,
+    entityType: ENTITY_TYPE.USER,
+    entityId: ADMIN_ID.SOFIA,
+    meta: {
+      name: 'Sofia Delgado',
+      email: 'sofia.delgado@betterblue.test',
+      role: ROLES.ADMIN,
+      permissionCount: 2,
+      permissions: [PERMISSIONS.SUPPORT_MANAGE, PERMISSIONS.REPORTS_MANAGE],
+    },
+    daysAgo: 74,
+  },
+  {
+    // Prompt 36. The narrowest grant in the seed — one permission, created by
+    // the same flow the console's "Add admin" dialog writes.
+    actor: ADMIN_ID.SUPER,
+    action: AUDIT_ACTION.ADMIN_CREATE,
+    entityType: ENTITY_TYPE.USER,
+    entityId: ADMIN_ID.THEO,
+    meta: {
+      name: 'Theo Almeida',
+      email: 'theo.almeida@betterblue.test',
+      role: ROLES.ADMIN,
+      permissionCount: 2,
+      permissions: [PERMISSIONS.MODERATION_REVIEW, PERMISSIONS.CONTENT_MANAGE],
+    },
+    daysAgo: 26,
+  },
+  {
+    actor: ADMIN_ID.SUPER,
+    action: AUDIT_ACTION.SETTINGS_UPDATE,
     entityType: ENTITY_TYPE.PLATFORM_SETTINGS,
     entityId: 'platformSettings',
     meta: { section: 'commission', field: 'defaultRate', from: 0.25, to: 0.2 },
@@ -94,7 +129,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.MAYA,
-    action: 'category.update',
+    action: AUDIT_ACTION.CATEGORY_UPDATE,
     entityType: ENTITY_TYPE.CATEGORY,
     entityId: CATEGORY_ID.EVENTS_ENTERTAINMENT,
     meta: { field: 'sortOrder', from: 14, to: 12 },
@@ -104,7 +139,7 @@ const AUDIT_SOURCE = [
   /* --- Creator verification ---------------------------------------------- */
   {
     actor: ADMIN_ID.MAYA,
-    action: 'user.verify',
+    action: AUDIT_ACTION.USER_VERIFY,
     entityType: ENTITY_TYPE.USER,
     entityId: creatorId('ava'),
     meta: { verified: true, evidence: 'business registration and portfolio review' },
@@ -112,7 +147,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.MAYA,
-    action: 'user.verify',
+    action: AUDIT_ACTION.USER_VERIFY,
     entityType: ENTITY_TYPE.USER,
     entityId: creatorId('liam'),
     meta: { verified: true, evidence: 'business registration and portfolio review' },
@@ -120,7 +155,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.MAYA,
-    action: 'user.verify',
+    action: AUDIT_ACTION.USER_VERIFY,
     entityType: ENTITY_TYPE.USER,
     entityId: creatorId('zoe'),
     meta: { verified: true, evidence: 'business registration and portfolio review' },
@@ -128,7 +163,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.MAYA,
-    action: 'user.verify',
+    action: AUDIT_ACTION.USER_VERIFY,
     entityType: ENTITY_TYPE.USER,
     entityId: creatorId('isla'),
     meta: { verified: true, evidence: 'business registration and portfolio review' },
@@ -136,7 +171,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.MAYA,
-    action: 'creator.feature',
+    action: AUDIT_ACTION.CREATOR_FEATURE,
     entityType: ENTITY_TYPE.CREATOR_PROFILE,
     entityId: creatorProfileId('ava'),
     meta: { featured: true, reason: 'consistently high ratings across food and product work' },
@@ -144,7 +179,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.MAYA,
-    action: 'creator.feature',
+    action: AUDIT_ACTION.CREATOR_FEATURE,
     entityType: ENTITY_TYPE.CREATOR_PROFILE,
     entityId: creatorProfileId('zoe'),
     meta: { featured: true, reason: 'strong beauty and fashion campaign portfolio' },
@@ -154,7 +189,7 @@ const AUDIT_SOURCE = [
   /* --- Moderation decisions ---------------------------------------------- */
   {
     actor: ADMIN_ID.PRIYA,
-    action: 'moderation.approve',
+    action: AUDIT_ACTION.MODERATION_APPROVE,
     entityType: ENTITY_TYPE.PORTFOLIO_ITEM,
     entityId: itemNamed('Studio campaign film for a sustainable denim drop').id,
     meta: { fromStatus: CONTENT_STATUS.UNDER_REVIEW, toStatus: CONTENT_STATUS.APPROVED },
@@ -162,7 +197,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.PRIYA,
-    action: 'moderation.approve',
+    action: AUDIT_ACTION.MODERATION_APPROVE,
     entityType: ENTITY_TYPE.PORTFOLIO_ITEM,
     entityId: itemNamed('Loft apartment walkthrough film').id,
     meta: { fromStatus: CONTENT_STATUS.UNDER_REVIEW, toStatus: CONTENT_STATUS.APPROVED },
@@ -170,7 +205,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.PRIYA,
-    action: 'moderation.approve',
+    action: AUDIT_ACTION.MODERATION_APPROVE,
     entityType: ENTITY_TYPE.PORTFOLIO_ITEM,
     entityId: itemNamed('Tailoring atelier process film').id,
     meta: { fromStatus: CONTENT_STATUS.UNDER_REVIEW, toStatus: CONTENT_STATUS.APPROVED },
@@ -178,7 +213,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.PRIYA,
-    action: 'moderation.request_changes',
+    action: AUDIT_ACTION.MODERATION_REQUEST_CHANGES,
     entityType: ENTITY_TYPE.PORTFOLIO_ITEM,
     entityId: itemNamed('Resistance band range demonstration set').id,
     meta: {
@@ -189,7 +224,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.PRIYA,
-    action: 'moderation.request_changes',
+    action: AUDIT_ACTION.MODERATION_REQUEST_CHANGES,
     entityType: ENTITY_TYPE.PORTFOLIO_ITEM,
     entityId: itemNamed('Lakeside venue tour film').id,
     meta: {
@@ -200,7 +235,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.PRIYA,
-    action: 'moderation.reject',
+    action: AUDIT_ACTION.MODERATION_REJECT,
     entityType: ENTITY_TYPE.PORTFOLIO_ITEM,
     entityId: itemNamed('Facial oil dropper macro set').id,
     meta: {
@@ -211,7 +246,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.PRIYA,
-    action: 'moderation.reject',
+    action: AUDIT_ACTION.MODERATION_REJECT,
     entityType: ENTITY_TYPE.PORTFOLIO_ITEM,
     entityId: itemNamed('New-build show home series').id,
     meta: {
@@ -222,7 +257,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.PRIYA,
-    action: 'content.restrict',
+    action: AUDIT_ACTION.CONTENT_RESTRICT,
     entityType: ENTITY_TYPE.PORTFOLIO_ITEM,
     entityId: itemNamed('Bath and body gift set stills').id,
     meta: {
@@ -236,7 +271,7 @@ const AUDIT_SOURCE = [
   /* --- Member reports ----------------------------------------------------- */
   {
     actor: ADMIN_ID.PRIYA,
-    action: 'report.action',
+    action: AUDIT_ACTION.REPORT_ACTION,
     entityType: ENTITY_TYPE.REPORT,
     entityId: reportId(2),
     meta: { status: REPORT_STATUS.ACTIONED, outcome: 'content restricted pending licence evidence' },
@@ -244,7 +279,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.PRIYA,
-    action: 'report.review',
+    action: AUDIT_ACTION.REPORT_REVIEW,
     entityType: ENTITY_TYPE.REPORT,
     entityId: reportId(1),
     meta: { status: REPORT_STATUS.REVIEWED, outcome: 'referred to the account review already in progress' },
@@ -252,7 +287,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.MAYA,
-    action: 'report.dismiss',
+    action: AUDIT_ACTION.REPORT_DISMISS,
     entityType: ENTITY_TYPE.REPORT,
     entityId: reportId(3),
     meta: { status: REPORT_STATUS.DISMISSED, outcome: 'campaign copy checked and compliant' },
@@ -262,7 +297,7 @@ const AUDIT_SOURCE = [
   /* --- Account actions ---------------------------------------------------- */
   {
     actor: ADMIN_ID.MAYA,
-    action: 'user.suspend',
+    action: AUDIT_ACTION.USER_SUSPEND,
     entityType: ENTITY_TYPE.USER,
     entityId: creatorId('chloe'),
     meta: {
@@ -278,7 +313,7 @@ const AUDIT_SOURCE = [
     // `statusChangedById`, because the detail banner reads one and the audit tab
     // reads the other and they sit on the same screen.
     actor: ADMIN_ID.MAYA,
-    action: 'user.blacklist',
+    action: AUDIT_ACTION.USER_BLACKLIST,
     entityType: ENTITY_TYPE.USER,
     entityId: buyerId('meridian'),
     meta: {
@@ -296,7 +331,7 @@ const AUDIT_SOURCE = [
     // `meta.selfService` is set.
     actor: buyerId('foundry'),
     actorRole: ROLES.BUYER,
-    action: 'user.deactivate',
+    action: AUDIT_ACTION.USER_DEACTIVATE,
     entityType: ENTITY_TYPE.USER,
     entityId: buyerId('foundry'),
     meta: {
@@ -309,7 +344,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.SUPER,
-    action: 'admin.permissions.update',
+    action: AUDIT_ACTION.ADMIN_PERMISSIONS_UPDATE,
     entityType: ENTITY_TYPE.USER,
     entityId: ADMIN_ID.MAYA,
     meta: { added: [PERMISSIONS.AUDIT_VIEW, PERMISSIONS.CATEGORIES_MANAGE], removed: [] },
@@ -317,17 +352,52 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.SUPER,
-    action: 'admin.permissions.update',
+    action: AUDIT_ACTION.ADMIN_PERMISSIONS_UPDATE,
     entityType: ENTITY_TYPE.USER,
     entityId: ADMIN_ID.DANIEL,
     meta: { added: [PERMISSIONS.AFFILIATES_MANAGE], removed: [] },
     daysAgo: 45,
   },
+  {
+    // Prompt 36. The full `meta` shape `adminTeamService.updateAdminPermissions`
+    // now writes — the diff **and** both sides of it, so the audit explorer has
+    // a seeded entry to render its before/after against. A revocation, which is
+    // the half of a permission change that matters most on review.
+    actor: ADMIN_ID.SUPER,
+    action: AUDIT_ACTION.ADMIN_PERMISSIONS_UPDATE,
+    entityType: ENTITY_TYPE.USER,
+    entityId: ADMIN_ID.THEO,
+    meta: {
+      name: 'Theo Almeida',
+      added: [],
+      removed: [PERMISSIONS.CONTENT_MANAGE],
+      from: [PERMISSIONS.MODERATION_REVIEW, PERMISSIONS.CONTENT_MANAGE],
+      to: [PERMISSIONS.MODERATION_REVIEW],
+    },
+    daysAgo: 13,
+  },
+  {
+    // Prompt 36. Offboarding, recorded: what they could do at the moment access
+    // was withdrawn, and why. The account and every decision on it stay.
+    actor: ADMIN_ID.SUPER,
+    action: AUDIT_ACTION.ADMIN_SUSPEND,
+    entityType: ENTITY_TYPE.USER,
+    entityId: ADMIN_ID.SOFIA,
+    meta: {
+      name: 'Sofia Delgado',
+      fromStatus: ACCOUNT_STATUS.ACTIVE,
+      toStatus: ACCOUNT_STATUS.SUSPENDED,
+      reason:
+        'Left the BetterBlue team at the end of their contract. Console access withdrawn; their record and past decisions are kept.',
+      permissions: [PERMISSIONS.SUPPORT_MANAGE, PERMISSIONS.REPORTS_MANAGE],
+    },
+    daysAgo: 11,
+  },
 
   /* --- Disputes ------------------------------------------------------------ */
   {
     actor: ADMIN_ID.MAYA,
-    action: 'dispute.assign',
+    action: AUDIT_ACTION.DISPUTE_ASSIGN,
     entityType: ENTITY_TYPE.DISPUTE,
     entityId: disputeOn('cancelled_bloom_serum'),
     meta: { assignedTo: ADMIN_ID.MAYA, toStatus: DISPUTE_STATUS.UNDER_REVIEW },
@@ -335,7 +405,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.MAYA,
-    action: 'dispute.resolve',
+    action: AUDIT_ACTION.DISPUTE_RESOLVE,
     entityType: ENTITY_TYPE.DISPUTE,
     entityId: disputeOn('cancelled_bloom_serum'),
     meta: { outcome: DISPUTE_RESOLUTION.FULL_REFUND, amountRefunded: 610 },
@@ -343,7 +413,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.DANIEL,
-    action: 'payment.refund',
+    action: AUDIT_ACTION.PAYMENT_REFUND,
     entityType: ENTITY_TYPE.ORDER,
     entityId: orderFor('cancelled_bloom_serum').id,
     meta: { amount: 610, reason: 'dispute resolution: full refund' },
@@ -351,7 +421,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.MAYA,
-    action: 'dispute.assign',
+    action: AUDIT_ACTION.DISPUTE_ASSIGN,
     entityType: ENTITY_TYPE.DISPUTE,
     entityId: disputeOn('completed_atlas_villa'),
     meta: { assignedTo: ADMIN_ID.MAYA, toStatus: DISPUTE_STATUS.UNDER_REVIEW },
@@ -359,7 +429,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.MAYA,
-    action: 'dispute.resolve',
+    action: AUDIT_ACTION.DISPUTE_RESOLVE,
     entityType: ENTITY_TYPE.DISPUTE,
     entityId: disputeOn('completed_atlas_villa'),
     meta: { outcome: DISPUTE_RESOLUTION.PARTIAL_REFUND, amountRefunded: 205 },
@@ -367,7 +437,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.DANIEL,
-    action: 'payment.refund',
+    action: AUDIT_ACTION.PAYMENT_REFUND,
     entityType: ENTITY_TYPE.ORDER,
     entityId: orderFor('completed_atlas_villa').id,
     meta: { amount: 205, reason: 'dispute resolution: partial refund' },
@@ -375,7 +445,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.PRIYA,
-    action: 'dispute.assign',
+    action: AUDIT_ACTION.DISPUTE_ASSIGN,
     entityType: ENTITY_TYPE.DISPUTE,
     entityId: disputeOn('completed_urbannest_loft'),
     meta: { assignedTo: ADMIN_ID.PRIYA, toStatus: DISPUTE_STATUS.UNDER_REVIEW },
@@ -383,7 +453,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.PRIYA,
-    action: 'dispute.resolve',
+    action: AUDIT_ACTION.DISPUTE_RESOLVE,
     entityType: ENTITY_TYPE.DISPUTE,
     entityId: disputeOn('completed_urbannest_loft'),
     meta: { outcome: DISPUTE_RESOLUTION.RELEASE_PAYMENT, amountRefunded: 0 },
@@ -391,7 +461,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.PRIYA,
-    action: 'dispute.close',
+    action: AUDIT_ACTION.DISPUTE_CLOSE,
     entityType: ENTITY_TYPE.DISPUTE,
     entityId: disputeOn('completed_urbannest_loft'),
     meta: { fromStatus: DISPUTE_STATUS.RESOLVED, toStatus: DISPUTE_STATUS.CLOSED },
@@ -399,7 +469,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.MAYA,
-    action: 'dispute.assign',
+    action: AUDIT_ACTION.DISPUTE_ASSIGN,
     entityType: ENTITY_TYPE.DISPUTE,
     entityId: disputeOn('awarded_craftware_demo'),
     meta: { assignedTo: ADMIN_ID.MAYA, toStatus: DISPUTE_STATUS.UNDER_REVIEW },
@@ -409,7 +479,7 @@ const AUDIT_SOURCE = [
   /* --- Marketplace operations --------------------------------------------- */
   {
     actor: ADMIN_ID.MAYA,
-    action: 'order.cancel',
+    action: AUDIT_ACTION.ORDER_CANCEL,
     entityType: ENTITY_TYPE.ORDER,
     entityId: orderFor('cancelled_atlas_winter').id,
     meta: { reason: 'Buyer postponed the event; the order was never funded.' },
@@ -417,7 +487,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.MAYA,
-    action: 'request.close',
+    action: AUDIT_ACTION.REQUEST_CLOSE,
     entityType: ENTITY_TYPE.REQUEST,
     entityId: requestId('closed_cocoa_easter'),
     meta: { reason: 'Closed at the buyer’s request after the range sold out.' },
@@ -427,7 +497,7 @@ const AUDIT_SOURCE = [
   /* --- Finance ------------------------------------------------------------- */
   {
     actor: ADMIN_ID.DANIEL,
-    action: 'payout.process',
+    action: AUDIT_ACTION.PAYOUT_PROCESS,
     entityType: ENTITY_TYPE.PAYOUT,
     entityId: payoutFor('ava'),
     meta: { amount: 1200, fromStatus: PAYOUT_STATUS.REQUESTED, toStatus: PAYOUT_STATUS.PROCESSING },
@@ -435,7 +505,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.DANIEL,
-    action: 'payout.mark_paid',
+    action: AUDIT_ACTION.PAYOUT_MARK_PAID,
     entityType: ENTITY_TYPE.PAYOUT,
     entityId: payoutFor('ava'),
     meta: { amount: 1200, toStatus: PAYOUT_STATUS.PAID },
@@ -443,7 +513,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.DANIEL,
-    action: 'payout.reject',
+    action: AUDIT_ACTION.PAYOUT_REJECT,
     entityType: ENTITY_TYPE.PAYOUT,
     entityId: payoutFor('chloe'),
     meta: { amount: 400, toStatus: PAYOUT_STATUS.REJECTED, reason: 'account under review' },
@@ -451,7 +521,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.DANIEL,
-    action: 'payout.process',
+    action: AUDIT_ACTION.PAYOUT_PROCESS,
     entityType: ENTITY_TYPE.PAYOUT,
     entityId: payoutFor('liam'),
     meta: { amount: 1500, fromStatus: PAYOUT_STATUS.REQUESTED, toStatus: PAYOUT_STATUS.PROCESSING },
@@ -461,7 +531,7 @@ const AUDIT_SOURCE = [
   /* --- Affiliate programme -------------------------------------------------- */
   {
     actor: ADMIN_ID.DANIEL,
-    action: 'affiliate.earning.approve',
+    action: AUDIT_ACTION.AFFILIATE_EARNING_APPROVE,
     entityType: ENTITY_TYPE.AFFILIATE_EARNING,
     entityId: affiliateEarnings[1].id,
     meta: { amount: affiliateEarnings[1].amount, code: 'AVA-STUDIO' },
@@ -469,7 +539,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.DANIEL,
-    action: 'affiliate.suspend',
+    action: AUDIT_ACTION.AFFILIATE_SUSPEND,
     entityType: ENTITY_TYPE.AFFILIATE_PROFILE,
     entityId: affiliateProfiles[2].id,
     meta: {
@@ -480,7 +550,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.DANIEL,
-    action: 'affiliate.earning.void',
+    action: AUDIT_ACTION.AFFILIATE_EARNING_VOID,
     entityType: ENTITY_TYPE.AFFILIATE_EARNING,
     entityId: affiliateEarnings[3].id,
     meta: { amount: affiliateEarnings[3].amount, reason: 'affiliate account suspended' },
@@ -490,7 +560,7 @@ const AUDIT_SOURCE = [
   /* --- Support -------------------------------------------------------------- */
   {
     actor: ADMIN_ID.PRIYA,
-    action: 'ticket.reply',
+    action: AUDIT_ACTION.TICKET_REPLY,
     entityType: ENTITY_TYPE.SUPPORT_TICKET,
     entityId: ticketId(2),
     meta: { status: TICKET_STATUS.RESOLVED },
@@ -498,7 +568,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.MAYA,
-    action: 'ticket.reply',
+    action: AUDIT_ACTION.TICKET_REPLY,
     entityType: ENTITY_TYPE.SUPPORT_TICKET,
     entityId: ticketId(1),
     meta: { status: TICKET_STATUS.PENDING },
@@ -506,7 +576,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.MAYA,
-    action: 'ticket.close',
+    action: AUDIT_ACTION.TICKET_CLOSE,
     entityType: ENTITY_TYPE.SUPPORT_TICKET,
     entityId: ticketId(3),
     meta: { status: TICKET_STATUS.CLOSED, reason: 'consolidated into the account review' },
@@ -516,7 +586,7 @@ const AUDIT_SOURCE = [
   /* --- Communications ------------------------------------------------------- */
   {
     actor: ADMIN_ID.SUPER,
-    action: 'settings.update',
+    action: AUDIT_ACTION.SETTINGS_UPDATE,
     entityType: ENTITY_TYPE.PLATFORM_SETTINGS,
     entityId: 'platformSettings',
     meta: { section: 'moderation', field: 'reviewSlaDays', from: 3, to: 2 },
@@ -524,7 +594,7 @@ const AUDIT_SOURCE = [
   },
   {
     actor: ADMIN_ID.MAYA,
-    action: 'announcement.send',
+    action: AUDIT_ACTION.ANNOUNCEMENT_SEND,
     entityType: ENTITY_TYPE.USER,
     entityId: buyerId('verde'),
     meta: { audience: ROLES.BUYER, subject: 'Escrow protection now covers revisions', recipients: 8 },

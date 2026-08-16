@@ -16,6 +16,7 @@
 // The two genuine imports below are the cross-cutting emits every workflow makes
 // (00 §10); they dereference inside function bodies only.
 
+import { AUDIT_ACTION } from '@/constants/auditActions'
 import { NOTIFICATION_ENTITY, NOTIFICATION_TYPE } from '@/constants/notificationTypes'
 import { getRejectionReason } from '@/constants/policy'
 import { ROLES } from '@/constants/roles'
@@ -103,7 +104,7 @@ export const MODERATION_DECISION_META = Object.freeze({
   [MODERATION_DECISION.APPROVE]: Object.freeze({
     status: CONTENT_STATUS.APPROVED,
     label: 'Approve',
-    auditAction: 'moderation.approve',
+    auditAction: AUDIT_ACTION.MODERATION_APPROVE,
     notifies: NOTIFICATION_TYPE.MODERATION_APPROVED,
     requiresReasonCode: false,
     requiresNotes: false,
@@ -111,7 +112,7 @@ export const MODERATION_DECISION_META = Object.freeze({
   [MODERATION_DECISION.REQUEST_CHANGES]: Object.freeze({
     status: CONTENT_STATUS.REVISION_REQUIRED,
     label: 'Request changes',
-    auditAction: 'moderation.request_changes',
+    auditAction: AUDIT_ACTION.MODERATION_REQUEST_CHANGES,
     notifies: NOTIFICATION_TYPE.MODERATION_REVISION,
     requiresReasonCode: false,
     requiresNotes: true,
@@ -119,7 +120,7 @@ export const MODERATION_DECISION_META = Object.freeze({
   [MODERATION_DECISION.REJECT]: Object.freeze({
     status: CONTENT_STATUS.REJECTED,
     label: 'Reject',
-    auditAction: 'moderation.reject',
+    auditAction: AUDIT_ACTION.MODERATION_REJECT,
     notifies: NOTIFICATION_TYPE.MODERATION_REJECTED,
     requiresReasonCode: true,
     requiresNotes: true,
@@ -127,7 +128,7 @@ export const MODERATION_DECISION_META = Object.freeze({
   [MODERATION_DECISION.RESTRICT]: Object.freeze({
     status: CONTENT_STATUS.RESTRICTED,
     label: 'Restrict',
-    auditAction: 'moderation.restrict',
+    auditAction: AUDIT_ACTION.MODERATION_RESTRICT,
     notifies: NOTIFICATION_TYPE.MODERATION_REJECTED,
     requiresReasonCode: true,
     requiresNotes: true,
@@ -519,6 +520,27 @@ export const moderationService = Object.freeze({
       })
     }
 
+    // Prompt 36's coverage sweep found this one missing. Taking a case out of
+    // the shared queue moves content into `under_review` and puts one reviewer's
+    // name on the decision that follows — which is exactly the kind of thing the
+    // trail exists to answer ("who was working this, and since when?"), and the
+    // mirror of `dispute.assign`, which has been audited since Prompt 33.
+    await quietly(() =>
+      auditService.log({
+        actorId: actor.id,
+        actorRole: actor.role ?? ROLES.ADMIN,
+        action: AUDIT_ACTION.MODERATION_CLAIM,
+        entityType: 'moderation_review',
+        entityId: reviewId,
+        meta: {
+          fromStatus: review.status,
+          toStatus: status,
+          subjectType: review.subjectType,
+          subjectId: review.subjectId,
+        },
+      })
+    )
+
     return claimed
   },
 
@@ -737,6 +759,29 @@ export const moderationService = Object.freeze({
       submittedAt: at,
       reviewedAt: null,
     })
+
+    // Prompt 36's coverage sweep: opening a case pulls published content back
+    // into review, and until now only the *report* that triggered it was
+    // recorded. The report's own `report.action` entry says a report was acted
+    // on; this one says what that action created, and it is what makes the case
+    // traceable when it was opened from somewhere other than a report.
+    if (actor?.id) {
+      await quietly(() =>
+        auditService.log({
+          actorId: actor.id,
+          actorRole: actor.role ?? ROLES.ADMIN,
+          action: AUDIT_ACTION.MODERATION_OPEN,
+          entityType: 'moderation_review',
+          entityId: review.id,
+          meta: {
+            subjectType,
+            subjectId,
+            ...(creatorUserId ? { creatorId: creatorUserId } : {}),
+            ...(note ? { reason: note } : {}),
+          },
+        })
+      )
+    }
 
     return { review, created: true }
   },
