@@ -154,9 +154,9 @@ export const buyerNav = Object.freeze([
 /* -------------------------------------------------------------------------- */
 
 /**
- * Prompts append: earnings (25), disputes (26), notifications (27). Those all
- * belong **between** Overview and Profile — the account entries stay last, the
- * same order the buyer's nav keeps.
+ * Prompts append: disputes (26), notifications (27). Those both belong
+ * **between** Overview and Profile — the account entries stay last, the same
+ * order the buyer's nav keeps.
  */
 export const creatorNav = Object.freeze([
   Object.freeze({
@@ -195,6 +195,17 @@ export const creatorNav = Object.freeze([
     icon: 'solar:box-linear',
     path: paths.CREATOR_ORDERS,
     badgeKey: BADGE_KEY.CREATOR_ORDERS_AWAITING_DELIVERY,
+  }),
+  Object.freeze({
+    // Prompt 25. Straight after Orders, which is where the money comes from —
+    // the creator's mirror of "Payments" sitting after Orders in the buyer's
+    // nav. **No badge, deliberately:** a balance is not a task, and a permanent
+    // number beside "Earnings" would read as something needing attention every
+    // single visit.
+    key: 'earnings',
+    label: 'Earnings',
+    icon: 'solar:wallet-money-linear',
+    path: paths.CREATOR_EARNINGS,
   }),
   Object.freeze({
     // Prompt 22. Above Profile because a storefront without sample work is the
@@ -296,8 +307,10 @@ export const MORE_NAV_KEYS = Object.freeze({
   // the sheet by name. Prompt 24's Orders entry makes seven, and it earns a
   // thumb slot ahead of Portfolio — an order has a deadline and a storefront
   // does not — so `splitBottomNav` overflows Portfolio into the sheet by
-  // position. The bar reads Overview · Browse · Proposals · Orders, with More
-  // holding Portfolio, Profile, and Settings.
+  // position. Prompt 25's Earnings makes eight and overflows the same way: a
+  // balance is checked, not worked on, and it is one tap into the More sheet.
+  // The bar reads Overview · Browse · Proposals · Orders, with More holding
+  // Earnings, Portfolio, Profile, and Settings.
   [ROLES.CREATOR]: Object.freeze([NAV_KEY.PROFILE, NAV_KEY.SETTINGS]),
   [ROLES.ADMIN]: Object.freeze([]),
   [ROLES.SUPER_ADMIN]: Object.freeze([]),

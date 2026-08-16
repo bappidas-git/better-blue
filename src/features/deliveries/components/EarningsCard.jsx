@@ -1,15 +1,18 @@
 import { Icon } from '@iconify/react'
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Divider from '@mui/material/Divider'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { alpha } from '@mui/material/styles'
+import { Link as RouterLink } from 'react-router-dom'
 
 import KeyValueList from '@/components/data-display/KeyValueList'
 import StatusChip from '@/components/data-display/StatusChip'
 import { PAYMENT_STATUS } from '@/constants/statuses'
+import { paths } from '@/routes/paths'
 import { formatCurrency, formatDateTime, formatPercent } from '@/utils/formatters'
 
 // What this order is worth to the creator, and where the money currently is.
@@ -125,10 +128,24 @@ export default function EarningsCard({ order, payment }) {
           </Typography>
         </Stack>
 
-        {/* TODO(Prompt 25): a "View earnings" link to `paths.CREATOR_EARNINGS`
-            belongs here once the earnings and payouts screens exist. Deliberately
-            not rendered yet — a link that lands on the dashboard 404 is worse
-            than no link (Prompt 14's rule for `navConfig`, applied to a page). */}
+        {/* Prompt 25 built the screen this waits on. The link is shown only
+            once the escrow has actually been released: before then there is
+            nothing on the earnings screen that this order has contributed, and
+            sending a creator to look at a balance their in-flight work has not
+            reached yet is a small, avoidable disappointment. */}
+        {isReleased ? (
+          <Button
+            component={RouterLink}
+            to={paths.CREATOR_EARNINGS}
+            variant="outlined"
+            color="inherit"
+            fullWidth
+            sx={{ mt: 2.5, minHeight: 44 }}
+            startIcon={<Icon icon="solar:wallet-money-linear" width={18} aria-hidden="true" />}
+          >
+            View earnings and payouts
+          </Button>
+        ) : null}
       </CardContent>
     </Card>
   )

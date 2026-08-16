@@ -28,6 +28,14 @@ import FormTextField from '@/components/inputs/FormTextField'
 // — is there so the demo does not teach anyone the wrong habit.
 
 /**
+ * DOM id of this card, so other screens can deep-link to it rather than to the
+ * top of a long form. Prompt 25's earnings screen sends "Update payout method"
+ * to `/creator/profile#payout-method`; `CreatorProfilePage` scrolls to it once
+ * the form has rendered.
+ */
+export const CREATOR_PAYOUT_METHOD_ANCHOR = 'payout-method'
+
+/**
  * @param {object} props
  * @param {object} props.form the `useForm` instance owning `payoutAccountName`,
  *   `payoutAccountNumber`, and `payoutRoutingNumber`
@@ -39,7 +47,7 @@ export default function PayoutMethodCard({ form, savedMasked, disabled = false }
   const hasSaved = Boolean(savedMasked)
 
   return (
-    <Card>
+    <Card id={CREATOR_PAYOUT_METHOD_ANCHOR} sx={{ scrollMarginTop: 96 }}>
       <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
           <Box

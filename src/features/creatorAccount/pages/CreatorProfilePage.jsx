@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Icon } from '@iconify/react'
 import Box from '@mui/material/Box'
@@ -8,6 +8,7 @@ import CardContent from '@mui/material/CardContent'
 import Divider from '@mui/material/Divider'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import { useLocation } from 'react-router-dom'
 
 import ErrorState from '@/components/feedback/ErrorState'
 import { useToast } from '@/components/feedback/ToastProvider'
@@ -201,9 +202,33 @@ function payoutPatch(values, baseline, savedPayout) {
   }
 }
 
+/**
+ * Scrolls to `#<id>` once the form has finished growing.
+ *
+ * A client-side navigation never acts on a URL fragment, and
+ * `ScrollRestoration` in `DashboardLayout` sends every new navigation to the
+ * top — the same two facts `FaqPage` handles the same way. The extra condition
+ * here is `ready`: the expertise section renders its category chips only once
+ * that query resolves, so scrolling before then aims at a card that is about to
+ * move several hundred pixels down the page. The card's own `scroll-margin-top`
+ * clears the sticky top bar, and the jump is instant because a long smooth
+ * scroll is exactly what 00 §7 asks us not to do to somebody.
+ *
+ * @param {string} hash `location.hash`, with or without its `#`
+ * @param {boolean} ready false while the form is still filling in
+ */
+function useHashScroll(hash, ready) {
+  useEffect(() => {
+    const id = decodeURIComponent(String(hash ?? '').replace(/^#/, ''))
+    if (!id || !ready) return
+    document.getElementById(id)?.scrollIntoView()
+  }, [hash, ready])
+}
+
 function CreatorProfileForm({ profile, user, onSaved }) {
   const toast = useToast()
   const { refreshUser } = useAuth()
+  const { hash } = useLocation()
 
   // The saved state the form is measured against. Set once at mount and again
   // after every successful save, so "dirty" always means "differs from what the
@@ -244,6 +269,7 @@ function CreatorProfileForm({ profile, user, onSaved }) {
   )
 
   useUnsavedChanges(isDirty)
+  useHashScroll(hash, !categoriesLoading)
 
   // Recomputed from the *form values* rather than the saved record, so the
   // meter moves as fields are filled in, before anything is saved.

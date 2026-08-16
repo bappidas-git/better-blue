@@ -2929,6 +2929,7 @@ are the reason these belong on the server:
 | 18 | `getOverview` | `creatorDashboardService` | 11 | `GET /creator/overview` |
 | 19 | `submitForReview` | `portfolioService` | 4 | `POST /portfolioItems/:id/submit` |
 | 20 | `submitProposal` | `proposalService` | 6 | `POST /proposals` |
+| 21 | `getEarningsBreakdown` | `paymentService` | 6 | `GET /creator/earnings` |
 
 Operations 16 and 17 were added by Prompt 20 (the buyer's order workspace), and
 operation 18 by Prompt 21 (the creator's) — the mirror of operation 14, section
@@ -2943,6 +2944,9 @@ accepting, and Trust & Safety resolving a dispute in the creator's favour), and
 only the first of those goes through a delivery. Operation 20 arrived with
 Prompt 23 (the request board and the creator's proposal flow): it is the supply
 side's entry point, and the only composite whose sequence is mostly *guards*.
+Operation 21 arrived with Prompt 25 (the creator's earnings screen): like 14, 17,
+and 18 it is a read that never writes, and it exists so that no component ever
+holds a money calculation.
 
 ### 7.2 The sequences
 
@@ -3742,6 +3746,69 @@ must be server-side regardless.
 > constraint, bump the counter cache, and dispatch the notification from a
 > model listener. `price` is validated but not clamped to the budget — an offer
 > above it is legal and the buyer decides (§6.8).
+
+---
+
+#### 21. `getEarningsBreakdown(creatorId)`
+
+Everything `/creator/earnings` prints: the four summary figures, one row per
+order that carries money, the totals under them, and twelve months of net
+earnings. A **read** — it writes nothing, and a screen can call it as often as
+it likes. Added by Prompt 25.
+
+Its reason for existing is the same one operation 18 has, stated more strictly:
+**no component performs money arithmetic** (Prompt 25 §7). The three views on
+that screen reconcile because they are folded from the same reads rather than
+computed three times.
+
+**Mock — `GET /creator/earnings` does not exist, so:**
+
+1. the whole of `getEarningsSummary` (operation 11's read half) — three calls
+   for `held`, `lifetime`, `balance`, `pendingPayouts`, `available`, `paidOut`
+2. `GET /platformSettings` → `general.payoutMinAmount`, so the withdraw dialog's
+   minimum comes from the same place `requestPayout` enforces it
+3. `GET /orders?creatorId=…&status=in_progress&status=delivered&status=revision_requested&status=disputed&status=completed&_page=1&_limit=100`
+   → one row each. `pending_payment`, `cancelled`, and `refunded` are excluded:
+   nothing is, or ever will be, owed on them
+4. `GET /transactions?userId=…&_page=1&_limit=100` → bucketed by `createdAt`
+   month exactly as operation 18 does, at twelve buckets instead of six
+5. `GET /payments?orderId=…&orderId=…&_page=1&_limit=100` → the escrow chip on
+   each row. Derived from the payment rather than from the order status, because
+   a completed order that was **partially refunded** is the one case where the
+   two records disagree (§6.12)
+
+Steps 1–4 run in parallel; step 5 is chained on step 3 because it is keyed by
+the order ids it returns.
+
+Each row's `net` is `orders.creator_earnings` — the figure frozen at award time
+(§6.9), which is also what the `release`/`commission` ledger pair nets to — so
+the table, the tiles, and the chart cannot disagree about the same money.
+
+MOCK-AGGREGATE: the folds are capped at the provider's 100-row page ceiling
+(§4.1). A creator past it would see a short list, so the response carries a
+`truncated` flag rather than quietly presenting a partial breakdown as a
+complete one.
+
+**Laravel — `GET /creator/earnings` → the same object for the authenticated creator**
+
+```json
+{
+  "currency": "USD", "payoutMinimum": 50, "truncated": false,
+  "summary": { "held": 1824, "available": 2153.6, "paidOut": 1200, "lifetime": 3944,
+               "pendingPayouts": 600, "balance": 2753.6 },
+  "rows": [{ "orderId": "ord_044", "title": "Packaging stills…", "orderStatus": "completed",
+             "escrowStatus": "released", "isSettled": true, "settledAt": "2026-08-06T…",
+             "gross": 530, "commissionRate": 0.2, "commissionAmount": 106, "net": 424 }],
+  "totals": { "count": 11, "gross": 7210, "commissionAmount": 1442, "net": 5768 },
+  "monthly": [{ "key": "2026-08", "label": "Aug", "amount": 1448 }],
+  "monthlyPeak": { "key": "2026-08", "label": "Aug", "amount": 1448 }
+}
+```
+
+One `JOIN` for the rows, one `GROUP BY` over the month for the series, and the
+summary's own aggregates — one round trip. The creator id is a **parameter in
+the mock only**; the endpoint takes it from the bearer token and must ignore any
+id the client sends (§9.2).
 
 ---
 

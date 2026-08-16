@@ -260,7 +260,30 @@ orders.forEach((order) => {
 /* Creator payouts                                                            */
 /* -------------------------------------------------------------------------- */
 
+// Prompt 25 §9: the **demo creator** needs a payout history worth reading, not
+// a single row — three of the four `PAYOUT_STATUS` values including a rejection
+// with its reason, so the settlement list on `/creator/earnings` demonstrates
+// every chip and the explained-rejection treatment on the account a reviewer
+// signs into. `requested` is deliberately left out of the seed: it is the state
+// the withdraw flow *creates*, and a demo that produces a new chip is worth
+// more than one that arrives pre-populated.
+//
+// Every amount is checked by `seed-db.js` against what that creator had earned
+// by its `requestedAt`, and a pending payout (`requested`/`processing`) is
+// reserved out of `available` by `getEarningsSummary` — so Ava's processing
+// request is also what makes the "already requested" line on the Available tile
+// real rather than hypothetical.
 const PAYOUT_SOURCE = [
+  {
+    creator: 'ava',
+    amount: 500,
+    last4: '4821',
+    status: PAYOUT_STATUS.REJECTED,
+    requestedDaysAgo: 40,
+    processedDaysAgo: 38,
+    rejectedReason:
+      'The account name on file did not match the bank record, so the transfer was returned. The balance is untouched — update the payout method on your profile and request it again.',
+  },
   {
     creator: 'ava',
     amount: 1200,
@@ -268,6 +291,14 @@ const PAYOUT_SOURCE = [
     status: PAYOUT_STATUS.PAID,
     requestedDaysAgo: 24,
     processedDaysAgo: 21,
+  },
+  {
+    creator: 'ava',
+    amount: 600,
+    last4: '4821',
+    status: PAYOUT_STATUS.PROCESSING,
+    requestedDaysAgo: 5,
+    processedDaysAgo: 3,
   },
   {
     creator: 'chloe',

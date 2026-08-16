@@ -39,8 +39,8 @@ import { EMPTY_PLACEHOLDER, formatCurrency, formatNumber } from '@/utils/formatt
 // Earnings as those screens arrive. A tile pointing at an unbuilt path would
 // land on the dashboard 404, so each one stays inert until its prompt lands
 // (Prompt 14's rule for `navConfig`, applied to page-level links). Prompt 23
-// lit the first two up and Prompt 24 the third; one is still waiting:
-//   TODO(Prompt 25): link "Available to withdraw" → CREATOR_EARNINGS.
+// lit the first two up, Prompt 24 the third, and Prompt 25 the last — all four
+// tiles now navigate.
 
 /** Chart height by breakpoint (§11). */
 const CHART_HEIGHT = { xs: 240, md: 300 }
@@ -156,7 +156,7 @@ export default function CreatorOverviewPage() {
       format: (amount) => formatCurrency(amount, currency, { hideDecimals: true }),
       icon: 'solar:wallet-money-linear',
       iconTone: 'success',
-      // TODO(Prompt 25): `to: paths.CREATOR_EARNINGS`.
+      to: paths.CREATOR_EARNINGS,
     },
   ]
 
