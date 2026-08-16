@@ -2807,11 +2807,22 @@ admin.create · admin.permissions.update · affiliate.earning.approve
 affiliate.earning.void · affiliate.suspend · announcement.send
 category.update · content.restrict · creator.feature · dispute.assign
 dispute.close · dispute.resolve · moderation.approve · moderation.reject
-moderation.request_changes · order.cancel · payment.refund · payout.mark_paid
-payout.process · payout.reject · report.action · report.dismiss · report.review
-request.close · settings.update · ticket.close · ticket.reply · user.blacklist
+moderation.request_changes · order.cancel · order.note · payment.refund
+payout.mark_paid · payout.process · payout.reject · report.action
+report.dismiss · report.review · request.close · settings.update
+ticket.close · ticket.reopen · ticket.reply · ticket.resolve · user.blacklist
 user.deactivate · user.reactivate · user.suspend · user.verify
 ```
+
+Prompt 31 added `order.note`, `ticket.resolve`, and `ticket.reopen`, and made
+`request.close` and `announcement.send` reachable from the console rather than
+seed-only. `order.note` is the odd one: it is the only verb whose `meta` carries
+the *content* of the action rather than a description of it (`meta.note`),
+because the audit trail **is** the storage for internal order notes — there is no
+`orderNotes` collection, for the same reason there is no `announcements` one
+(operation 12). `ticket.resolve` and `ticket.reopen` extend the ticket family
+rather than renaming `ticket.close`/`ticket.reply`, which the seed already
+carries.
 
 `user.blacklist` and `user.reactivate` were added by Prompt 29 alongside the
 `user.suspend` the seed already carried — the three account-status verbs are one
@@ -2968,6 +2979,9 @@ are the reason these belong on the server:
 | 26 | `claimForReview` | `moderationService` | 3 | `PATCH /moderationReviews/:id` |
 | 27 | `decide` | `moderationService` | 5 | `POST /moderationReviews/:id/decision` |
 | 28 | `actionReport` | `reportService` | 5 | `POST /reports/:id/action` |
+| 29 | `adminCloseRequest` | `requestService` | 4 + 2N | `POST /admin/contentRequests/:id/close` |
+| 30 | `getAdminOrderContext` | `orderService` | 11 | `GET /admin/orders/:id` |
+| 31 | `replyToTicket` | `supportService` | 3 | `POST /admin/supportTickets/:id/replies` |
 
 Operations 16 and 17 were added by Prompt 20 (the buyer's order workspace), and
 operation 18 by Prompt 21 (the creator's) — the mirror of operation 14, section
@@ -2995,7 +3009,16 @@ compute a statistic. Operations 26–28 arrived with Prompt 30 (content
 moderation) and close the loop operation 19 opened: 19 puts content in the
 queue, 26 takes it off, 27 decides it and propagates that decision to the
 content, the creator, and the audit trail, and 28 is how a member report becomes
-a case in the first place.
+a case in the first place. Operations 29–31 arrived with Prompt 31 (marketplace
+operations), and operation 12 was implemented by the same prompt. All four are
+the *admin* side of workflows that already existed: 29 is `closeRequest` (§7.2
+operation not listed — a buyer action) told in BetterBlue's voice with an audit
+entry and a notification for the buyer; 30 is the admin superset of the reads
+behind the buyer's and creator's order screens; 31 is the only new conversation
+in the console. **Admin cancellation of an order is deliberately not a new
+operation** — it is operation 15 with `byRole: 'admin'`, which is what makes the
+refund path identical whether the trigger is a dispute resolution or an
+intervention.
 
 ### 7.2 The sequences
 
@@ -3411,22 +3434,49 @@ method, and rejects an over-withdrawal with `422` `validation_failed` +
 
 ---
 
-#### 12. `broadcastAnnouncement({ title, body, audience })`
+#### 12. `broadcastAnnouncement({ title, body, audience, actor, onProgress })`
 
-An admin messages a segment of the platform.
+An admin messages a segment of the platform. Implemented by Prompt 31.
 
 **Mock:**
 
-1. `GET /users?role=buyer&accountStatus=active&_limit=100` per audience segment
-   (paged — the client walks every page)
-2. `POST /notifications` **per recipient** — `type: 'system_announcement'`, no
-   `entityType`/`entityId`
-3. `POST /auditLogs` — `announcement.send`,
-   `meta: { audience, recipientCount }`
+1. `GET /users?role=buyer&accountStatus=active&_page=N&_limit=100` per audience
+   segment (paged — the client walks every page, up to a 1,000-recipient cap)
+2. `POST /notifications` **per recipient**, sequentially — `type:
+   'system_announcement'`, no `entityType`/`entityId`. `onProgress` is called
+   after each write so a long send has a moving number
+3. `POST /auditLogs` — `announcement.send`, `entityType: 'platform_settings'`,
+   `meta: { title, body, audience, recipientCount, sent, failed }`
 
-With 24 seeded accounts that is ~25 requests. At 10,000 users it is 10,000
+With 23 seeded members that is ~24 requests. At 10,000 users it is 10,000
 requests from a browser tab — the operation that most obviously does not belong
 on the client.
+
+Returns `{ audience, title, recipientCount, sent, failed, audited }`. A recipient
+whose write fails is counted in `failed` rather than aborting the run, and the
+console reports "Sent 240/243" — retrying re-sends to the whole audience, so the
+copy says so.
+
+**Two decisions worth stating, because both are the kind somebody assumes
+otherwise:**
+
+- **`all` means every active buyer and creator, not every account.** The admin
+  team sends announcements; it is not an audience for them. `countAudience(audience)`
+  returns the same figure the send will write, and the confirmation dialog
+  fetches it live rather than reusing the tile's.
+- **There is no `announcements` collection, and the history is the audit trail.**
+  An announcement is an event — sent once, never edited, never deleted — and
+  `auditLogs` already has to record it, so a second table storing the same four
+  fields would be a second source of truth for one sentence.
+  `notificationService.listAnnouncements()` reads `announcement.send` entries
+  back out and normalises their `meta` (the seeded entry spells its fields
+  `subject`/`recipients`, so both spellings are read). Laravel may introduce a
+  real `announcements` table when scheduling or drafts arrive; until then this
+  is one source of truth, not a shortcut.
+
+`system_announcement` is on `MANDATORY_NOTIFICATION_TYPES` (§6.19), so
+preferences do not suppress it and `sent` equals `recipientCount` barring write
+failures.
 
 **Laravel — `POST /announcements` → `{ sent: 4821 }`**
 
@@ -3435,8 +3485,7 @@ on the client.
 ```
 
 `audience` ∈ `all` \| `buyers` \| `creators`. One request; the server fans out
-in a queued job, respects each recipient's
-`notificationPrefs.system.inApp`, and writes the audit entry once.
+in a queued job and writes the audit entry once.
 
 ---
 
@@ -4161,6 +4210,138 @@ same content produce two cases for it.
 
 ---
 
+#### 29. `adminCloseRequest(requestId, { reason, actor })`
+
+BetterBlue closes a brief that the business itself has not withdrawn — a policy
+breach, or a closure the buyer asked support for. `open` only; `reason` is
+**required**. Added by Prompt 31.
+
+**Mock:**
+
+1. `GET /contentRequests/:id` — and the `open → closed` transition is asserted
+   against `REQUEST_STATUS_MACHINE` before anything is written
+2. `GET /proposals?requestId=…&status=submitted&status=shortlisted` — the offers
+   still waiting
+3. per live offer: `PATCH /proposals/:id` → `declined` **and** `POST
+   /notifications` (`proposal_declined`), sequentially
+4. `PATCH /contentRequests/:id` → `{ status: 'closed', closedAt, closureReason }`
+5. `POST /notifications` — `request_closed` to the buyer, carrying the reason
+6. `POST /auditLogs` — `request.close`,
+   `meta: { fromStatus, reason, declinedProposals, buyerId }`
+
+The buyer notification is the one thing the buyer-initiated `closeRequest` does
+not send, and the reason it is a separate function: there, the buyer is the one
+who clicked.
+
+**There is no reopen.** `closed` is terminal in `REQUEST_STATUS_MACHINE` (§8),
+and the console does not invent an edge for it — a business that still wants the
+work posts the brief again, which is also the honest record, since every creator
+who proposed the first time was told it was over.
+
+**Laravel — `POST /admin/contentRequests/:id/close`** — one transaction, gated on
+`requests.manage`, with the fan-out over the offers queued.
+
+---
+
+#### 30. `getAdminOrderContext(orderId)`
+
+Everything the admin order screen renders. A **read**, and like operations 14,
+17, 18, 21, 24, and 25 it never writes. Added by Prompt 31.
+
+**Mock:** `getWithRelations` (6 calls — order, request, proposal, deliveries,
+revisions, payment), then five more in parallel:
+
+7. `GET /users?id=:buyerId&id=:creatorId` — both parties in one request
+8. `GET /categories/:categoryId`
+9. `GET /transactions?orderId=…` — the ledger, both sides of it
+10. `GET /disputes?orderId=…` — the banner, if there is one
+11. `getAdminOrderTimeline(orderId)` — operation 17 plus the internal notes
+
+Each of the five extras fails soft into `null`/`[]`: the order is what the admin
+came for, and a missing category must not blank the screen.
+
+**Internal notes are a separate timeline function, not a flag.**
+`getOrderTimeline` (operation 17) is what the buyer and the creator see, and the
+safest guarantee that an internal note never reaches a party is for the function
+they call to have no code path that can produce one. `getAdminOrderTimeline`
+merges `auditLogs` entries with `action: 'order.note'` into it, marked
+`internal: true`. A note is written by `orderService.addAdminNote` — one
+`POST /auditLogs`, no notification, nothing patched on the order — because a note
+is context for the next admin, not a message to anybody.
+
+**Laravel — `GET /admin/orders/:id`** — the whole graph eager-loaded, gated on
+`orders.manage`, with the internal notes serialised only for that audience.
+
+---
+
+#### 31. `replyToTicket(ticketId, { body, actor })` · `setTicketStatus(ticketId, { status, note, actor })`
+
+The support console answers a ticket and moves it. Added by Prompt 31.
+
+**Mock (reply):**
+
+1. `GET /supportTickets/:id`
+2. `PATCH /supportTickets/:id` → `{ replies: [...existing, { byId, body, at }], status: 'pending' }`
+3. `POST /auditLogs` — `ticket.reply`, `meta: { status, fromStatus }`
+
+`setTicketStatus` is the same three calls with `ticket.resolve`, `ticket.close`,
+or `ticket.reopen` as the verb (extending the §6.26 vocabulary, which already
+carries `ticket.reply` and `ticket.close`), appending the optional closing note
+to the thread first.
+
+MOCK-APPEND: `replies` is a whole-array read-modify-write, so two admins replying
+at once lose one reply (§6.22).
+
+**Tickets have no state machine** and deliberately so — 00 §9 defines none, a
+support conversation genuinely goes back and forth, and reopening a ticket closed
+too early is ordinary support work rather than an invented transition. What is
+guarded is the *set*: anything outside `TICKET_STATUS` is refused.
+
+> **HONEST LIMITATION, v1.** A reply is an **in-app admin-side record only**.
+> There is no outbound email in the mock stack and members have no ticket screen
+> — Prompt 11's contact form is write-only — so a reply is read by the next admin
+> who opens the ticket and by nobody else. The console says this in the composer
+> rather than letting somebody believe they have answered a member. Laravel
+> closes it at both ends: a queued mailable to the address on the ticket, and a
+> member-facing "my tickets" screen reading this same `replies` array.
+
+**Laravel — `POST /admin/supportTickets/:id/replies`** and
+`PATCH /admin/supportTickets/:id`, both gated on `support.manage`, with the reply
+stored as a `ticket_replies` row rather than a JSON array.
+
+---
+
+### 7.3 Admin list parameters (Prompt 31)
+
+The console's list screens call **service functions**, never a raw collection
+(00 §10). Each takes the screen's vocabulary and maps it to the adapter's:
+
+| Function | Service | Filters | Sorts |
+|---|---|---|---|
+| `adminListRequests` | `requestService` | `search`, `status[]`, `categoryId[]`, `createdFrom`, `createdTo` | `createdAt`, `publishedAt`, `deadline`, `budgetMax`, `proposalsCount` |
+| `adminListOrders` | `orderService` | `search`, `status[]`, `paymentStatus[]`, `categoryId[]`, `createdFrom`, `createdTo` | `createdAt`, `deliveryDueAt`, `price` |
+| `adminListTickets` | `supportService` | `search`, `status[]`, `createdFrom`, `createdTo` | `createdAt` |
+
+All three take `page`, `limit`, and `order`, return the standard
+`{ items, total, page, limit }`, and join their rows: requests carry `buyer`,
+orders carry `buyer`/`creator`/`payment`, tickets carry `requester` (`null` for a
+signed-out sender, which is normal rather than a failed join). Every join fails
+soft — a row without a name still lists.
+
+`createdFrom`/`createdTo` accept a date-only value and are widened to the day
+they mean before being sent as `createdAt_gte`/`createdAt_lte`; getting that
+wrong silently drops a day off either end of a filtered view.
+
+> **MOCK-FILTER — `adminListOrders({ paymentStatus })`.** The payment status
+> lives on another collection, and JSON Server cannot filter one collection by a
+> field on another. So it is applied to the page that came back, **after** the
+> join: `total` is the count *before* the filter and a page can legitimately look
+> short. The result carries `filteredInPage: true` and the screen says this out
+> loud rather than printing a count it cannot stand behind. In Laravel it is a
+> join condition and the caveat disappears.
+
+---
+
 ## 8. Status and enum reference
 
 **`src/constants/` is the single source of truth.** The seed script imports
@@ -4197,14 +4378,14 @@ implementing from this document alone — if they ever disagree with the code,
 | `REJECTION_REASON_CODE` | `policy.js` | `policy_prohibited_content` · `low_production_quality` · `mismatch_with_brief` · `ip_violation` · `metadata_incomplete` · `other` |
 | `PERMISSIONS` | `permissions.js` | 16 keys — below |
 
-**`NOTIFICATION_TYPE`** (`notificationTypes.js`) — 24 values:
+**`NOTIFICATION_TYPE`** (`notificationTypes.js`) — 25 values:
 
 ```
 proposal_received · proposal_shortlisted · proposal_accepted · proposal_declined
-order_paid · delivery_submitted · revision_requested · delivery_accepted
-order_completed · order_cancelled · payment_released · payment_refunded
-payout_requested · payout_processed · dispute_opened · dispute_message
-dispute_resolved · moderation_approved · moderation_rejected
+request_closed · order_paid · delivery_submitted · revision_requested
+delivery_accepted · order_completed · order_cancelled · payment_released
+payment_refunded · payout_requested · payout_processed · dispute_opened
+dispute_message · dispute_resolved · moderation_approved · moderation_rejected
 moderation_revision · account_status_changed · affiliate_conversion
 affiliate_payout · system_announcement
 ```
@@ -4213,6 +4394,14 @@ affiliate_payout · system_announcement
 Prompt 17: the escrow workflow ends an order three ways and only completion had
 a type of its own. They carry no seeded rows — the seed predates them — and map
 onto the existing `orders` and `payments` preference categories.
+
+`request_closed` was added in Prompt 31 for operation 29: the proposers on an
+administratively closed brief already had `proposal_declined`, but the **buyer**
+had nothing — their brief would simply have stopped being open, with the reason
+visible only to somebody who went looking. It sits in the `marketplace`
+preference category, which is deliberate: this is news about their own brief, not
+a platform announcement, and a buyer who has silenced marketplace notifications
+still sees the status and the reason on the request itself.
 
 **`PERMISSIONS`** (`permissions.js`) — `super_admin` implicitly holds all;
 `admin` accounts carry a `permissions` array; buyers and creators hold none:

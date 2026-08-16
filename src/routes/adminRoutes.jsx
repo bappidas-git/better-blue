@@ -50,6 +50,20 @@ const AdminModerationPage = lazy(
 const AdminModerationDetailPage = lazy(
   () => import('@/features/admin/moderation/pages/AdminModerationDetailPage')
 )
+// Prompt 31 — marketplace operations. Each page gates itself inside its
+// `DashboardPage`: requests on `requests.manage`, orders on `orders.manage`,
+// support on `support.manage`, announcements on `announcements.send`.
+const AdminRequestsPage = lazy(
+  () => import('@/features/admin/operations/pages/AdminRequestsPage')
+)
+const AdminOrdersPage = lazy(() => import('@/features/admin/operations/pages/AdminOrdersPage'))
+const AdminOrderDetailPage = lazy(
+  () => import('@/features/admin/operations/pages/AdminOrderDetailPage')
+)
+const AdminSupportPage = lazy(() => import('@/features/admin/operations/pages/AdminSupportPage'))
+const AdminAnnouncementsPage = lazy(
+  () => import('@/features/admin/operations/pages/AdminAnnouncementsPage')
+)
 const NotificationsPage = lazy(
   () => import('@/features/notifications/pages/NotificationsPage')
 )
@@ -62,6 +76,11 @@ export const adminRoutes = [
   { path: paths.ADMIN_MODERATION, element: <AdminModerationPage /> },
   { path: paths.ADMIN_MODERATION_DETAIL_PATTERN, element: <AdminModerationDetailPage /> },
   { path: paths.ADMIN_REPORTS, element: <AdminModerationPage reportsFirst /> },
+  { path: paths.ADMIN_REQUESTS, element: <AdminRequestsPage /> },
+  { path: paths.ADMIN_ORDERS, element: <AdminOrdersPage /> },
+  { path: paths.ADMIN_ORDER_DETAIL_PATTERN, element: <AdminOrderDetailPage /> },
+  { path: paths.ADMIN_SUPPORT, element: <AdminSupportPage /> },
+  { path: paths.ADMIN_ANNOUNCEMENTS, element: <AdminAnnouncementsPage /> },
   { path: paths.ADMIN_NOTIFICATIONS, element: <NotificationsPage /> },
   // Keeps the whole `/admin` subtree guarded — see buyerRoutes.jsx.
   { path: paths.ADMIN_CATCH_ALL, element: <NotFoundPage /> },

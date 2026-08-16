@@ -306,8 +306,9 @@ export const creatorNav = Object.freeze([
  * ║ adds `import { PERMISSIONS } from '@/constants/permissions'` at the top   ║
  * ║ of this file if it is not there yet — Prompt 29 added it, so it is there. ║
  * ║                                                                          ║
- * ║ Enabled now: Overview, Users (Prompt 29), and Notifications (Prompt 27's  ║
- * ║ shared page, mounted at `paths.ADMIN_NOTIFICATIONS`).                     ║
+ * ║ Enabled now: Overview, Requests and Orders (Prompt 31), Users (29),       ║
+ * ║ Moderation and Reports (30), Announcements and Support (31), and          ║
+ * ║ Notifications (Prompt 27's shared page, at `paths.ADMIN_NOTIFICATIONS`).  ║
  * ╚══════════════════════════════════════════════════════════════════════════╝
  *
  * Order is deliberate — it follows what an admin does with their day: check the
@@ -329,22 +330,25 @@ export const adminNav = Object.freeze([
     key: 'marketplace',
     group: 'Marketplace',
     items: Object.freeze([
-      // Prompt 31
-      // Object.freeze({
-      //   key: 'requests',
-      //   label: 'Requests',
-      //   icon: 'solar:clipboard-list-linear',
-      //   path: paths.ADMIN_REQUESTS,
-      //   permission: PERMISSIONS.REQUESTS_MANAGE,
-      // }),
-      // Prompt 31
-      // Object.freeze({
-      //   key: 'orders',
-      //   label: 'Orders',
-      //   icon: 'solar:box-linear',
-      //   path: paths.ADMIN_ORDERS,
-      //   permission: PERMISSIONS.ORDERS_MANAGE,
-      // }),
+      Object.freeze({
+        // Prompt 31. An admin without `requests.manage` never sees this entry,
+        // and `AdminPageGuard` inside the page refuses the typed URL too.
+        key: 'requests',
+        label: 'Requests',
+        icon: 'solar:clipboard-list-linear',
+        path: paths.ADMIN_REQUESTS,
+        permission: PERMISSIONS.REQUESTS_MANAGE,
+      }),
+      Object.freeze({
+        // Prompt 31. Straight after Requests, which is the order the work
+        // happens in — brief, then engagement. `/admin/orders/:orderId` is a
+        // child of this path, so a detail screen keeps "Orders" highlighted.
+        key: 'orders',
+        label: 'Orders',
+        icon: 'solar:box-linear',
+        path: paths.ADMIN_ORDERS,
+        permission: PERMISSIONS.ORDERS_MANAGE,
+      }),
       // Prompt 33 — the admin side of the case queue, not the party-facing
       // screens Prompt 26 built for buyers and creators.
       // Object.freeze({
@@ -450,22 +454,27 @@ export const adminNav = Object.freeze([
     key: 'communication',
     group: 'Communication',
     items: Object.freeze([
-      // Prompt 31
-      // Object.freeze({
-      //   key: 'announcements',
-      //   label: 'Announcements',
-      //   icon: 'solar:megaphone-linear',
-      //   path: paths.ADMIN_ANNOUNCEMENTS,
-      //   permission: PERMISSIONS.ANNOUNCEMENTS_SEND,
-      // }),
-      // Prompt 31
-      // Object.freeze({
-      //   key: 'support',
-      //   label: 'Support',
-      //   icon: 'solar:chat-round-line-linear',
-      //   path: paths.ADMIN_SUPPORT,
-      //   permission: PERMISSIONS.SUPPORT_MANAGE,
-      // }),
+      Object.freeze({
+        // Prompt 31. Above Support because announcing is the rarer, heavier
+        // action of the two and belongs at the top of the group rather than
+        // buried under a queue somebody opens every day.
+        key: 'announcements',
+        label: 'Announcements',
+        icon: 'solar:megaphone-linear',
+        path: paths.ADMIN_ANNOUNCEMENTS,
+        permission: PERMISSIONS.ANNOUNCEMENTS_SEND,
+      }),
+      Object.freeze({
+        // Prompt 31. No badge: the count that would belong here is "open
+        // tickets", and Prompt 28's badge map has no key for it. Adding one
+        // means a query on every console page load, which is Prompt 36's call
+        // to make once the console's badge story is settled.
+        key: 'support',
+        label: 'Support',
+        icon: 'solar:chat-round-line-linear',
+        path: paths.ADMIN_SUPPORT,
+        permission: PERMISSIONS.SUPPORT_MANAGE,
+      }),
       Object.freeze({
         // Prompt 28, using Prompt 27's shared notification centre — the same
         // page the buyer and creator navs point at, which reads the signed-in
@@ -582,16 +591,15 @@ export const MORE_NAV_KEYS = Object.freeze({
   // Overview · Browse · Proposals · Orders, with More holding Earnings,
   // Disputes, Portfolio, Notifications, Profile, and Settings.
   [ROLES.CREATOR]: Object.freeze([NAV_KEY.PROFILE, NAV_KEY.SETTINGS]),
-  // Prompt 28: the console has three live destinations — Overview, Users
-  // (Prompt 29), and Notifications — so all three fit on the bar and
-  // `splitBottomNav` renders no "More" tile at all. Users is not deferred: a
-  // suspension is the one console action somebody does reach for on a phone.
-  // Nothing else is deferred **by name** yet on purpose either — which
-  // four of the console's eventual fifteen destinations deserve a thumb slot
-  // depends on which ones a given admin's permissions leave standing, and
-  // overflow-by-position already handles that correctly. Prompts 29–36 should
-  // add a key here only if their screen is one an admin would open on a phone
-  // *less* often than whatever it would otherwise push out.
+  // Prompt 28 left this empty and Prompt 31 keeps it that way. The console now
+  // has nine live destinations, so `splitBottomNav` overflows by position:
+  // Overview, Requests, Orders, and Users take the four thumb slots, and
+  // Moderation, Reports, Announcements, Support, and Notifications go into the
+  // sheet. That is the right split without naming anything — the heavier
+  // screens all sit below Users in the sidebar already, and which four a given
+  // admin ends up with correctly depends on their permissions. Prompts 32–36
+  // should add a key here only if their screen is one an admin would open on a
+  // phone *less* often than whatever it would otherwise push out.
   [ROLES.ADMIN]: Object.freeze([]),
   [ROLES.SUPER_ADMIN]: Object.freeze([]),
 })

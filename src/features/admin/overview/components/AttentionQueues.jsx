@@ -11,6 +11,7 @@ import EmptyState from '@/components/feedback/EmptyState'
 import ErrorState from '@/components/feedback/ErrorState'
 import ListSkeleton from '@/components/feedback/skeletons/ListSkeleton'
 import StatusChip from '@/components/data-display/StatusChip'
+import { ORDER_STATUS } from '@/constants/statuses'
 import { AgeBadge, EntityRefChip } from '@/features/admin/shared'
 import { categoryLabel } from '@/features/disputes/utils/disputeDisplay'
 import { paths } from '@/routes/paths'
@@ -27,8 +28,17 @@ import { formatDate, formatNumber } from '@/utils/formatters'
 // empty state is **positive**: an empty moderation queue is a good afternoon,
 // not missing data (§13).
 //
-// The "View all" links are comment-gated until Prompts 30/31/33 build their
-// screens — the same rule `navConfig` follows, for the same reason.
+// The "View all" links are comment-gated until the prompt that builds their
+// screen — the same rule `navConfig` follows, for the same reason. Moderation
+// went live with Prompt 30 and orders with Prompt 31; disputes waits for 33.
+
+/**
+ * The order list, opened the way this card reads it: the live states, due
+ * soonest first. The card shows three rows and this is where the rest are —
+ * landing on an unfiltered list would make the reader redo the filtering the
+ * card already did for them.
+ */
+const ADMIN_ORDERS_BY_DUE_DATE = `${paths.ADMIN_ORDERS}?status=${ORDER_STATUS.IN_PROGRESS}&status=${ORDER_STATUS.REVISION_REQUESTED}&sort=due`
 
 /** Age thresholds per queue, in days. Beyond these the badge turns amber, then red. */
 const SLA = Object.freeze({
@@ -257,7 +267,20 @@ export default function AttentionQueues({ queues, loading = false, onRetry }) {
               />
             ))
           : null}
-        {/* TODO(Prompt 31): a "View all orders" link to `paths.ADMIN_ORDERS`. */}
+        {/* Prompt 31 built the order console, so this link is live. The
+            disputes one stays a comment until Prompt 33. */}
+        <Box sx={{ mt: 'auto', pt: 1.5 }}>
+          <Link
+            component={RouterLink}
+            to={ADMIN_ORDERS_BY_DUE_DATE}
+            variant="body2"
+            underline="hover"
+            sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+          >
+            Open the order list
+            <Icon icon="tabler:arrow-right" width={16} aria-hidden="true" />
+          </Link>
+        </Box>
       </QueueCard>
     </Box>
   )

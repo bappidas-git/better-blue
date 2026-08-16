@@ -28,6 +28,7 @@ import { applyRate, subtractMoney } from '@/utils/money'
 import { assertTransition } from '@/utils/stateMachine'
 
 import { API_ERROR_CODE, createApiError } from './api/apiError'
+import { categoryService } from './categoryService'
 import { createCrudService } from './api/crudFactory'
 import { SORT_ORDER } from './api/listAdapter'
 import { creatorProfileService } from './creatorProfileService'
@@ -39,6 +40,7 @@ import { paymentService } from './paymentService'
 import { proposalService } from './proposalService'
 import { requestService } from './requestService'
 import { revisionService } from './revisionService'
+import { userService } from './userService'
 
 const orders = createCrudService('orders', { idPrefix: ID_PREFIX.ORDER })
 
@@ -99,6 +101,11 @@ export const ORDER_EVENT_TYPE = Object.freeze({
   DISPUTE_RESOLVED: 'dispute_resolved',
   ORDER_COMPLETED: 'order_completed',
   ORDER_CANCELLED: 'order_cancelled',
+  /**
+   * Prompt 31: an admin's internal note. **Never** part of
+   * {@link orderService.getOrderTimeline} — see `getAdminOrderTimeline`.
+   */
+  ADMIN_NOTE: 'admin_note',
 })
 
 /** `{ icon, tone }` per event type — the visual half of the timeline. */
@@ -115,6 +122,7 @@ const EVENT_STYLE = Object.freeze({
   [ORDER_EVENT_TYPE.DISPUTE_RESOLVED]: { icon: 'solar:shield-check-linear', tone: 'success' },
   [ORDER_EVENT_TYPE.ORDER_COMPLETED]: { icon: 'solar:verified-check-linear', tone: 'success' },
   [ORDER_EVENT_TYPE.ORDER_CANCELLED]: { icon: 'solar:close-circle-linear', tone: 'neutral' },
+  [ORDER_EVENT_TYPE.ADMIN_NOTE]: { icon: 'solar:notes-linear', tone: 'warning' },
 })
 
 /**
@@ -993,6 +1001,263 @@ export const orderService = Object.freeze({
     }
 
     return cancelled
+  },
+
+  /* ------------------------------------------------------------------------ */
+  /* Admin console (Prompt 31)                                                */
+  /* ------------------------------------------------------------------------ */
+
+  /**
+   * **Every order on the platform**, with the two parties and the payment state
+   * the list column needs (Prompt 31 §4.2).
+   *
+   * MOCK-JOIN: three requests for a whole page — the orders, then the accounts
+   * on them and the payments against them, each with the ids OR'd (contract
+   * §4.1). Both joins fail soft: a row whose buyer could not be read still shows
+   * the order, because an operations desk that cannot see an order at all is
+   * worse off than one seeing it without a name attached.
+   *
+   * @param {object} [params]
+   * @param {number} [params.page=1]
+   * @param {number} [params.limit=20]
+   * @param {string} [params.sort='createdAt'] `createdAt` | `deliveryDueAt` | `price`
+   * @param {'asc'|'desc'} [params.order='desc']
+   * @param {string} [params.search] matches the order title
+   * @param {string|string[]} [params.status] one or several `ORDER_STATUS` values
+   * @param {string|string[]} [params.categoryId] `cat_…`
+   * @param {string} [params.createdFrom] ISO lower bound on `createdAt`
+   * @param {string} [params.createdTo] ISO upper bound on `createdAt`
+   * @param {string|string[]} [params.paymentStatus] filtered **after** the join
+   *   — see the note below
+   * @returns {Promise<import('./api/listAdapter').ListResult>} orders, each with
+   *   `buyer`, `creator`, and `payment` (any of them `null`)
+   *
+   * **Future endpoint:** `GET /admin/orders?…&include=buyer,creator,payment`,
+   * where the payment filter is a join condition rather than a post-filter.
+   */
+  async adminListOrders({
+    page = 1,
+    limit = 20,
+    sort = DEFAULT_SORT,
+    order = SORT_ORDER.DESC,
+    search,
+    status,
+    categoryId,
+    createdFrom,
+    createdTo,
+    paymentStatus,
+  } = {}) {
+    const filters = {}
+    if (status) filters.status = status
+    if (categoryId) filters.categoryId = categoryId
+    if (createdFrom) filters.createdAt_gte = createdFrom
+    if (createdTo) filters.createdAt_lte = createdTo
+
+    const result = await orders.list({ page, limit, sort, order, search, filters })
+    if (result.items.length === 0) return result
+
+    const ids = result.items.map((row) => row.id)
+    const userIds = result.items.flatMap((row) => [row.buyerId, row.creatorId])
+
+    const [parties, payments] = await Promise.all([
+      userService.listByIds(userIds).catch(() => []),
+      paymentService
+        .list({ page: 1, limit: FOLD_LIMIT, filters: { orderId: ids } })
+        .catch(() => ({ items: [] })),
+    ])
+
+    const partyById = new Map(parties.map((party) => [party.id, party]))
+    // An order can carry more than one payment row — a declined attempt then a
+    // successful one — so the newest wins, which is what the list means by "the
+    // payment on this order". `paymentService.list` is newest-first.
+    const paymentByOrderId = new Map()
+    payments.items.forEach((payment) => {
+      if (!paymentByOrderId.has(payment.orderId)) paymentByOrderId.set(payment.orderId, payment)
+    })
+
+    const wanted = paymentStatus
+      ? new Set(Array.isArray(paymentStatus) ? paymentStatus : [paymentStatus])
+      : null
+
+    const items = result.items
+      .map((row) => ({
+        ...row,
+        buyer: partyById.get(row.buyerId) ?? null,
+        creator: partyById.get(row.creatorId) ?? null,
+        payment: paymentByOrderId.get(row.id) ?? null,
+      }))
+      // MOCK-FILTER: JSON Server cannot filter a collection by a field on
+      // another one, so a payment-status filter is applied to the page that came
+      // back rather than to the query. That makes `total` the count *before* the
+      // filter, which the screen says out loud rather than printing a page count
+      // it cannot stand behind.
+      .filter((row) => !wanted || wanted.has(row.payment?.status))
+
+    return {
+      ...result,
+      items,
+      ...(wanted ? { filteredInPage: true } : {}),
+    }
+  },
+
+  /**
+   * **Everything the admin order screen renders** (Prompt 31 §4.2): the order,
+   * both parties, the brief, the deliveries and revisions, the money and its
+   * ledger, any dispute, and the full history.
+   *
+   * The admin superset of {@link getWithRelations}, which the buyer's and
+   * creator's screens use. Their versions stop at what a party may see; this one
+   * adds the counterparty's account, the ledger rows, and the internal notes —
+   * so the extra reads land here rather than being scattered across a page.
+   *
+   * MOCK-JOIN: `getWithRelations` (six calls), then five more in parallel.
+   * Every one of the extras fails soft into `null`/`[]`: the order is what the
+   * admin came for.
+   *
+   * @param {string} orderId `ord_…`
+   * @returns {Promise<{order: object, request: object|null, proposal: object|null,
+   *   deliveries: object[], revisions: object[], payment: object|null,
+   *   buyer: object|null, creator: object|null, category: object|null,
+   *   transactions: object[], dispute: object|null, timeline: object[]}>}
+   * @throws {ApiError} `not_found` when the order does not exist
+   *
+   * **Future endpoint:** `GET /admin/orders/:id` — the whole graph eager-loaded.
+   */
+  async getAdminOrderContext(orderId) {
+    const base = await orderService.getWithRelations(orderId)
+    const { order } = base
+
+    const [parties, category, transactions, disputes, timeline] = await Promise.all([
+      userService.listByIds([order.buyerId, order.creatorId]).catch(() => []),
+      order.categoryId ? categoryService.getById(order.categoryId).catch(() => null) : null,
+      paymentService
+        .listTransactions({ page: 1, limit: FOLD_LIMIT, filters: { orderId } })
+        .catch(() => ({ items: [] })),
+      disputeService
+        .list({ page: 1, limit: FOLD_LIMIT, filters: { orderId } })
+        .catch(() => ({ items: [] })),
+      orderService.getAdminOrderTimeline(orderId).catch(() => []),
+    ])
+
+    const partyById = new Map(parties.map((party) => [party.id, party]))
+
+    return {
+      ...base,
+      buyer: partyById.get(order.buyerId) ?? null,
+      creator: partyById.get(order.creatorId) ?? null,
+      category,
+      transactions: transactions.items,
+      dispute: disputes.items[0] ?? null,
+      timeline,
+    }
+  },
+
+  /**
+   * **The order's history as an admin reads it** — the shared timeline, plus the
+   * internal notes the team has left on it (Prompt 31 §6).
+   *
+   * A separate function rather than a flag on {@link getOrderTimeline}: that one
+   * is what the buyer and the creator see, and the safest way to guarantee an
+   * internal note never reaches a party is for the function they call to have no
+   * code path that could produce one.
+   *
+   * Note entries carry `internal: true` so the admin timeline can mark them.
+   *
+   * @param {string} orderId `ord_…`
+   * @returns {Promise<object[]>} timeline entries, oldest first
+   * @throws {ApiError} `not_found` when the order does not exist
+   */
+  async getAdminOrderTimeline(orderId) {
+    const [shared, notes] = await Promise.all([
+      orderService.getOrderTimeline(orderId),
+      orderService.listAdminNotes(orderId).catch(() => []),
+    ])
+
+    const entries = [
+      ...shared,
+      ...notes.map((note) => ({
+        id: note.id,
+        type: ORDER_EVENT_TYPE.ADMIN_NOTE,
+        at: note.createdAt,
+        title: 'Internal note',
+        description: note.meta?.note ?? '',
+        internal: true,
+        actorId: note.actorId,
+        ...EVENT_STYLE[ORDER_EVENT_TYPE.ADMIN_NOTE],
+      })),
+    ]
+
+    return entries.sort((a, b) => String(a.at).localeCompare(String(b.at)))
+  },
+
+  /**
+   * The internal notes on an order, oldest first — read straight off the audit
+   * trail (§4.2).
+   *
+   * There is no `orderNotes` collection and there does not need to be: a note is
+   * an administrative action on an order, which is precisely what `auditLogs`
+   * records, and giving it a collection of its own would put the same sentence
+   * in two places with nothing keeping them in step.
+   *
+   * @param {string} orderId `ord_…`
+   * @returns {Promise<object[]>} audit entries, oldest first
+   */
+  async listAdminNotes(orderId) {
+    const { items } = await auditService.list({
+      page: 1,
+      limit: FOLD_LIMIT,
+      sort: 'createdAt',
+      order: SORT_ORDER.ASC,
+      filters: { action: 'order.note', entityType: 'order', entityId: orderId },
+    })
+    return items
+  },
+
+  /**
+   * **Leaves an internal note on an order** (§4.2) — what the team knows about
+   * an engagement that the record itself does not say.
+   *
+   * Writes **nothing** to the order and notifies nobody. That is the whole point:
+   * a note is context for the next admin who opens this screen, not a message to
+   * the parties. Anything the buyer or the creator needs to hear goes through a
+   * dispute or a cancellation, both of which notify.
+   *
+   * @param {string} orderId `ord_…`
+   * @param {object} options
+   * @param {string} options.note what the team should know
+   * @param {{id: string, role: string}} options.actor the acting admin
+   * @returns {Promise<object>} the audit entry the note is stored as
+   * @throws {ApiError} `validation_failed` without a note or an actor ·
+   *   `not_found` when the order does not exist
+   *
+   * **Future endpoint:** `POST /admin/orders/:id/notes` → `{ note }`.
+   */
+  async addAdminNote(orderId, { note, actor } = {}) {
+    const body = String(note ?? '').trim()
+    if (!body) {
+      throw createApiError(API_ERROR_CODE.VALIDATION_FAILED, 'A note needs something in it.', {
+        note: 'Write the note before saving it.',
+      })
+    }
+    if (!actor?.id) {
+      throw createApiError(
+        API_ERROR_CODE.VALIDATION_FAILED,
+        'A note has to be attributable to the admin who left it.'
+      )
+    }
+
+    // Read first, so a note can never be filed against an order id that is a
+    // typo — an audit entry pointing at nothing is worse than no entry.
+    const order = await orders.getById(orderId)
+
+    return auditService.log({
+      actorId: actor.id,
+      actorRole: actor.role ?? ROLES.ADMIN,
+      action: 'order.note',
+      entityType: 'order',
+      entityId: order.id,
+      meta: { note: body, orderStatus: order.status },
+    })
   },
 })
 

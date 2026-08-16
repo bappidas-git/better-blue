@@ -67,6 +67,7 @@ the reason.
 | Buyer awards the brief — the losing proposals end | `orderService.acceptProposal` | every other live creator | `proposal_declined` | ✅ |
 | Buyer awards the brief — the winner | `orderService.acceptProposal` | winning creator | `proposal_accepted` | ✅ |
 | Buyer closes or cancels a brief with live proposals | `requestService.endLiveProposals` (via `closeRequest` / `cancelRequest`) | every live creator | `proposal_declined` | ✅ |
+| **BetterBlue** closes a brief administratively | `requestService.adminCloseRequest` | every live creator, **and the buyer** | `proposal_declined` · `request_closed` | ✅ **Prompt 31.** Same cascade, told in BetterBlue's voice rather than the buyer's — a creator reading "the buyer closed this" about a brief we took down would aim their next question at the wrong person. The buyer gets `request_closed`, a type added for exactly this gap: on the buyer-initiated path they are the one who clicked, here they are not. |
 | Buyer un-shortlists a proposal | — | — | — | ➖ Nothing has been decided, and "you are no longer starred" is discouraging noise about a brief still in play. |
 | Buyer publishes a draft brief | — | — | — | ➖ Nobody has engaged with it yet; discovery is how creators find it. |
 
@@ -121,7 +122,7 @@ the reason.
 | Event | Emitter | Recipient(s) | Type | Status |
 |---|---|---|---|---|
 | Account suspended / blacklisted / reactivated | admin (`users.manage`) | the account | `account_status_changed` | ✅ **Prompt 29** — one function, `userService.adminSetAccountStatus`, with the verb derived from the destination status (`user.suspend` / `user.blacklist` / `user.reactivate`). The reason is quoted to the member verbatim. |
-| Platform announcement to an audience | — | every member in the audience | `system_announcement` | 🕓 **Prompt 34** (`notificationService.broadcastAnnouncement`). |
+| Platform announcement to an audience | `notificationService.broadcastAnnouncement` | every **active member** in the audience | `system_announcement` | ✅ **Prompt 31.** `all` is every active buyer and creator — the admin team sends announcements and is not an audience for them (contract §7.2 operation 12). Mandatory, so preferences do not suppress it. |
 
 ### Affiliate — `affiliate`
 
