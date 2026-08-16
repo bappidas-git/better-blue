@@ -14,8 +14,12 @@
 > Sections in which a failure was found were fixed and **re-run in full**. The
 > fixes are listed in [§13](#13-fixes-made-during-certification).
 
-**Result: 148 of 148 steps pass**, plus a 432-cell route × role matrix with no
-unexpected outcomes.
+**Result: 193 of 193 steps pass** — 151 across the nine workflow sections, 29
+against the production build and 13 on the fresh-clone tour — plus a 426-cell
+route × role matrix with no unexpected outcomes.
+
+The nine workflow sections were re-run end to end, in order, on a fresh seed
+**after** every fix below was in place; that run is the one recorded here.
 
 ---
 
@@ -25,7 +29,7 @@ unexpected outcomes.
 |---|---|---|---|
 | 1 | [Setup](#1-setup) | — | ✅ |
 | 2 | [Public surfaces](#2-public-surfaces) | 22 | ✅ 22/22 |
-| 3 | [The buyer journey](#3-the-buyer-journey) | 40 | ✅ 40/40 |
+| 3 | [The buyer journey](#3-the-buyer-journey) | 52 | ✅ 52/52 |
 | 4 | [Disputes](#4-disputes) | 19 | ✅ 19/19 |
 | 5 | [Creator finance](#5-creator-finance) | 11 | ✅ 11/11 |
 | 6 | [Moderation](#6-moderation) | 10 | ✅ 10/10 |
@@ -33,10 +37,10 @@ unexpected outcomes.
 | 8 | [Super admin](#8-super-admin) | 13 | ✅ 13/13 |
 | 9 | [Notifications](#9-notifications) | 12 | ✅ 12/12 |
 | 10 | [JSON Server integration](#10-json-server-integration) | — | ✅ |
-| 11 | [Route × role matrix](#11-route--role-verification-matrix) | 432 cells | ✅ |
+| 11 | [Route × role matrix](#11-route--role-verification-matrix) | 426 cells | ✅ |
 | 12 | [Production build certification](#12-production-build-certification) | 29 | ✅ 29/29 |
 | 13 | [Fixes made during certification](#13-fixes-made-during-certification) | — | 5 fixes |
-| 14 | [Fresh-clone certification](#14-fresh-clone-certification) | — | ✅ |
+| 14 | [Fresh-clone certification](#14-fresh-clone-certification) | 13 | ✅ 13/13 |
 
 ---
 
@@ -392,9 +396,81 @@ than by clicking a link, so the guards are what is actually under test.
 | `block (super)` | Rendered the "super admin only" screen |
 | `not-found` | The 404 page |
 
-<!-- MATRIX -->
+| Path | guest | buyer | creator | admin | limited-admin | super_admin |
+|---|---|---|---|---|---|---|
+| `/` | render | render | render | render | render | render |
+| `/creators` | render | render | render | render | render | render |
+| `/creators/cpr_ava` | render | render | render | render | render | render |
+| `/requests` | render | render | render | render | render | render |
+| `/requests/req_001` | render | render | render | render | render | render |
+| `/how-it-works` | render | render | render | render | render | render |
+| `/content-policy` | render | render | render | render | render | render |
+| `/pricing` | render | render | render | render | render | render |
+| `/faq` | render | render | render | render | render | render |
+| `/about` | render | render | render | render | render | render |
+| `/contact` | render | render | render | render | render | render |
+| `/terms` | render | render | render | render | render | render |
+| `/privacy` | render | render | render | render | render | render |
+| `/r/AVA-STUDIO` | → /register | → /buyer | → /creator | → /admin | → /admin | → /admin |
+| `/login` | render | → /buyer | → /creator | → /admin | → /admin | → /admin |
+| `/register` | render | → /buyer | → /creator | → /admin | → /admin | → /admin |
+| `/forgot-password` | render | → /buyer | → /creator | → /admin | → /admin | → /admin |
+| `/buyer` | → /login | render | → /creator | → /admin | → /admin | → /admin |
+| `/buyer/requests` | → /login | render | → /creator | → /admin | → /admin | → /admin |
+| `/buyer/requests/new` | → /login | render | → /creator | → /admin | → /admin | → /admin |
+| `/buyer/requests/req_001` | → /login | render | → /creator | → /admin | → /admin | → /admin |
+| `/buyer/checkout/ord_008` | → /login | render | → /creator | → /admin | → /admin | → /admin |
+| `/buyer/orders` | → /login | render | → /creator | → /admin | → /admin | → /admin |
+| `/buyer/orders/ord_007` | → /login | render | → /creator | → /admin | → /admin | → /admin |
+| `/buyer/payments` | → /login | render | → /creator | → /admin | → /admin | → /admin |
+| `/buyer/disputes` | → /login | render | → /creator | → /admin | → /admin | → /admin |
+| `/buyer/disputes/dsp_006` | → /login | render | → /creator | → /admin | → /admin | → /admin |
+| `/buyer/affiliate` | → /login | render | → /creator | → /admin | → /admin | → /admin |
+| `/buyer/notifications` | → /login | render | → /creator | → /admin | → /admin | → /admin |
+| `/buyer/profile` | → /login | render | → /creator | → /admin | → /admin | → /admin |
+| `/buyer/settings` | → /login | render | → /creator | → /admin | → /admin | → /admin |
+| `/buyer/not-a-real-page` | → /login | not-found | → /creator | → /admin | → /admin | → /admin |
+| `/creator` | → /login | → /buyer | render | → /admin | → /admin | → /admin |
+| `/creator/browse` | → /login | → /buyer | render | → /admin | → /admin | → /admin |
+| `/creator/proposals` | → /login | → /buyer | render | → /admin | → /admin | → /admin |
+| `/creator/orders` | → /login | → /buyer | render | → /admin | → /admin | → /admin |
+| `/creator/orders/ord_002` | → /login | → /buyer | render | → /admin | → /admin | → /admin |
+| `/creator/portfolio` | → /login | → /buyer | render | → /admin | → /admin | → /admin |
+| `/creator/earnings` | → /login | → /buyer | render | → /admin | → /admin | → /admin |
+| `/creator/disputes` | → /login | → /buyer | render | → /admin | → /admin | → /admin |
+| `/creator/disputes/dsp_007` | → /login | → /buyer | render | → /admin | → /admin | → /admin |
+| `/creator/notifications` | → /login | → /buyer | render | → /admin | → /admin | → /admin |
+| `/creator/profile` | → /login | → /buyer | render | → /admin | → /admin | → /admin |
+| `/creator/settings` | → /login | → /buyer | render | → /admin | → /admin | → /admin |
+| `/creator/not-a-real-page` | → /login | → /buyer | not-found | → /admin | → /admin | → /admin |
+| `/admin` | → /login | → /buyer | → /creator | render | render | render |
+| `/admin/users` | → /login | → /buyer | → /creator | render | block (perm) | render |
+| `/admin/users/usr_buyer_verde` | → /login | → /buyer | → /creator | render | block (perm) | render |
+| `/admin/moderation` | → /login | → /buyer | → /creator | render | render | render |
+| `/admin/moderation/mod_002` | → /login | → /buyer | → /creator | render | render | render |
+| `/admin/requests` | → /login | → /buyer | → /creator | render | block (perm) | render |
+| `/admin/orders` | → /login | → /buyer | → /creator | render | block (perm) | render |
+| `/admin/orders/ord_002` | → /login | → /buyer | → /creator | render | block (perm) | render |
+| `/admin/payments` | → /login | → /buyer | → /creator | block (perm) | block (perm) | render |
+| `/admin/settlements` | → /login | → /buyer | → /creator | block (perm) | block (perm) | render |
+| `/admin/commissions` | → /login | → /buyer | → /creator | block (perm) | block (perm) | render |
+| `/admin/disputes` | → /login | → /buyer | → /creator | render | block (perm) | render |
+| `/admin/disputes/dsp_001` | → /login | → /buyer | → /creator | render | block (perm) | render |
+| `/admin/reports` | → /login | → /buyer | → /creator | render | render | render |
+| `/admin/support` | → /login | → /buyer | → /creator | render | block (perm) | render |
+| `/admin/announcements` | → /login | → /buyer | → /creator | block (perm) | block (perm) | render |
+| `/admin/affiliates` | → /login | → /buyer | → /creator | block (perm) | block (perm) | render |
+| `/admin/admins` | → /login | → /buyer | → /creator | block (super) | block (super) | render |
+| `/admin/roles` | → /login | → /buyer | → /creator | block (super) | block (super) | render |
+| `/admin/settings` | → /login | → /buyer | → /creator | block (super) | block (super) | render |
+| `/admin/categories` | → /login | → /buyer | → /creator | block (super) | block (super) | render |
+| `/admin/audit-logs` | → /login | → /buyer | → /creator | block (super) | block (super) | render |
+| `/admin/notifications` | → /login | → /buyer | → /creator | render | render | render |
+| `/admin/not-a-real-page` | → /login | → /buyer | → /creator | not-found | not-found | not-found |
+| `/dev/design` | render | render | render | render | render | render |
+| `/definitely-not-a-route` | not-found | not-found | not-found | not-found | not-found | not-found |
 
-**All 432 cells matched the expected outcome.** The patterns worth calling out:
+**All 426 cells matched the expected outcome.** The patterns worth calling out:
 
 - **Public and auth routes** render for everyone signed out. Signed-in members
   hitting `/login`, `/register` or `/forgot-password` are redirected to their own
@@ -408,12 +484,30 @@ than by clicking a link, so the guards are what is actually under test.
   than leaking a public 404 that loses the destination.
 - **Cross-role access redirects rather than dead-ends** — a creator opening a
   `/buyer/…` URL lands on `/creator` with an explanation, not on an error.
+- **Permission gates are finer than routes.** `/admin/reports` renders for the
+  moderation-only admin because the page is reachable with *either*
+  `moderation.review` or `reports.manage` — but the reports queue inside it does
+  not appear: *"Reviewing content does not include triaging member reports. Ask a
+  super admin for the 'Handle reports' permission."* The cell says `render`
+  because the page rendered; the data behind it is still gated. `/admin/users/:id`
+  is the opposite shape — the header renders while the record loads, and the
+  permission block replaces the body once it has.
+- **Two refusal screens, deliberately different.** `block (perm)` names the
+  permission you are missing and who can grant it; `block (super)` says the area
+  is super-admin-only, because no permission grant would open it.
 - **`/dev/design`** renders for every persona here, because this matrix runs
   against the **dev server**, where the route is mounted (`import.meta.env.DEV
   && env.enableDevPages`). It is deliberately not role-gated — it is a component
   gallery with no data in it. In a production build the route does not exist at
   all, which [§12a.2](#12a-dev-surfaces-absent-from-the-prod-flag-build) verifies
   separately.
+
+**How the cells were measured.** A first pass read each page shortly after
+navigation; 36 cells came back as thin content, which meant the page had not
+finished deciding — a detail page resolves its permission gate only after the
+record loads, and `/r/:code` redirects from an effect. Those 36 were re-measured
+with a full network-idle settle, which is what the table above reports. No cell
+remained ambiguous.
 
 ---
 
@@ -636,11 +730,11 @@ npm run dev:all
 
 | Check | Result |
 |---|---|
-| `npm install` completes | ✅ no build scripts, no post-install downloads |
-| `npm run seed` regenerates `server/db.json` | ✅ integrity checks passed |
-| `npm run dev:all` starts both servers | ✅ `:5173` and `:4000` |
+| `npm install` completes | ✅ 491 packages, ~10 s, no build scripts and no post-install downloads |
+| `npm run seed` regenerates `server/db.json` | ✅ integrity checks passed — and byte-identical to the committed file after a full certification run had written to it |
+| `npm run dev:all` starts both servers | ✅ `:5173` and `:4000` both answering |
 | `npm run lint` | ✅ zero warnings |
-| `npm run build` | ✅ clean |
+| `npm run build` | ✅ 2 674 modules, 12.7 s |
 | `npm run smoke:api` | ✅ 59/59 |
 | `npm run smoke:workflow` | ✅ 37/37 |
 
@@ -651,7 +745,8 @@ source or the scripts uses an API newer than Node 18.
 
 ### Ten-minute spot tour
 
-The demonstration path, in order, all reachable from a fresh `npm run dev:all`:
+Executed on the fresh clone — **13/13 checks passed**. The demonstration path,
+in order, all reachable from a fresh `npm run dev:all`:
 
 1. **Landing** (`/`) — live creators, categories and marketplace numbers.
 2. **Discovery** (`/creators`) — filter by category and content type; open a

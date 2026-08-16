@@ -223,7 +223,7 @@ The seed reports the totals in its summary.
 
 Sizes below are what the current seed produces.
 
-### `users` — 24
+### `users` — 30
 
 Every account: 1 super admin, 3 admins, 8 buyers, 12 creators.
 
@@ -248,7 +248,7 @@ table, `notification_prefs JSON`, `referred_by_code VARCHAR(32)` indexed.
 Admin permissions become a pivot table `admin_permissions(user_id, permission)`
 rather than a JSON column, so they can be queried and constrained.
 
-### `buyerProfiles` — 8
+### `buyerProfiles` — 12
 
 The business behind a buyer account.
 
@@ -379,7 +379,7 @@ Categories added after the seed get a generated `cat_…` id from
 
 **MySQL** `categories` — `slug VARCHAR(64) UNIQUE`, index `(active, sort_order)`.
 
-### `contentRequests` — 61
+### `contentRequests` — 65
 
 Buyer briefs. 24 hand-written scenario briefs cover every `REQUEST_STATUS` and
 host the 14 scenario orders; 30 archived briefs back the completed engagement
@@ -441,7 +441,7 @@ and `(buyer_id, status)` for "my requests". `awarded_proposal_id` and
 `invited_creator_id` are nullable FKs; add `awarded_proposal_id` after
 `proposals` exists to avoid a circular constraint at migration time.
 
-### `proposals` — 108
+### `proposals` — 116
 
 Creator offers. Live briefs carry 2–4 each (submitted / shortlisted / declined
 / withdrawn), the closed brief carries expired offers, and every order has the
@@ -464,7 +464,7 @@ accepted offer that created it plus the offers that lost.
 propose twice; `sample_item_ids` becomes `proposal_samples`; index
 `(creator_id, status)`.
 
-### `orders` — 47
+### `orders` — 51
 
 The funded engagement. **One order = one request + one accepted proposal**
 (00 §8) — there is deliberately no `orderItems` table.
@@ -491,7 +491,7 @@ The funded engagement. **One order = one request + one accepted proposal**
 `DECIMAL(10,2)`; index `(buyer_id, status)`, `(creator_id, status)`,
 `(status, delivery_due_at)` for the overdue view.
 
-### `deliveries` — 41
+### `deliveries` — 44
 
 One record per delivered **version**. Asking for changes closes that version at
 `revision_requested`; the next submission is a new record (Prompt 03's
@@ -529,7 +529,7 @@ A buyer's request for changes against a specific delivery.
 
 **MySQL** `revisions` — index `(order_id, created_at)`.
 
-### `payments` — 43
+### `payments` — 53
 
 Buyer payments into escrow. One per order, plus retries: the `pending_payment`
 order carries a `failed` attempt and a `processing` retry.
@@ -555,7 +555,7 @@ resolution, `refunded` after a full refund.
 `provider_reference` column when the dummy provider is replaced. Never store a
 full card number — `method` keeps a brand and a masked tail only.
 
-### `transactions` — 106
+### `transactions` — 119
 
 The ledger. `amount` is **signed from the perspective of `userId`**: money
 leaving that account is negative, money arriving is positive.
@@ -590,7 +590,7 @@ against their card, which is why `balanceAfter` is `null` on those rows.
 earnings statement and `(order_id)` for the order ledger. `balance_after` is a
 convenience cache; the balance of record is `SUM(amount)` over the account.
 
-### `commissions` — 31
+### `commissions` — 33
 
 BetterBlue's fee, written when escrow is released. Exactly one per released
 order.
@@ -611,7 +611,7 @@ money that actually changed hands.
 **MySQL** `commissions` — `order_id` UNIQUE; index `(created_at)` for revenue
 reporting.
 
-### `payouts` — 4
+### `payouts` — 10
 
 Settlements to a bank account, covering every `PAYOUT_STATUS` (`requested`,
 `processing`, `paid`, `rejected`). Since Prompt 34 the collection holds **two
@@ -648,7 +648,7 @@ a `CHECK` that exactly one of `creator_id` / `user_id` is set, matched to
 `source`. The method snapshot is kept on the row so a later change to the
 member's bank details cannot rewrite a historical settlement.
 
-### `disputes` — 5
+### `disputes` — 9
 
 Trust & Safety casework: one just opened and untriaged, one under review with
 an admin assigned, two resolved (a full refund and a partial refund), and one
@@ -676,7 +676,7 @@ is omitted for a `release_payment` outcome.
 (`resolution_outcome`, `resolution_amount`, `resolution_note`, `resolved_by`,
 `resolved_at`) or its own `dispute_resolutions` table.
 
-### `disputeMessages` — 18
+### `disputeMessages` — 33
 
 The case thread.
 
@@ -695,7 +695,7 @@ The case thread.
 must be filtered **server-side**; hiding it in the client is not access control
 (00 §11).
 
-### `reviews` — 29
+### `reviews` — 31
 
 The buyer's rating of a completed engagement. One review per order, and only on
 completed orders. Two archived orders were never reviewed, which is why a
@@ -714,7 +714,7 @@ creator's `ratingCount` can legitimately trail their `completedOrders`.
 `(creator_id, created_at DESC)`; `rating TINYINT` with a `CHECK` between 1
 and 5.
 
-### `notifications` — 41
+### `notifications` — 74
 
 The in-app bell feed, generated from events that exist in the data.
 
@@ -875,7 +875,7 @@ takes a decision on it; Laravel replaces it with an atomic increment.
 **MySQL** `affiliate_profiles` — `user_id` UNIQUE, `code VARCHAR(32) UNIQUE`;
 the earnings columns are caches over `affiliate_earnings`.
 
-### `affiliateReferrals` — 4
+### `affiliateReferrals` — 5
 
 | Field | Type | Notes |
 |---|---|---|
@@ -921,7 +921,7 @@ transaction.
 **MySQL** `affiliate_earnings` — UNIQUE `(affiliate_id, order_id)`; index
 `(status)` for the payout run.
 
-### `auditLogs` — 49
+### `auditLogs` — 55
 
 The immutable record of administrative action. Buyer and creator activity is
 not duplicated here — it lives in its own collections.

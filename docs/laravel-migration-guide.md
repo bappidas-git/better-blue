@@ -535,7 +535,8 @@ scheduler. Each becomes a queued job or a scheduled command.
 ### 8a. Auto-accept of deliveries
 
 A delivered order auto-accepts after the window in
-`platform_settings.general.autoAcceptWindow` — the buyer's order screen says so
+`platform_settings.general.auto_accept_days` (`general.autoAcceptDays` on the
+wire) — the buyer's order screen says so
 ("it accepts automatically on Aug 18, 2026"). Today nothing enforces it; the
 date is computed and displayed, and acceptance only happens if someone clicks.
 
@@ -553,8 +554,8 @@ only when they did not do it themselves — keep that distinction.
 ### 8b. Affiliate attribution expiry
 
 `affiliate_referrals` are captured `pending` and convert on the referred user's
-first completed order. They expire after the window in
-`platform_settings.affiliate` (`MOCK-ATTRIBUTION`, 2 sites). The contract notes
+first completed order. They expire after `platform_settings.affiliate.attribution_days`
+(`affiliate.attributionDays` on the wire, seeded at 30) — `MOCK-ATTRIBUTION`, 2 sites. The contract notes
 this should be "a scheduled job".
 
 ```php

@@ -51,7 +51,7 @@ Every seeded account uses the same password: **`Password123!`**
 | Admin | `admin@betterblue.test` | Maya Chen | Moderation queue, live disputes, support tickets, user management, audit log |
 | Super admin | `super@betterblue.test` | Elena Marsh | All of the above plus the admin team, the permission matrix, and platform settings |
 
-A further 19 seeded accounts share the same password — the full roster is in
+A further 25 seeded accounts share the same password — the full roster is in
 [`docs/data-model.md`](docs/data-model.md) §2. `theo.almeida@betterblue.test` is
 a deliberately limited admin (moderation only), useful for seeing the permission
 system refuse things.
