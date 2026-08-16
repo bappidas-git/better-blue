@@ -11,7 +11,7 @@ import {
   USAGE_RIGHTS,
 } from '@/constants/statuses'
 import useDebounce from '@/hooks/useDebounce'
-import useForm from '@/hooks/useForm'
+import useForm, { fieldId, focusFieldById } from '@/hooks/useForm'
 import { requestService, requiresVideoDuration } from '@/services/requestService'
 import {
   compose,
@@ -539,9 +539,18 @@ export function useRequestWizard({
   const submit = useCallback(async () => {
     // Every step, not just the review one: a jump link may have left an earlier
     // answer half-edited, and the record has to be whole either way (§5).
-    const brokenStep = WIZARD_STEPS.findIndex((_, index) => validateStep(index) !== null)
+    let brokenField = null
+    const brokenStep = WIZARD_STEPS.findIndex((_, index) => {
+      brokenField = validateStep(index)
+      return brokenField !== null
+    })
     if (brokenStep !== -1) {
       goToStep(brokenStep)
+      // Publish owes the same courtesy every Next click gives (00 §12): the
+      // field that failed takes focus, not the button that was pressed. The
+      // step may be about to swap, so this waits for that render — and for the
+      // step transition — rather than reaching for a node that is not there.
+      window.requestAnimationFrame(() => focusFieldById(fieldId(brokenField)))
       return null
     }
 

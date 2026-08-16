@@ -1637,7 +1637,9 @@ export const disputeService = Object.freeze({
             ).order
       } catch (failure) {
         throw inconsistency(
-          'the order could not be closed out',
+          // Reads into `inconsistency`'s template — "The money was moved but
+          // <step> did not complete" — so this is a noun phrase, not a clause.
+          'closing out the order',
           { paymentId: payment?.id, refundedAmount: payment?.refundedAmount ?? null },
           failure
         )
@@ -1673,7 +1675,7 @@ export const disputeService = Object.freeze({
       })
     } catch (failure) {
       throw inconsistency(
-        'the decision could not be recorded on the case',
+        'recording the decision on the case',
         { orderId: order.id, paymentId: payment?.id, outcome },
         failure
       )

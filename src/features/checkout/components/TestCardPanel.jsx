@@ -14,10 +14,13 @@ import { DUMMY_TEST_CARDS } from '@/services/paymentService'
 // A one-click way to reach each of the three outcomes the prototype's processor
 // can produce — success, a plain decline, and a decline for insufficient funds.
 //
-// **Development only.** Gated on `import.meta.env.DEV && env.enableDevPages`
-// (00 §4, read through `env` so this file keeps the single access point), which
-// is a build-time constant: the whole panel and the card numbers in it are
-// dropped from a production bundle rather than merely hidden.
+// **Development only.** Gated on `import.meta.env.DEV && env.enableDevPages`,
+// the same two independent switches as `DemoAccountsPanel`. `import.meta.env.DEV`
+// is read here rather than through `env` deliberately (the one exception to
+// 00 §4, shared with that component): Vite replaces it at build time, so this
+// panel and the card numbers in it are eliminated from a production bundle
+// rather than merely hidden. Reading it through `env.isDev` — a runtime
+// property — would leave the markup and the digits in the shipped chunk.
 //
 // The cards come from `paymentService`, which re-exports them precisely so a
 // screen can show them **without importing `services/payments/`** (Prompt 17
@@ -45,7 +48,7 @@ const OUTCOME_ICON = {
 export default function TestCardPanel({ onFill, disabled = false }) {
   const [open, setOpen] = useState(false)
 
-  if (!env.isDev || !env.enableDevPages) return null
+  if (!import.meta.env.DEV || !env.enableDevPages) return null
 
   // The form keeps a name that has already been typed; this one only fills the
   // blank.

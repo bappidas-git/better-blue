@@ -1037,7 +1037,9 @@ export const paymentService = Object.freeze({
       }
     } catch (failure) {
       throw inconsistency(
-        'the release could not be recorded in full',
+        // Reads into `inconsistency`'s template — "The payment was taken but
+        // <step> did not complete" — so this is a noun phrase, not a clause.
+        'recording the release in full',
         { paymentId: payment.id, status: PAYMENT_STATUS.RELEASED },
         failure
       )
@@ -1175,7 +1177,7 @@ export const paymentService = Object.freeze({
     } catch (failure) {
       if (failure?.code === API_ERROR_CODE.CONFLICT) throw failure
       throw inconsistency(
-        'the refund could not be recorded in full',
+        'recording the refund in full',
         { paymentId: held.id, refundedAmount: requested },
         failure
       )
@@ -2109,7 +2111,7 @@ export const paymentService = Object.freeze({
       return { payout: updated, transaction }
     } catch (failure) {
       throw inconsistency(
-        'the payout was marked paid but the ledger row was not written',
+        'writing the ledger row for the payout it marked paid',
         { payoutId: payout.id, status: PAYOUT_STATUS.PAID },
         failure
       )

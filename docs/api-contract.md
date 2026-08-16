@@ -3299,10 +3299,10 @@ are the reason these belong on the server:
 | 6 | `acceptDelivery` | `deliveryService` | 3 + complete | `POST /deliveries/:id/accept` |
 | 6a | `completeOrder` | `orderService` | 3 + release | *(inside operation 6)* |
 | 7 | `requestRevision` | `revisionService` | 6 | `POST /deliveries/:id/revisions` |
-| 8 | `resolveDispute` | `disputeService` | 8+ | `POST /disputes/:id/resolve` |
-| 9 | `enrollAffiliate` | `affiliateService` | 3 | `POST /affiliate/enroll` |
+| 8 | `resolve` | `disputeService` | 8+ | `POST /disputes/:id/resolve` |
+| 9 | `enroll` | `affiliateService` | 3 | `POST /affiliate/enroll` |
 | 10 | `processConversion` | `affiliateService` | 9 | internal (order-completed handler) |
-| 11 | `requestPayout` | `payoutService` | 4 | `POST /payouts` |
+| 11 | `requestPayout` | `paymentService` | 4 | `POST /payouts` |
 | 12 | `broadcastAnnouncement` | `notificationService` | 1 + N | `POST /announcements` |
 | 13 | `getStats` | `landingService` | 4 | `GET /stats/landing` |
 | 14 | `getOverview` | `buyerDashboardService` | 8 | `GET /buyer/overview` |
@@ -3511,7 +3511,7 @@ in the product.
 > **Implementation note (Prompt 17).** `paymentService.releasePayment` performs
 > steps 1–6 and the `payment_released` notification — it moves **money** only.
 > Steps 7, 8, and `order_completed` belong to the caller
-> (`deliveryService.acceptDelivery`, `disputeService.resolveDispute`), because
+> (`deliveryService.acceptDelivery`, `disputeService.resolve`), because
 > the same release finishes an accepted delivery, an auto-acceptance, and a
 > dispute differently. Step 5's balance read is `writeTransaction`'s job, and the
 > affiliate hook in step 9 is marked in place for Prompt 34.

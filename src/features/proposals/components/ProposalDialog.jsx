@@ -23,7 +23,7 @@ import { BUDGET_TYPE } from '@/constants/statuses'
 import { formatBudget } from '@/features/requests/utils/requestDisplay'
 import useApiMutation from '@/hooks/useApiMutation'
 import useApiQuery from '@/hooks/useApiQuery'
-import useForm from '@/hooks/useForm'
+import useForm, { focusFieldById } from '@/hooks/useForm'
 import { paths } from '@/routes/paths'
 import { portfolioService } from '@/services/portfolioService'
 import {
@@ -184,6 +184,10 @@ export default function ProposalDialog({
   const handleSubmit = form.handleSubmit(async (values) => {
     if (!hasAgreed) {
       setAgreementError(true)
+      // The acknowledgement is bespoke state rather than a `useForm` field, so
+      // `handleSubmit`'s focus-first-invalid does not reach it — send it there
+      // by hand, the way the other bespoke dialogs do (00 §12).
+      focusFieldById('proposal-terms')
       return
     }
 
@@ -387,6 +391,7 @@ export default function ProposalDialog({
             <FormControlLabel
               control={
                 <Checkbox
+                  id="proposal-terms"
                   checked={hasAgreed}
                   onChange={(event) => {
                     setAgreed(event.target.checked)
