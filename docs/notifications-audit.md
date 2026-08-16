@@ -91,8 +91,9 @@ the reason.
 | Escrow released to the creator | `paymentService.settleEscrow` (via `releasePayment`) | order's creator | `payment_released` | ✅ |
 | Refund issued (full or partial) | `paymentService.refundPayment` | buyer **and** creator | `payment_refunded` | ✅ |
 | Creator requests a payout | `paymentService.requestPayout` | requesting creator | `payout_requested` | ✅ |
-| Creator's payout request reaches the finance queue | — | admins with `settlements.process` | `payout_requested` | 🕓 **Prompt 32.** Deliberately deferred rather than added here: `notifyAdmins` exists and would work, but the notification's deep link is `/admin/settlements`, which Prompt 32 builds. Emitting now would put a queue item in front of admins that opens their dashboard home. |
-| Payout marked processing / paid / rejected | — | beneficiary creator | `payout_processed` | 🕓 **Prompt 32** (the admin settlements workflow). |
+| Creator's payout request reaches the finance queue | `paymentService.requestPayout` → `notifyAdmins` | admins with `settlements.process` | `payout_requested` | ✅ **Prompt 32.** Deferred by this audit until `/admin/settlements` existed to deep-link to; that screen is Prompt 32's, and the emit landed with it. |
+| Payout approved or rejected | `paymentService.processPayout` | beneficiary creator | `payout_processed` | ✅ **Prompt 32.** One type, two titles — "Payout approved" / "Payout rejected", the rejection carrying the reason verbatim. |
+| Payout confirmed sent | `paymentService.markPayoutPaid` | beneficiary creator | `payout_processed` | ✅ **Prompt 32.** The step that also writes the `payout` ledger row. |
 | Commission written | — | — | — | ➖ Internal accounting. It is visible on the creator's ledger and inside the release notification's figure. |
 
 ### Disputes — `disputes`
@@ -159,7 +160,7 @@ escrow leaves without a word.
 when `reason !== 'buyer_accepted'`. One `if`, one emit, no change to any
 signature or to the happy path.
 
-### 3.2 Deferred with a reason — payout requests do not reach the finance queue
+### 3.2 ~~Deferred~~ Closed by Prompt 32 — payout requests reach the finance queue
 
 `requestPayout` confirms to the creator and stops there. Admins with
 `settlements.process` should hear about it, and `notifyAdmins` would do it in
@@ -169,6 +170,11 @@ a queue item that opens the admin dashboard home. **Prompt 32 should add the
 `notifyAdmins(PERMISSIONS.SETTLEMENTS_PROCESS, …)` call alongside the screen**,
 and delete `paths.ADMIN_SETTLEMENTS` from `ADMIN_PENDING` in
 `notificationRoutes.js` at the same time.
+
+**Done (Prompt 32).** Both changes landed with `/admin/settlements`: the emit
+sits at the end of `requestPayout`, wrapped so a bell item can never fail a
+withdrawal a creator is entitled to, and `ADMIN_PENDING` lost both
+`paths.ADMIN_SETTLEMENTS` and `paths.ADMIN_PAYMENTS`.
 
 ### 3.3 Fixed — two seeded notifications pointed at the wrong record
 

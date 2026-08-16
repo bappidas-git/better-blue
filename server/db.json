@@ -11615,6 +11615,17 @@
     },
     {
       "id": "txn_112",
+      "type": "payout",
+      "payoutId": "pyo_010",
+      "userId": "usr_creator_amara",
+      "amount": -900,
+      "description": "Payout to bank account **** 4416",
+      "createdAt": "2026-08-05T11:00:00.000Z",
+      "currency": "USD",
+      "balanceAfter": 932
+    },
+    {
+      "id": "txn_113",
       "type": "charge",
       "orderId": "ord_045",
       "paymentId": "pay_047",
@@ -11626,7 +11637,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_113",
+      "id": "txn_114",
       "type": "release",
       "orderId": "ord_044",
       "paymentId": "pay_046",
@@ -11638,7 +11649,7 @@
       "balanceAfter": 2859.6
     },
     {
-      "id": "txn_114",
+      "id": "txn_115",
       "type": "commission",
       "orderId": "ord_044",
       "paymentId": "pay_046",
@@ -11650,7 +11661,7 @@
       "balanceAfter": 2753.6
     },
     {
-      "id": "txn_115",
+      "id": "txn_116",
       "type": "charge",
       "orderId": "ord_002",
       "paymentId": "pay_003",
@@ -11662,7 +11673,7 @@
       "balanceAfter": null
     },
     {
-      "id": "txn_116",
+      "id": "txn_117",
       "type": "release",
       "orderId": "ord_045",
       "paymentId": "pay_047",
@@ -11671,10 +11682,10 @@
       "description": "Escrow released for “Supper club coverage for the harvest series”",
       "createdAt": "2026-08-11T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 2352
+      "balanceAfter": 1452
     },
     {
-      "id": "txn_117",
+      "id": "txn_118",
       "type": "commission",
       "orderId": "ord_045",
       "paymentId": "pay_047",
@@ -11683,7 +11694,7 @@
       "description": "BetterBlue commission (20%) on “Supper club coverage for the harvest series”",
       "createdAt": "2026-08-11T16:10:00.000Z",
       "currency": "USD",
-      "balanceAfter": 2248
+      "balanceAfter": 1348
     }
   ],
   "commissions": [
@@ -12071,6 +12082,62 @@
       "status": "requested",
       "requestedAt": "2026-08-12T09:40:00.000Z",
       "processedAt": null
+    },
+    {
+      "id": "pyo_007",
+      "creatorId": "usr_creator_yuki",
+      "amount": 700,
+      "currency": "USD",
+      "method": {
+        "type": "bank",
+        "accountName": "Yuki Tanaka",
+        "accountMasked": "**** 5194"
+      },
+      "status": "requested",
+      "requestedAt": "2026-08-05T09:40:00.000Z",
+      "processedAt": null
+    },
+    {
+      "id": "pyo_008",
+      "creatorId": "usr_creator_noah",
+      "amount": 550,
+      "currency": "USD",
+      "method": {
+        "type": "bank",
+        "accountName": "Noah Feldman",
+        "accountMasked": "**** 3372"
+      },
+      "status": "requested",
+      "requestedAt": "2026-08-08T09:40:00.000Z",
+      "processedAt": null
+    },
+    {
+      "id": "pyo_009",
+      "creatorId": "usr_creator_zoe",
+      "amount": 800,
+      "currency": "USD",
+      "method": {
+        "type": "bank",
+        "accountName": "Zoe Okonkwo",
+        "accountMasked": "**** 6045"
+      },
+      "status": "requested",
+      "requestedAt": "2026-08-10T09:40:00.000Z",
+      "processedAt": null
+    },
+    {
+      "id": "pyo_010",
+      "creatorId": "usr_creator_amara",
+      "amount": 900,
+      "currency": "USD",
+      "method": {
+        "type": "bank",
+        "accountName": "Amara Diallo",
+        "accountMasked": "**** 4416"
+      },
+      "status": "paid",
+      "requestedAt": "2026-08-02T09:40:00.000Z",
+      "processedAt": "2026-08-05T11:00:00.000Z"
     }
   ],
   "disputes": [

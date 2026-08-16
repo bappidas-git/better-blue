@@ -2982,6 +2982,10 @@ are the reason these belong on the server:
 | 29 | `adminCloseRequest` | `requestService` | 4 + 2N | `POST /admin/contentRequests/:id/close` |
 | 30 | `getAdminOrderContext` | `orderService` | 11 | `GET /admin/orders/:id` |
 | 31 | `replyToTicket` | `supportService` | 3 | `POST /admin/supportTickets/:id/replies` |
+| 32 | `processPayout` | `paymentService` | 4 | `POST /payouts/:id/process` |
+| 33 | `markPayoutPaid` | `paymentService` | 5 | `POST /payouts/:id/paid` |
+| 34 | `getEscrowOverview` | `paymentService` | 4+ | `GET /admin/escrow` |
+| 35 | `getFinanceSummary` | `paymentService` | 3+ | `GET /admin/finance/summary` |
 
 Operations 16 and 17 were added by Prompt 20 (the buyer's order workspace), and
 operation 18 by Prompt 21 (the creator's) — the mirror of operation 14, section
@@ -3018,7 +3022,16 @@ behind the buyer's and creator's order screens; 31 is the only new conversation
 in the console. **Admin cancellation of an order is deliberately not a new
 operation** — it is operation 15 with `byRole: 'admin'`, which is what makes the
 refund path identical whether the trigger is a dispute resolution or an
-intervention.
+intervention. Operations 32–35 arrived with Prompt 32 (admin finance) and
+complete the payout lifecycle operation 11 opened: 11 is a creator asking, 32 is
+finance answering, and 33 is the **separate** moment money leaves the balance —
+two steps because "we accept this request" and "the bank has sent it" are two
+different facts, and only the second writes a ledger row (`docs/payments.md` §5).
+34 and 35 are reads that never write, in the shape of 24 and 25. **Refunding
+from the finance console is deliberately not a new operation** —
+`adminRefundOrder` is a named wrapper over operation 4 that supplies the
+`intervention` refund context and requires a reason; a second implementation of
+a refund is the last thing this product needs.
 
 ### 7.2 The sequences
 
@@ -4311,6 +4324,116 @@ stored as a `ticket_replies` row rather than a JSON array.
 
 ---
 
+#### 32. `processPayout(payoutId, { action, reason, actor })`
+
+Finance accepts or refuses a creator's withdrawal. Added by Prompt 32, gated on
+`settlements.process`.
+
+**Mock:**
+
+1. `GET /payouts/:id`
+2. `PATCH /payouts/:id` → approve: `{ status: 'processing', processedAt }` ·
+   reject: `{ status: 'rejected', processedAt, rejectedReason }`, both through
+   `PAYOUT_STATUS_MACHINE`
+3. `POST /notifications` — the beneficiary, `payout_processed`
+4. `POST /auditLogs` — `payout.process` or `payout.reject`,
+   `meta: { creatorId, amount, fromStatus, toStatus, reason? }` — the verbs the
+   seed already uses, per the "extend, do not rename" rule in §6.26
+
+**No ledger row, either way.** Approving states an intention; rejecting releases
+a reservation. A rejected payout stops being subtracted from `available` simply
+by leaving `requested`, so the creator's balance returns on the next read of
+`getEarningsSummary` with nothing written to undo.
+
+A rejection **requires** a reason (`validation_failed`, `details.reason`): the
+creator reads it word for word on `/creator/earnings`, and an unexplained
+"Rejected" chip against somebody's wages is the most alarming thing this product
+could show.
+
+**Laravel — `POST /payouts/:id/process` → `{ payout }`**
+
+```json
+{ "action": "reject", "reason": "The account name on file did not match the bank record." }
+```
+
+#### 33. `markPayoutPaid(payoutId, { actor })`
+
+The second, separate step: finance confirms the transfer has actually gone out.
+**This is the only place a `payout` ledger row is written** (§6.15,
+`docs/payments.md` §5).
+
+**Mock:**
+
+1. `GET /payouts/:id`
+2. `PATCH /payouts/:id` → `{ status: 'paid', processedAt }` (`processing → paid`)
+3. `GET /transactions?userId=:creatorId` — the balance to carry forward
+   (MOCK-BALANCE, §6.13)
+4. `POST /transactions` — `type: 'payout'`, `userId: creatorId`,
+   `amount: −payout.amount`, `payoutId`, `balanceAfter`
+5. `POST /notifications` + `POST /auditLogs` — `payout.mark_paid`,
+   `meta: { creatorId, amount, toStatus, transactionId }`
+
+MOCK-TRANSFER: no bank is called and nothing outside BetterBlue is checked. The
+admin is asserting that a transfer *they* made elsewhere has gone out, and the
+confirmation dialog says exactly that — a prototype that implied it had moved
+somebody's wages would be the wrong kind of demo.
+
+A failure after step 2 throws `server_error` with `{ step, completed }`: the
+payout is `paid` with no ledger row, which is a reconciliation a human has to
+do, and swallowing it is how a balance silently stops adding up.
+
+**Laravel — `POST /payouts/:id/paid` → `{ payout, transaction }`**, wrapped in
+`DB::transaction()` with the idempotency key from §1.8 so a retried confirmation
+cannot debit a balance twice.
+
+#### 34. `getEscrowOverview()`
+
+Every payment the platform is currently holding, with its age and its parties.
+
+**Mock:**
+
+1. `GET /payments?status=held&_sort=heldAt&_order=asc` — walked to exhaustion
+   (see the MOCK-AGGREGATE note below)
+2. `GET /orders?id=…` — batched over the page's order ids
+3. `GET /disputes?orderId=…&status=…` — live cases only, so a resolved dispute
+   does not flag a row
+4. `GET /users?id=…` — both parties, batched
+
+Returns the rows plus `{ heldTotal, heldCount, agingBuckets, truncated }`.
+Buckets are 0–7 / 8–14 / 15–30 / over 30 days.
+
+**Laravel — `GET /admin/escrow`**, one query with its joins and one `GROUP BY`
+on the age buckets.
+
+#### 35. `getFinanceSummary({ months = 6 })`
+
+Five figures per calendar month: `chargeVolume`, `released`, `refunded`,
+`commissionRevenue`, `payoutsPaid`.
+
+**Mock:** three folds — `transactions` and `commissions` from the window start,
+and `payouts?status=paid` — bucketed by `createdAt`, except payouts which are
+dated by `processedAt` because that is when the money actually left.
+
+`commissionRevenue` reads the **`commissions` collection**, not the ledger's
+`commission` rows. They agree to the cent (one is the negation of the other), but
+the ledger row is a debit against a *creator's* balance while the `commissions`
+row is the platform's revenue record (`docs/payments.md` §7) — and reading the
+revenue record is what makes this figure reconcile with operation 24's chart,
+which reads the same collection.
+
+**Laravel — `GET /admin/finance/summary?months=6`**, three
+`GROUP BY DATE_FORMAT(…, '%Y-%m')` queries unioned.
+
+> **MOCK-AGGREGATE — the finance folds walk pages.** These are the first reads in
+> the product whose row count is not bounded by one member: a six-month ledger
+> outgrows the provider's 100-row page ceiling (§4.1) on any real marketplace,
+> and quietly summing the first page would print a number that is simply wrong.
+> So each fold pages to exhaustion up to a 10-page cap and returns `truncated`
+> when it stopped early — and every screen prints a warning band rather than a
+> total it cannot stand behind.
+
+---
+
 ### 7.3 Admin list parameters (Prompt 31)
 
 The console's list screens call **service functions**, never a raw collection
@@ -4321,6 +4444,19 @@ The console's list screens call **service functions**, never a raw collection
 | `adminListRequests` | `requestService` | `search`, `status[]`, `categoryId[]`, `createdFrom`, `createdTo` | `createdAt`, `publishedAt`, `deadline`, `budgetMax`, `proposalsCount` |
 | `adminListOrders` | `orderService` | `search`, `status[]`, `paymentStatus[]`, `categoryId[]`, `createdFrom`, `createdTo` | `createdAt`, `deliveryDueAt`, `price` |
 | `adminListTickets` | `supportService` | `search`, `status[]`, `createdFrom`, `createdTo` | `createdAt` |
+| `adminListTransactions` | `paymentService` | `type[]`, `userId`, `orderId`, `search` (an order id), `from`, `to` | `createdAt` |
+| `adminListSettlements` | `paymentService` | `status[]` | `requestedAt` |
+| `adminListCommissions` | `paymentService` | `month` (`YYYY-MM`) | `createdAt` |
+
+The three Prompt 32 rows join too: ledger rows carry `user` and `order`,
+settlements carry `creator`, commissions carry `order`. `adminListSettlements`
+defaults to **ascending** `requestedAt` — a payout queue is somebody waiting for
+their own money, and the person kept waiting longest is the one to serve.
+
+`adminListTransactions({ search })` is an **exact order id**, not free text. The
+ledger's `description` is copy the platform generated itself
+(`constants/transactionTemplates.js`), so searching it finds phrasing rather than
+records; the order is what a finance question is actually about.
 
 All three take `page`, `limit`, and `order`, return the standard
 `{ items, total, page, limit }`, and join their rows: requests carry `buyer`,

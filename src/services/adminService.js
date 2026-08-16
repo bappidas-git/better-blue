@@ -406,6 +406,30 @@ async function loadOldestModeration(limit) {
 }
 
 /**
+ * The oldest payout requests nobody has picked up, with the creator behind
+ * each. Added by Prompt 32, which built the screen the card now links to — a
+ * queue card pointing at an unmounted route was the reason this one waited.
+ *
+ * `requested` only, matching {@link loadPendingSettlements}: a `processing`
+ * payout is already somebody's job.
+ */
+async function loadOldestPayouts(limit) {
+  const { items } = await payoutService.list({
+    page: 1,
+    limit,
+    sort: 'requestedAt',
+    order: SORT_ORDER.ASC,
+    filters: { status: PAYOUT_STATUS.REQUESTED },
+  })
+  if (items.length === 0) return items
+
+  const creators = await userService.listByIds(items.map((payout) => payout.creatorId)).catch(() => [])
+  const nameById = new Map(creators.map((user) => [user.id, user.name]))
+
+  return items.map((payout) => ({ ...payout, creatorName: nameById.get(payout.creatorId) ?? null }))
+}
+
+/**
  * Orders past their delivery date that have not been delivered — longest
  * overdue first, so the worst case is the first thing read.
  */
@@ -455,7 +479,10 @@ async function loadOverdueOrders(limit, now) {
  *   first, each carrying `creatorName`
  * @property {Array<object>|null} overdueOrders undelivered orders past their
  *   delivery date, longest overdue first
- * @property {{disputes: ApiError|null, moderation: ApiError|null, orders: ApiError|null}} errors
+ * @property {Array<object>|null} oldestPayouts payout requests nobody has picked
+ *   up, oldest first, each carrying `creatorName` (Prompt 32)
+ * @property {{disputes: ApiError|null, moderation: ApiError|null,
+ *   orders: ApiError|null, settlements: ApiError|null}} errors
  */
 
 export const adminService = Object.freeze({
@@ -522,11 +549,12 @@ export const adminService = Object.freeze({
   },
 
   /**
-   * The three queues the console exists to keep empty — the oldest item in each
-   * is the one the platform has kept somebody waiting on longest.
+   * The queues the console exists to keep empty — the oldest item in each is
+   * the one the platform has kept somebody waiting on longest. Three at
+   * Prompt 28; four since Prompt 32 added settlements.
    *
    * **Future endpoint:** `GET /admin/attention?limit=3` (contract §7.1
-   * operation 25) — three `ORDER BY … ASC LIMIT 3` reads with their joins,
+   * operation 25) — four `ORDER BY … ASC LIMIT 3` reads with their joins,
    * returned together.
    *
    * @param {object} [options]
@@ -535,17 +563,27 @@ export const adminService = Object.freeze({
    * @returns {Promise<AdminAttentionQueues>} never rejects — see `errors`
    */
   async getAttentionQueues({ limit = ATTENTION_LIMIT, now } = {}) {
-    const [disputes, moderation, orders] = await Promise.all([
+    const [disputes, moderation, orders, settlements] = await Promise.all([
       section(() => loadOldestDisputes(limit)),
       section(() => loadOldestModeration(limit)),
       section(() => loadOverdueOrders(limit, now)),
+      section(() => loadOldestPayouts(limit)),
     ])
 
     return {
       oldestOpenDisputes: disputes.data,
       oldestModerationItems: moderation.data,
       overdueOrders: orders.data,
-      errors: { disputes: disputes.error, moderation: moderation.error, orders: orders.error },
+      // Prompt 32. The fourth queue: `getOverviewStats` has counted pending
+      // settlements since Prompt 28, but nothing showed *which* ones because
+      // `/admin/settlements` did not exist to send anybody to.
+      oldestPayouts: settlements.data,
+      errors: {
+        disputes: disputes.error,
+        moderation: moderation.error,
+        orders: orders.error,
+        settlements: settlements.error,
+      },
     }
   },
 

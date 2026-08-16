@@ -98,8 +98,16 @@ export function resolveEntityPath(type, id) {
       return paths.adminOrderDetail(id)
     case 'support_ticket':
       return `${paths.ADMIN_SUPPORT}?ticket=${encodeURIComponent(id)}`
-    // case 'payment':           return paths.ADMIN_PAYMENTS               // Prompt 32
-    // case 'payout':            return paths.ADMIN_SETTLEMENTS            // Prompt 32
+    // Prompt 32. Neither record has a route of its own: a payment is read in
+    // the escrow monitor or the ledger, and a payout in the settlement queue,
+    // so both chips point at the screen that lists them — the same shape
+    // `report` and `request` take. The ledger's own tab is where a `pay_…`
+    // actually resolves, which is why the payment chip lands on the tab strip
+    // rather than deep-linking to a row that may be forty pages down.
+    case 'payment':
+      return paths.ADMIN_PAYMENTS
+    case 'payout':
+      return paths.ADMIN_SETTLEMENTS
     // case 'dispute':           return paths.adminDisputeDetail(id)       // Prompt 33
     // case 'affiliate_profile':                                           // Prompt 34
     // case 'affiliate_earning': return paths.ADMIN_AFFILIATES             // Prompt 34

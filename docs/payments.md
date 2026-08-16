@@ -242,8 +242,22 @@ attempt *and* a `processing` retry, and must still be payable.
 ### Payout
 
 `requested → processing | rejected`, `processing → paid`. **Only a `paid` payout
-writes its `payout` ledger row** — that is the moment money leaves the balance
-(admin processing arrives in Prompt 32).
+writes its `payout` ledger row** — that is the moment money leaves the balance.
+
+Prompt 32 built the desk that works this machine (`/admin/settlements`), and it
+does so in **two deliberate steps**:
+
+| Step | Service function | What moves |
+|---|---|---|
+| Approve | `processPayout(id, { action: 'approve' })` | status → `processing`. No money. |
+| Reject | `processPayout(id, { action: 'reject', reason })` | status → `rejected`, reason stored. No money; the reservation is released by leaving `requested`. |
+| Confirm sent | `markPayoutPaid(id)` | status → `paid`, **and the `payout` ledger row** |
+
+They are two calls rather than one because they are two different facts —
+"we accept this request" and "the bank has sent it" — and collapsing them would
+have the platform assert the second when only the first is known. MOCK-TRANSFER:
+no bank is called at any point; the admin is recording a transfer they made
+elsewhere, and the confirmation copy on screen says so.
 
 ---
 
@@ -317,7 +331,7 @@ negative, money arriving is positive.
 | Escrow released | `release` — creator, `+baseAmount`; `commission` — creator, `−fee` |
 | Full refund | `refund` — buyer, `+amount` |
 | Partial refund | `partial_refund` — buyer, `+refunded`; then the two release rows on the remainder |
-| Payout paid | `payout` — creator, `−amount` (Prompt 32) |
+| Payout paid | `payout` — creator, `−amount`, written by `markPayoutPaid` |
 | Affiliate conversion | `affiliate_commission` — referrer, `+share` (Prompt 34) |
 
 The commission is a **debit against the creator's balance**, not a credit to a

@@ -12,12 +12,15 @@ import ErrorState from '@/components/feedback/ErrorState'
 import ListSkeleton from '@/components/feedback/skeletons/ListSkeleton'
 import StatusChip from '@/components/data-display/StatusChip'
 import { ORDER_STATUS } from '@/constants/statuses'
+import { SETTLEMENT_SLA } from '@/features/admin/finance/utils/financeFilters'
 import { AgeBadge, EntityRefChip } from '@/features/admin/shared'
 import { categoryLabel } from '@/features/disputes/utils/disputeDisplay'
 import { paths } from '@/routes/paths'
-import { formatDate, formatNumber } from '@/utils/formatters'
+import { formatCurrency, formatDate, formatNumber } from '@/utils/formatters'
 
-// "What has been waiting longest" — three queues, three rows each.
+// "What has been waiting longest" — four queues, three rows each (three at
+// Prompt 28; settlements joined with Prompt 32, once there was a screen to send
+// a reader to).
 //
 // The KPI band above says *how many*; this section says *which ones*, oldest
 // first, because the oldest item in a queue is the person the platform has kept
@@ -30,7 +33,8 @@ import { formatDate, formatNumber } from '@/utils/formatters'
 //
 // The "View all" links are comment-gated until the prompt that builds their
 // screen — the same rule `navConfig` follows, for the same reason. Moderation
-// went live with Prompt 30 and orders with Prompt 31; disputes waits for 33.
+// went live with Prompt 30, orders with Prompt 31, and settlements with
+// Prompt 32; disputes waits for 33.
 
 /**
  * The order list, opened the way this card reads it: the live states, due
@@ -45,6 +49,9 @@ const SLA = Object.freeze({
   disputes: { warnAfterDays: 3, errorAfterDays: 7 },
   moderation: { warnAfterDays: 2, errorAfterDays: 5 },
   orders: { warnAfterDays: 2, errorAfterDays: 5 },
+  // Prompt 32 — imported rather than restated, so a badge cannot change colour
+  // between this card and the screen it links to.
+  settlements: SETTLEMENT_SLA,
 })
 
 /** One queue card: heading, count, rows, and whatever state it is in. */
@@ -154,13 +161,20 @@ export default function AttentionQueues({ queues, loading = false, onRetry }) {
   const disputes = queues?.oldestOpenDisputes ?? []
   const moderation = queues?.oldestModerationItems ?? []
   const orders = queues?.overdueOrders ?? []
+  const payouts = queues?.oldestPayouts ?? []
 
   return (
     <Box
       sx={{
         display: 'grid',
         gap: { xs: 2, md: 2.5 },
-        gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
+        // Four cards since Prompt 32: two-up from `md` and four across at `lg`,
+        // rather than three-and-a-widow.
+        gridTemplateColumns: {
+          xs: '1fr',
+          md: 'repeat(2, minmax(0, 1fr))',
+          lg: 'repeat(4, minmax(0, 1fr))',
+        },
       }}
     >
       <QueueCard
@@ -278,6 +292,51 @@ export default function AttentionQueues({ queues, loading = false, onRetry }) {
             sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
           >
             Open the order list
+            <Icon icon="tabler:arrow-right" width={16} aria-hidden="true" />
+          </Link>
+        </Box>
+      </QueueCard>
+
+      {/* Prompt 32. The count behind this card has been in `getOverviewStats`
+          since Prompt 28; what it lacked was somewhere to send anybody. */}
+      <QueueCard
+        title="Settlements waiting"
+        icon="solar:wallet-money-linear"
+        description="Payout requests to work"
+        count={loading || errors.settlements ? undefined : payouts.length}
+        loading={loading}
+        error={errors.settlements}
+        onRetry={onRetry}
+        empty={<NothingWaiting message="No creator is waiting on a payout right now." />}
+      >
+        {payouts.length > 0
+          ? payouts.map((payout, index) => (
+              <QueueRow
+                key={payout.id}
+                primary={formatCurrency(payout.amount, payout.currency)}
+                secondary={payout.creatorName ?? 'A creator'}
+                chip={
+                  <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
+                    <StatusChip status={payout.status} size="sm" showDot={false} />
+                    <EntityRefChip type="payout" id={payout.id} label={payout.id} />
+                  </Stack>
+                }
+                badge={
+                  <AgeBadge date={payout.requestedAt} noun="Requested" {...SLA.settlements} />
+                }
+                isLast={index === payouts.length - 1}
+              />
+            ))
+          : null}
+        <Box sx={{ mt: 'auto', pt: 1.5 }}>
+          <Link
+            component={RouterLink}
+            to={paths.ADMIN_SETTLEMENTS}
+            variant="body2"
+            underline="hover"
+            sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+          >
+            Open the settlement queue
             <Icon icon="tabler:arrow-right" width={16} aria-hidden="true" />
           </Link>
         </Box>

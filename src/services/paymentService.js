@@ -24,10 +24,12 @@ import dayjs from 'dayjs'
 
 import { appConfig } from '@/config/appConfig'
 import { NOTIFICATION_TYPE } from '@/constants/notificationTypes'
+import { PERMISSIONS } from '@/constants/permissions'
 import { isAdminRole } from '@/constants/roles'
 import {
   ORDER_STATUS_MACHINE,
   PAYMENT_STATUS_MACHINE,
+  PAYOUT_STATUS_MACHINE,
 } from '@/constants/stateMachines'
 import {
   ORDER_STATUS,
@@ -55,10 +57,24 @@ import { createCrudService } from './api/crudFactory'
 import { SORT_ORDER } from './api/listAdapter'
 import { auditService } from './auditService'
 import { creatorProfileService } from './creatorProfileService'
+// CYCLE (Prompt 32): the escrow monitor flags a held payment whose order is
+// contested, and `disputeService` reaches back here through `orderService`. The
+// harmless shape that pair already has — nothing is dereferenced at evaluation
+// time, only inside function bodies. Imported rather than re-declared because
+// "which dispute statuses are live" is a rule with one home (§4.2).
+import { ACTIVE_DISPUTE_STATUSES, disputeService } from './disputeService'
 import { notificationService } from './notificationService'
 import { getPaymentProvider } from './payments'
 import { payoutService } from './payoutService'
 import { settingsService, SETTINGS_FALLBACK } from './settingsService'
+// CYCLE (Prompt 32): `userService` imports this module for a member's money
+// aggregates, and the admin finance reads below call back for the names behind
+// a ledger row. The harmless shape `disputeService`/`orderService` already
+// have — neither module touches the other at evaluation time, and both
+// dereference only inside function bodies. It is imported rather than replaced
+// by a raw collection handle because `listByIds` strips credentials, and an
+// admin table is exactly where that must not be re-derived by hand.
+import { userService } from './userService'
 
 const payments = createCrudService('payments', { idPrefix: ID_PREFIX.PAYMENT })
 const transactions = createCrudService('transactions', { idPrefix: ID_PREFIX.TRANSACTION })
@@ -120,6 +136,38 @@ const BALANCE_BEARING_TYPES = new Set([
 
 /** Ledger types that make up a creator's lifetime earnings. */
 const EARNING_TYPES = new Set([TRANSACTION_TYPE.RELEASE, TRANSACTION_TYPE.COMMISSION])
+
+/** Ledger types that return money to a buyer — one figure on the finance summary. */
+const REFUND_TYPES = new Set([TRANSACTION_TYPE.REFUND, TRANSACTION_TYPE.PARTIAL_REFUND])
+
+/**
+ * Columns on the admin finance summary — six months including the current
+ * partial one, matching `adminService.OVERVIEW_MONTHS` so the console's two
+ * revenue charts cover the same window.
+ */
+export const FINANCE_SUMMARY_MONTHS = 6
+
+/**
+ * How long escrow has been sitting, in days, as the buckets the escrow monitor
+ * legends and groups by (Prompt 32 §4.2). Open-ended at the top: `maxDays` of
+ * `null` means "and everything older".
+ *
+ * Held money is not a queue anybody works, so these are not an SLA — they are a
+ * shape. A marketplace whose escrow is mostly in the first bucket is settling
+ * work; one whose escrow is mostly in the last has orders nobody is finishing.
+ */
+export const ESCROW_AGING_BUCKETS = Object.freeze([
+  Object.freeze({ key: 'fresh', label: '0–7 days', minDays: 0, maxDays: 7 }),
+  Object.freeze({ key: 'week', label: '8–14 days', minDays: 8, maxDays: 14 }),
+  Object.freeze({ key: 'fortnight', label: '15–30 days', minDays: 15, maxDays: 30 }),
+  Object.freeze({ key: 'stale', label: 'Over 30 days', minDays: 31, maxDays: null }),
+])
+
+/** Payout states an admin can still act on, oldest-first in the queue. */
+const ACTIONABLE_PAYOUT_STATUSES = Object.freeze([
+  PAYOUT_STATUS.REQUESTED,
+  PAYOUT_STATUS.PROCESSING,
+])
 
 /**
  * Columns on the earnings screen's chart — a full trailing year, including the
@@ -202,6 +250,14 @@ function addDaysIso(iso, days) {
  * (contract §6.13), so the newest balance-bearing row is read back and added
  * to. Two concurrent writes would produce two rows with the same balance —
  * Laravel computes it inside the transaction instead.
+ *
+ * **Ties on `createdAt` are broken by id** (Prompt 32). A release and the
+ * commission debited against it are written with the *same* timestamp — that is
+ * true of every seeded settlement and of `settleEscrow` — so "newest row" is
+ * ambiguous exactly where it matters most, and picking the release would treat
+ * the gross amount as the balance and lose the fee. Ids order correctly for
+ * both kinds of row: the seed's are zero-padded sequences, and
+ * `generateId` mints a base-36 timestamp that always sorts above them.
  */
 async function latestBalanceOf(userId) {
   const { items } = await transactions.list({
@@ -212,8 +268,17 @@ async function latestBalanceOf(userId) {
     filters: { userId },
   })
 
-  const latest = items.find((row) => Number.isFinite(Number(row.balanceAfter)))
-  return latest ? Number(latest.balanceAfter) : 0
+  const candidates = items.filter((row) => Number.isFinite(Number(row.balanceAfter)))
+  if (candidates.length === 0) return 0
+
+  const newest = candidates.reduce((best, row) => {
+    const gap = Date.parse(row.createdAt) - Date.parse(best.createdAt)
+    if (gap > 0) return row
+    if (gap < 0) return best
+    return String(row.id) > String(best.id) ? row : best
+  })
+
+  return Number(newest.balanceAfter)
 }
 
 /**
@@ -414,6 +479,101 @@ function latestPaymentByOrder(rows = []) {
 /** The date an earnings row is filed under: when it settled, else when it started. */
 function earningsRowDate(order) {
   return order.completedAt ?? order.activatedAt ?? order.createdAt ?? null
+}
+
+/* -------------------------------------------------------------------------- */
+/* Admin finance folds (Prompt 32)                                            */
+/* -------------------------------------------------------------------------- */
+
+/** Pages one fold may walk — 1,000 rows, far beyond the seeded marketplace. */
+const FOLD_PAGE_CAP = 10
+
+/**
+ * Pages a list function to exhaustion, up to {@link FOLD_PAGE_CAP} pages.
+ *
+ * MOCK-AGGREGATE: the platform-wide finance reads below are the first in the
+ * product whose row count is not bounded by one member — a six-month ledger
+ * outgrows the provider's 100-row page ceiling (contract §4.1) on any real
+ * marketplace, and quietly summing the first page would print a number that is
+ * simply wrong. So the fold walks pages and **says so** when it stopped early:
+ * every caller returns `truncated`, and every screen prints a warning rather
+ * than a total it cannot stand behind. Laravel answers each of these with one
+ * `GROUP BY` and the whole helper goes away.
+ *
+ * @param {(params: object) => Promise<import('./api/listAdapter').ListResult>} listFn
+ * @param {object} params list params — `page` is supplied by the walk
+ * @returns {Promise<{items: object[], total: number, truncated: boolean}>}
+ */
+async function foldPages(listFn, params = {}) {
+  const items = []
+  let page = 1
+  let total = 0
+
+  for (; page <= FOLD_PAGE_CAP; page += 1) {
+    // Sequential by necessity: the number of pages is not known until the first
+    // response, and a fold that guessed would read pages that do not exist.
+    // eslint-disable-next-line no-await-in-loop
+    const result = await listFn({ ...params, page, limit: FOLD_LIMIT })
+    total = result.total ?? items.length + result.items.length
+    items.push(...result.items)
+    if (items.length >= total || result.items.length === 0) break
+  }
+
+  return { items, total, truncated: items.length < total }
+}
+
+/** Whole days between an ISO timestamp and `now`, floored at zero. */
+function ageInDays(iso, now) {
+  const from = dayjs(iso)
+  if (!from.isValid()) return 0
+  return Math.max(0, dayjs(now ?? undefined).diff(from, 'day'))
+}
+
+/** The {@link ESCROW_AGING_BUCKETS} entry an age in days falls into. */
+function bucketForAge(days) {
+  return (
+    ESCROW_AGING_BUCKETS.find(
+      (bucket) => days >= bucket.minDays && (bucket.maxDays === null || days <= bucket.maxDays)
+    ) ?? ESCROW_AGING_BUCKETS[ESCROW_AGING_BUCKETS.length - 1]
+  )
+}
+
+/**
+ * The last `months` calendar months as empty finance buckets, oldest first —
+ * the summary's own shape, alongside {@link emptyMonthBuckets} which the
+ * creator's single-figure chart uses.
+ */
+function emptyFinanceMonths(now, months) {
+  const thisMonth = dayjs(now ?? undefined).startOf('month')
+
+  return Array.from({ length: months }, (unused, index) => {
+    const month = thisMonth.subtract(months - 1 - index, 'month')
+    return {
+      key: month.format('YYYY-MM'),
+      label: month.format('MMM'),
+      chargeVolume: 0,
+      released: 0,
+      refunded: 0,
+      commissionRevenue: 0,
+      payoutsPaid: 0,
+    }
+  })
+}
+
+/** Adds `amount` to one field of a month bucket, in cent space. */
+function addToMonth(bucket, field, amount) {
+  if (bucket) bucket[field] = sumMoney([bucket[field], amount])
+}
+
+/**
+ * Resolves member ids to accounts, keyed by id, never rejecting: a finance
+ * table missing a name is readable; one that failed to load is not.
+ */
+async function namesByIdFor(ids) {
+  const unique = [...new Set(ids.filter(Boolean))]
+  if (unique.length === 0) return new Map()
+  const people = await userService.listByIds(unique).catch(() => [])
+  return new Map(people.map((person) => [person.id, person]))
 }
 
 export const paymentService = Object.freeze({
@@ -1257,7 +1417,699 @@ export const paymentService = Object.freeze({
       entityId: payout.id,
     })
 
+    // The finance queue hears about it too. Deferred by Prompt 27's audit
+    // (`docs/notifications-audit.md` §3.2) precisely until the screen it deep
+    // links to existed — `/admin/settlements` is Prompt 32's, and this is that
+    // prompt. Best-effort like every other emit: a bell item must never fail a
+    // withdrawal a creator is entitled to.
+    try {
+      await notificationService.notifyAdmins(PERMISSIONS.SETTLEMENTS_PROCESS, {
+        type: NOTIFICATION_TYPE.PAYOUT_REQUESTED,
+        title: 'Payout request waiting',
+        body:
+          `${formatCurrency(requested, summary.currency)} requested by a creator. ` +
+          'Approve or reject it from the settlements queue.',
+        entityType: 'payout',
+        entityId: payout.id,
+      })
+    } catch {
+      /* best-effort */
+    }
+
     return payout
+  },
+
+  /* —— admin finance (Prompt 32) ———————————————————————————————————————— */
+
+  /**
+   * **The platform ledger**, with the names and titles behind each row
+   * (Prompt 32 §4.3). The admin counterpart of {@link listTransactions}, which
+   * returns bare rows: a finance screen printing "usr_creator_ava" is a screen
+   * nobody can reconcile against anything.
+   *
+   * `search` matches an **order id** rather than free text — the ledger's
+   * `description` is generated copy (`constants/transactionTemplates.js`) and
+   * searching prose that the platform itself wrote finds nothing an admin was
+   * looking for. The order is the thing a finance question is actually about.
+   *
+   * MOCK-JOIN: the page is fetched, then its users and orders are read in two
+   * batched calls. Both fail soft — a row without a resolved name still shows
+   * its money, which is the column that matters.
+   *
+   * @param {object} [params]
+   * @param {number} [params.page=1]
+   * @param {number} [params.limit=20]
+   * @param {string|string[]} [params.type] a `TRANSACTION_TYPE` value, or several
+   * @param {string} [params.userId] whose ledger
+   * @param {string} [params.orderId] one engagement
+   * @param {string} [params.search] an order id, exact — `ord_012`
+   * @param {string} [params.from] ISO lower bound on `createdAt`
+   * @param {string} [params.to] ISO upper bound on `createdAt`
+   * @param {'asc'|'desc'} [params.order='desc']
+   * @returns {Promise<import('./api/listAdapter').ListResult & {items: object[]}>}
+   *   each item carries `user` and `order` (either may be `null`)
+   *
+   * **Future endpoint:** `GET /admin/transactions` — the same filters, with the
+   * two joins done in SQL.
+   */
+  async adminListTransactions({
+    page = 1,
+    limit = 20,
+    type,
+    userId,
+    orderId,
+    search,
+    from,
+    to,
+    order = SORT_ORDER.DESC,
+  } = {}) {
+    const filters = {}
+    if (type) filters.type = type
+    if (userId) filters.userId = userId
+    // A search *is* an order filter, so a typed id and a picked order cannot
+    // disagree: the explicit one wins.
+    const searchedOrderId = orderId ?? (search ? String(search).trim() : undefined)
+    if (searchedOrderId) filters.orderId = searchedOrderId
+    if (from) filters.createdAt_gte = from
+    if (to) filters.createdAt_lte = to
+
+    const result = await transactions.list({
+      page,
+      limit,
+      sort: 'createdAt',
+      order,
+      filters,
+    })
+    if (result.items.length === 0) return { ...result, items: [] }
+
+    const [people, orderPage] = await Promise.all([
+      namesByIdFor(result.items.map((row) => row.userId)),
+      orders
+        .list({
+          page: 1,
+          limit: FOLD_LIMIT,
+          filters: { id: [...new Set(result.items.map((row) => row.orderId).filter(Boolean))] },
+        })
+        .catch(() => ({ items: [] })),
+    ])
+
+    const orderById = new Map(orderPage.items.map((row) => [row.id, row]))
+
+    return {
+      ...result,
+      items: result.items.map((row) => ({
+        ...row,
+        user: people.get(row.userId) ?? null,
+        order: row.orderId ? (orderById.get(row.orderId) ?? null) : null,
+      })),
+    }
+  },
+
+  /**
+   * **Every payment BetterBlue is currently holding**, with both parties, the
+   * engagement, how long it has been held, and whether it is contested
+   * (Prompt 32 §4.2).
+   *
+   * "Held" is read from the **payment**, not the order: `held` is the one state
+   * that means money is sitting with the platform (`docs/payments.md` §5), and
+   * an order status is a statement about work rather than about money. The two
+   * agree almost always, and this screen exists for the times they do not.
+   *
+   * MOCK-AGGREGATE: one fold over held payments (see {@link foldPages}), then
+   * three batched joins. `truncated` is returned rather than hidden, because a
+   * short escrow total is worse than no escrow total.
+   *
+   * **Reconcile:** filter `db.payments` to `status === 'held'` and sum `amount`.
+   *
+   * @param {object} [options]
+   * @param {Date|string} [options.now] injectable clock for the ages
+   * @returns {Promise<{items: object[], heldTotal: number, heldCount: number,
+   *   agingBuckets: Array<{key: string, label: string, count: number, amount: number}>,
+   *   currency: string, truncated: boolean}>}
+   *
+   * **Future endpoint:** `GET /admin/escrow` — one query with its joins and one
+   * `GROUP BY` on the age buckets.
+   */
+  async getEscrowOverview({ now } = {}) {
+    const fold = await foldPages(payments.list, {
+      sort: 'heldAt',
+      order: SORT_ORDER.ASC,
+      filters: { status: PAYMENT_STATUS.HELD },
+    })
+
+    const buckets = ESCROW_AGING_BUCKETS.map((bucket) => ({
+      key: bucket.key,
+      label: bucket.label,
+      count: 0,
+      amount: 0,
+    }))
+    const bucketByKey = new Map(buckets.map((bucket) => [bucket.key, bucket]))
+
+    const empty = {
+      items: [],
+      heldTotal: 0,
+      heldCount: 0,
+      agingBuckets: buckets,
+      currency: appConfig.defaultCurrency,
+      truncated: fold.truncated,
+    }
+    if (fold.items.length === 0) return empty
+
+    const orderIds = [...new Set(fold.items.map((payment) => payment.orderId).filter(Boolean))]
+
+    const [orderPage, disputePage] = await Promise.all([
+      orders.list({ page: 1, limit: FOLD_LIMIT, filters: { id: orderIds } }).catch(() => ({ items: [] })),
+      // Only the *live* case matters here: a resolved dispute on a held payment
+      // is history, and flagging it would send an admin looking for a decision
+      // that has already been taken.
+      disputeService
+        .list({
+          page: 1,
+          limit: FOLD_LIMIT,
+          filters: { orderId: orderIds, status: [...ACTIVE_DISPUTE_STATUSES] },
+        })
+        .catch(() => ({ items: [] })),
+    ])
+
+    const orderById = new Map(orderPage.items.map((row) => [row.id, row]))
+    const disputeByOrderId = new Map()
+    disputePage.items.forEach((dispute) => {
+      if (!disputeByOrderId.has(dispute.orderId)) disputeByOrderId.set(dispute.orderId, dispute)
+    })
+
+    const people = await namesByIdFor(
+      fold.items.flatMap((payment) => {
+        const order = orderById.get(payment.orderId)
+        return [payment.buyerId ?? order?.buyerId, order?.creatorId]
+      })
+    )
+
+    const items = fold.items.map((payment) => {
+      const order = orderById.get(payment.orderId) ?? null
+      const heldAt = payment.heldAt ?? payment.createdAt
+      const ageDays = ageInDays(heldAt, now)
+      const bucket = bucketForAge(ageDays)
+
+      const row = bucketByKey.get(bucket.key)
+      if (row) {
+        row.count += 1
+        row.amount = sumMoney([row.amount, payment.amount])
+      }
+
+      return {
+        ...payment,
+        heldAt,
+        ageDays,
+        agingBucket: bucket.key,
+        order,
+        buyer: people.get(payment.buyerId ?? order?.buyerId) ?? null,
+        creator: people.get(order?.creatorId) ?? null,
+        dispute: disputeByOrderId.get(payment.orderId) ?? null,
+      }
+    })
+
+    return {
+      items,
+      heldTotal: sumMoney(items.map((payment) => payment.amount)),
+      heldCount: items.length,
+      agingBuckets: buckets,
+      currency: items[0]?.currency ?? appConfig.defaultCurrency,
+      truncated: fold.truncated,
+    }
+  },
+
+  /**
+   * **The five figures finance reports on**, per month and for the window as a
+   * whole (Prompt 32 §4.1):
+   *
+   * | Figure | Derivation |
+   * |---|---|
+   * | `chargeVolume` | Σ \|amount\| of `charge` rows — money taken from buyers |
+   * | `released` | Σ `release` rows — escrow settled to creators, gross |
+   * | `refunded` | Σ `refund` + `partial_refund` rows — money given back |
+   * | `commissionRevenue` | Σ `commissions.amount` — BetterBlue's own earnings |
+   * | `payoutsPaid` | Σ `payouts.amount` where `paid`, dated `processedAt` |
+   *
+   * `commissionRevenue` comes from the `commissions` collection rather than
+   * from the ledger's `commission` rows, for the reason `docs/payments.md` §7
+   * gives: the ledger row is a **debit against the creator's balance**, while
+   * the `commissions` row is the platform's revenue record. They agree to the
+   * cent — one is the negation of the other — and reading the revenue record is
+   * what makes this figure reconcile with `adminService`'s overview chart,
+   * which reads the same collection.
+   *
+   * A month is `createdAt` for ledger and commission rows and `processedAt` for
+   * payouts: revenue is recognised on settlement, and a payout belongs to the
+   * month the money actually left.
+   *
+   * @param {object} [options]
+   * @param {Date|string} [options.now] injectable clock for the buckets
+   * @param {number} [options.months={@link FINANCE_SUMMARY_MONTHS}] window length
+   * @returns {Promise<{months: object[], current: object, totals: object,
+   *   currency: string, truncated: boolean}>}
+   *
+   * **Future endpoint:** `GET /admin/finance/summary?months=6` — three
+   * `GROUP BY DATE_FORMAT(…, '%Y-%m')` queries, unioned.
+   */
+  async getFinanceSummary({ now, months = FINANCE_SUMMARY_MONTHS } = {}) {
+    const windowStart = dayjs(now ?? undefined)
+      .startOf('month')
+      .subtract(months - 1, 'month')
+      .toISOString()
+
+    const buckets = emptyFinanceMonths(now, months)
+    const byKey = new Map(buckets.map((bucket) => [bucket.key, bucket]))
+    const monthOf = (iso) => byKey.get(dayjs(iso).format('YYYY-MM'))
+
+    const [ledger, commissionRows, paidPayouts] = await Promise.all([
+      foldPages(transactions.list, {
+        sort: 'createdAt',
+        order: SORT_ORDER.ASC,
+        filters: { createdAt_gte: windowStart },
+      }),
+      foldPages(commissions.list, {
+        sort: 'createdAt',
+        order: SORT_ORDER.ASC,
+        filters: { createdAt_gte: windowStart },
+      }),
+      foldPages(payoutService.list, {
+        sort: 'requestedAt',
+        order: SORT_ORDER.ASC,
+        filters: { status: PAYOUT_STATUS.PAID },
+      }),
+    ])
+
+    ledger.items.forEach((row) => {
+      const bucket = monthOf(row.createdAt)
+      if (!bucket) return
+      if (row.type === TRANSACTION_TYPE.CHARGE) {
+        addToMonth(bucket, 'chargeVolume', Math.abs(Number(row.amount) || 0))
+      } else if (row.type === TRANSACTION_TYPE.RELEASE) {
+        addToMonth(bucket, 'released', row.amount)
+      } else if (REFUND_TYPES.has(row.type)) {
+        addToMonth(bucket, 'refunded', row.amount)
+      }
+    })
+
+    commissionRows.items.forEach((row) => {
+      addToMonth(monthOf(row.createdAt), 'commissionRevenue', row.amount)
+    })
+
+    // Payouts are filtered by status rather than by date — `processedAt` is the
+    // date that matters and JSON Server cannot range-filter it alongside the
+    // status without a compound index it does not have. The fold is bounded by
+    // the paid set, which is small, and the window is applied here.
+    paidPayouts.items.forEach((payout) => {
+      addToMonth(monthOf(payout.processedAt ?? payout.requestedAt), 'payoutsPaid', payout.amount)
+    })
+
+    const fields = ['chargeVolume', 'released', 'refunded', 'commissionRevenue', 'payoutsPaid']
+    const totals = Object.fromEntries(
+      fields.map((field) => [field, sumMoney(buckets.map((bucket) => bucket[field]))])
+    )
+
+    return {
+      months: buckets,
+      current: buckets[buckets.length - 1],
+      totals,
+      currency: ledger.items[0]?.currency ?? appConfig.defaultCurrency,
+      truncated: ledger.truncated || commissionRows.truncated || paidPayouts.truncated,
+    }
+  },
+
+  /**
+   * **The settlement queue**, with the creator behind each request
+   * (Prompt 32 §4.3). Oldest first by default: a payout is somebody waiting for
+   * their own money, and the person kept waiting longest is the one to serve.
+   *
+   * @param {object} [params]
+   * @param {string|string[]} [params.status] a `PAYOUT_STATUS` value, or several
+   * @param {number} [params.page=1]
+   * @param {number} [params.limit=20]
+   * @param {'asc'|'desc'} [params.order='asc'] on `requestedAt`
+   * @returns {Promise<import('./api/listAdapter').ListResult>} items carry `creator`
+   *
+   * **Future endpoint:** `GET /admin/payouts` — one query with its join.
+   */
+  async adminListSettlements({ status, page = 1, limit = 20, order = SORT_ORDER.ASC } = {}) {
+    const result = await payoutService.list({
+      page,
+      limit,
+      sort: 'requestedAt',
+      order,
+      filters: status ? { status } : {},
+    })
+    if (result.items.length === 0) return { ...result, items: [] }
+
+    const people = await namesByIdFor(result.items.map((payout) => payout.creatorId))
+
+    return {
+      ...result,
+      items: result.items.map((payout) => ({
+        ...payout,
+        creator: people.get(payout.creatorId) ?? null,
+      })),
+    }
+  },
+
+  /**
+   * The two figures above the settlement queue: what is owed and what has gone
+   * out this month.
+   *
+   * @param {object} [options]
+   * @param {Date|string} [options.now]
+   * @returns {Promise<{pendingTotal: number, pendingCount: number,
+   *   paidThisMonth: number, paidCountThisMonth: number, currency: string}>}
+   */
+  async getSettlementSummary({ now } = {}) {
+    const monthStart = dayjs(now ?? undefined).startOf('month')
+
+    const [pending, paid] = await Promise.all([
+      foldPages(payoutService.list, {
+        filters: { status: [...ACTIONABLE_PAYOUT_STATUSES] },
+      }).catch(() => ({ items: [] })),
+      foldPages(payoutService.list, { filters: { status: PAYOUT_STATUS.PAID } }).catch(() => ({
+        items: [],
+      })),
+    ])
+
+    const paidThisMonth = paid.items.filter((payout) =>
+      dayjs(payout.processedAt ?? payout.requestedAt).isAfter(monthStart)
+    )
+
+    return {
+      pendingTotal: sumMoney(pending.items.map((payout) => payout.amount)),
+      pendingCount: pending.items.length,
+      paidThisMonth: sumMoney(paidThisMonth.map((payout) => payout.amount)),
+      paidCountThisMonth: paidThisMonth.length,
+      currency: pending.items[0]?.currency ?? paid.items[0]?.currency ?? appConfig.defaultCurrency,
+    }
+  },
+
+  /**
+   * **Approves or rejects a settlement request** — the first of the two steps a
+   * payout takes through the finance desk (contract §7 operation 32).
+   *
+   * Approving moves `requested → processing` and **moves no money**: the
+   * transfer happens outside BetterBlue, and the ledger row is written when
+   * somebody confirms it landed ({@link markPayoutPaid}). Two steps rather than
+   * one because they are two different facts — "we accept this request" and
+   * "the bank has sent it" — and collapsing them would have the platform assert
+   * the second when only the first is known.
+   *
+   * Rejecting moves `requested → rejected` and requires a reason, which the
+   * creator reads verbatim on their earnings screen (Prompt 25). No balance
+   * changes either way: a rejected payout releases its reservation simply by
+   * leaving `requested`, so the money becomes available again on the next read
+   * of `getEarningsSummary`.
+   *
+   * @param {string} payoutId `pyo_…`
+   * @param {object} options
+   * @param {'approve'|'reject'} options.action
+   * @param {string} [options.reason] required for a rejection
+   * @param {{id: string, role: string}} [options.actor] the acting admin
+   * @returns {Promise<object>} the updated settlement
+   * @throws {ApiError} `conflict` when the payout has already moved on ·
+   *   `validation_failed` when a rejection carries no reason
+   *
+   * **Future endpoint:** `POST /payouts/:id/process` → `{ payout }`, with the
+   * transition guarded inside `DB::transaction()`.
+   */
+  async processPayout(payoutId, { action, reason, actor } = {}) {
+    const payout = await payoutService.getById(payoutId)
+    const isApproval = action === 'approve'
+
+    if (!isApproval && action !== 'reject') {
+      throw createApiError(
+        API_ERROR_CODE.VALIDATION_FAILED,
+        'A settlement is either approved or rejected.',
+        { action: 'Choose approve or reject.' },
+        422
+      )
+    }
+
+    const trimmedReason = String(reason ?? '').trim()
+    if (!isApproval && !trimmedReason) {
+      throw createApiError(
+        API_ERROR_CODE.VALIDATION_FAILED,
+        'Tell the creator why their payout was rejected.',
+        { reason: 'A reason is required — the creator reads it on their earnings screen.' },
+        422
+      )
+    }
+
+    const next = isApproval ? PAYOUT_STATUS.PROCESSING : PAYOUT_STATUS.REJECTED
+    const processedAt = nowIso()
+
+    const updated = await payoutService.update(payoutId, {
+      status: transitionTo(
+        PAYOUT_STATUS_MACHINE,
+        payout.status,
+        next,
+        isApproval
+          ? 'This settlement can no longer be approved — reload the queue.'
+          : 'This settlement can no longer be rejected — reload the queue.'
+      ),
+      processedAt,
+      ...(isApproval ? {} : { rejectedReason: trimmedReason }),
+    })
+
+    await notifyQuietly({
+      userId: payout.creatorId,
+      type: NOTIFICATION_TYPE.PAYOUT_PROCESSED,
+      title: isApproval ? 'Payout approved' : 'Payout rejected',
+      body: isApproval
+        ? `${formatCurrency(payout.amount, payout.currency)} has been approved and is being ` +
+          'transferred to your bank account. We will confirm as soon as it has been sent.'
+        : `${formatCurrency(payout.amount, payout.currency)} was not paid out. ${trimmedReason} ` +
+          'Your balance is untouched and you can request it again.',
+      entityType: 'payout',
+      entityId: payout.id,
+    })
+
+    // VOCABULARY: `payout.process` / `payout.mark_paid` / `payout.reject`, not
+    // `payout.approve` / `payout.paid`. Contract §6.26 is explicit — "extend
+    // the vocabulary, do not rename it" — and all three verbs are already in
+    // the seeded set and in `AuditFeed`'s phrase map. Prompt 32 §4.1 suggested
+    // `approve`/`paid`; adding those would leave two verbs for one event and an
+    // audit trail that has to be searched twice.
+    await auditIfAdmin(actor, {
+      action: isApproval ? 'payout.process' : 'payout.reject',
+      entityType: 'payout',
+      entityId: payout.id,
+      meta: {
+        creatorId: payout.creatorId,
+        amount: payout.amount,
+        fromStatus: payout.status,
+        toStatus: next,
+        ...(isApproval ? {} : { reason: trimmedReason }),
+      },
+    })
+
+    return updated
+  },
+
+  /**
+   * **Confirms a settlement was actually sent** — the second step, and the only
+   * moment money leaves a creator's BetterBlue balance (contract §6.15,
+   * `docs/payments.md` §5: "only a `paid` payout writes its `payout` ledger
+   * row").
+   *
+   * MOCK-TRANSFER: no bank is called. The admin is asserting that a transfer
+   * they made elsewhere has gone out, which is exactly what the confirmation
+   * copy on the screen says — the prototype does not pretend to move money it
+   * cannot move.
+   *
+   * @param {string} payoutId `pyo_…`
+   * @param {object} [options]
+   * @param {{id: string, role: string}} [options.actor] the acting admin
+   * @returns {Promise<{payout: object, transaction: object}>}
+   * @throws {ApiError} `conflict` when the payout is not `processing` ·
+   *   `server_error` when the ledger row could not be written after the status
+   *   moved — the one failure here that leaves work for a human
+   *
+   * **Future endpoint:** `POST /payouts/:id/paid` → `{ payout, transaction }`,
+   * with the idempotency key from contract §1.8 so a retried confirmation
+   * cannot debit a balance twice.
+   */
+  async markPayoutPaid(payoutId, { actor } = {}) {
+    const payout = await payoutService.getById(payoutId)
+    const paidAt = nowIso()
+
+    const updated = await payoutService.update(payoutId, {
+      status: transitionTo(
+        PAYOUT_STATUS_MACHINE,
+        payout.status,
+        PAYOUT_STATUS.PAID,
+        'This settlement cannot be marked paid from where it is — reload the queue.'
+      ),
+      processedAt: paidAt,
+    })
+
+    try {
+      const transaction = await writeTransaction({
+        type: TRANSACTION_TYPE.PAYOUT,
+        userId: payout.creatorId,
+        // Signed from the creator's perspective: the money leaves their
+        // BetterBlue balance for their bank (`docs/payments.md` §7).
+        amount: -round2(payout.amount),
+        payoutId: payout.id,
+        context: { accountMasked: payout.method?.accountMasked },
+      })
+
+      await notifyQuietly({
+        userId: payout.creatorId,
+        type: NOTIFICATION_TYPE.PAYOUT_PROCESSED,
+        title: 'Payout sent',
+        body:
+          `${formatCurrency(payout.amount, payout.currency)} has been sent to ` +
+          `${payout.method?.accountMasked ?? 'your bank account'}. ` +
+          'Bank transfers usually settle within three working days.',
+        entityType: 'payout',
+        entityId: payout.id,
+      })
+
+      await auditIfAdmin(actor, {
+        action: 'payout.mark_paid',
+        entityType: 'payout',
+        entityId: payout.id,
+        meta: {
+          creatorId: payout.creatorId,
+          amount: payout.amount,
+          toStatus: PAYOUT_STATUS.PAID,
+          transactionId: transaction.id,
+        },
+      })
+
+      return { payout: updated, transaction }
+    } catch (failure) {
+      throw inconsistency(
+        'the payout was marked paid but the ledger row was not written',
+        { payoutId: payout.id, status: PAYOUT_STATUS.PAID },
+        failure
+      )
+    }
+  },
+
+  /**
+   * **Refunds escrow from the finance console** — a thin, named wrapper over
+   * {@link refundPayment} (contract §7 operation 4).
+   *
+   * It exists so the escrow monitor has an intention-named call of its own and
+   * so the refund context is right without every call site remembering it: a
+   * refund issued from finance is an *intervention*, not a dispute outcome, and
+   * the ledger row says so. Everything consequential — the amount bounds, the
+   * partial-refund settlement, the notifications, the `payment.refund` audit
+   * entry — stays in `refundPayment`, because a second implementation of a
+   * refund is the last thing this product needs.
+   *
+   * @param {string} orderId `ord_…`
+   * @param {object} options
+   * @param {number} [options.amount] defaults to the whole held amount
+   * @param {string} options.reason shown to both parties and audited
+   * @param {{id: string, role: string}} options.actor the acting admin
+   * @returns {Promise<object>} the `refunded` or `partially_refunded` payment
+   * @throws {ApiError} `validation_failed` when no reason is given, and
+   *   everything {@link refundPayment} throws
+   */
+  async adminRefundOrder(orderId, { amount, reason, actor } = {}) {
+    const trimmedReason = String(reason ?? '').trim()
+    if (!trimmedReason) {
+      throw createApiError(
+        API_ERROR_CODE.VALIDATION_FAILED,
+        'Record why this escrow is being returned.',
+        { reason: 'A reason is required — both parties are told, and it is audited.' },
+        422
+      )
+    }
+
+    return paymentService.refundPayment(orderId, {
+      amount,
+      reason: trimmedReason,
+      context: REFUND_CONTEXT.INTERVENTION,
+      actor,
+    })
+  },
+
+  /**
+   * **The commission records for a period** (Prompt 32 §4.4), with the order
+   * behind each one. Exactly one row per settled order (contract §6.14), so
+   * this list *is* platform revenue rather than a view of it.
+   *
+   * @param {object} [params]
+   * @param {string} [params.month] `YYYY-MM` — the period; omit for everything
+   * @param {number} [params.page=1]
+   * @param {number} [params.limit=20]
+   * @param {'asc'|'desc'} [params.order='desc'] on `createdAt`
+   * @returns {Promise<import('./api/listAdapter').ListResult>} items carry `order`
+   *
+   * **Future endpoint:** `GET /admin/commissions?month=YYYY-MM`.
+   */
+  async adminListCommissions({ month, page = 1, limit = 20, order = SORT_ORDER.DESC } = {}) {
+    const filters = {}
+    if (month) {
+      const start = dayjs(`${month}-01`)
+      filters.createdAt_gte = start.startOf('month').toISOString()
+      filters.createdAt_lte = start.endOf('month').toISOString()
+    }
+
+    const result = await commissions.list({ page, limit, sort: 'createdAt', order, filters })
+    if (result.items.length === 0) return { ...result, items: [] }
+
+    const orderPage = await orders
+      .list({
+        page: 1,
+        limit: FOLD_LIMIT,
+        filters: { id: [...new Set(result.items.map((row) => row.orderId).filter(Boolean))] },
+      })
+      .catch(() => ({ items: [] }))
+    const orderById = new Map(orderPage.items.map((row) => [row.id, row]))
+
+    return {
+      ...result,
+      items: result.items.map((row) => ({ ...row, order: orderById.get(row.orderId) ?? null })),
+    }
+  },
+
+  /**
+   * The three figures above the commissions table: what the period earned, the
+   * average rate that produced it, and how many orders settled.
+   *
+   * `averageRate` is **weighted** — total commission over total base — not the
+   * mean of the rate column. An unweighted average would let one small order at
+   * a high rate move the platform's headline take rate, which is not what the
+   * figure means.
+   *
+   * @param {object} [options]
+   * @param {string} [options.month] `YYYY-MM`; omit for every commission ever
+   * @returns {Promise<{total: number, baseTotal: number, averageRate: number|null,
+   *   orderCount: number, currency: string, truncated: boolean}>}
+   */
+  async getCommissionSummary({ month } = {}) {
+    const filters = {}
+    if (month) {
+      const start = dayjs(`${month}-01`)
+      filters.createdAt_gte = start.startOf('month').toISOString()
+      filters.createdAt_lte = start.endOf('month').toISOString()
+    }
+
+    const fold = await foldPages(commissions.list, {
+      sort: 'createdAt',
+      order: SORT_ORDER.ASC,
+      filters,
+    })
+
+    const total = sumMoney(fold.items.map((row) => row.amount))
+    const baseTotal = sumMoney(fold.items.map((row) => row.baseAmount))
+
+    return {
+      total,
+      baseTotal,
+      averageRate: baseTotal > 0 ? total / baseTotal : null,
+      orderCount: fold.items.length,
+      currency: fold.items[0]?.currency ?? appConfig.defaultCurrency,
+      truncated: fold.truncated,
+    }
   },
 })
 

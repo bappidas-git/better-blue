@@ -64,6 +64,17 @@ const AdminSupportPage = lazy(() => import('@/features/admin/operations/pages/Ad
 const AdminAnnouncementsPage = lazy(
   () => import('@/features/admin/operations/pages/AdminAnnouncementsPage')
 )
+// Prompt 32 — the finance suite. Payments and commissions gate themselves on
+// `payments.manage`, settlements on `settlements.process`: reading the money and
+// moving somebody's wages are different jobs, and an admin can hold either
+// without the other.
+const AdminPaymentsPage = lazy(() => import('@/features/admin/finance/pages/AdminPaymentsPage'))
+const AdminSettlementsPage = lazy(
+  () => import('@/features/admin/finance/pages/AdminSettlementsPage')
+)
+const AdminCommissionsPage = lazy(
+  () => import('@/features/admin/finance/pages/AdminCommissionsPage')
+)
 const NotificationsPage = lazy(
   () => import('@/features/notifications/pages/NotificationsPage')
 )
@@ -81,6 +92,9 @@ export const adminRoutes = [
   { path: paths.ADMIN_ORDER_DETAIL_PATTERN, element: <AdminOrderDetailPage /> },
   { path: paths.ADMIN_SUPPORT, element: <AdminSupportPage /> },
   { path: paths.ADMIN_ANNOUNCEMENTS, element: <AdminAnnouncementsPage /> },
+  { path: paths.ADMIN_PAYMENTS, element: <AdminPaymentsPage /> },
+  { path: paths.ADMIN_SETTLEMENTS, element: <AdminSettlementsPage /> },
+  { path: paths.ADMIN_COMMISSIONS, element: <AdminCommissionsPage /> },
   { path: paths.ADMIN_NOTIFICATIONS, element: <NotificationsPage /> },
   // Keeps the whole `/admin` subtree guarded — see buyerRoutes.jsx.
   { path: paths.ADMIN_CATCH_ALL, element: <NotFoundPage /> },

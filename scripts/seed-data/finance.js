@@ -325,6 +325,50 @@ const PAYOUT_SOURCE = [
     status: PAYOUT_STATUS.REQUESTED,
     requestedDaysAgo: 2,
   },
+
+  /* --- Appended by Prompt 32 (admin settlements) ------------------------- */
+  //
+  // The finance console's queue needs a queue. One `requested` row demonstrates
+  // a chip; four demonstrate the thing the screen is actually for — an
+  // oldest-first list with an age spread across the `AgeBadge` thresholds
+  // (3 days amber, 7 days red), and enough checkboxes for batch approval to be
+  // something a reviewer can try rather than read about.
+  //
+  // Amounts are all comfortably inside what each creator had earned by the day
+  // they asked: `seed-db.js` checks exactly that, and a `requested` payout
+  // writes no ledger row, so none of these moves a balance.
+  {
+    creator: 'yuki',
+    amount: 700,
+    last4: '5194',
+    status: PAYOUT_STATUS.REQUESTED,
+    requestedDaysAgo: 9,
+  },
+  {
+    creator: 'noah',
+    amount: 550,
+    last4: '3372',
+    status: PAYOUT_STATUS.REQUESTED,
+    requestedDaysAgo: 6,
+  },
+  {
+    creator: 'zoe',
+    amount: 800,
+    last4: '6045',
+    status: PAYOUT_STATUS.REQUESTED,
+    requestedDaysAgo: 4,
+  },
+  // One settlement paid *this* calendar month, so the queue's "Paid this
+  // month" card has something to say on a freshly seeded database. The only
+  // existing `paid` payout is three weeks old and lands in the previous month.
+  {
+    creator: 'amara',
+    amount: 900,
+    last4: '4416',
+    status: PAYOUT_STATUS.PAID,
+    requestedDaysAgo: 12,
+    processedDaysAgo: 9,
+  },
 ]
 
 PAYOUT_SOURCE.forEach((source) => {
