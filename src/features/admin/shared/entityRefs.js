@@ -10,6 +10,8 @@
 // the collections the console browses, so an audit row can be rendered by
 // passing its own fields straight through.
 
+import { paths } from '@/routes/paths'
+
 /**
  * Icon and human label per entity type. An unknown type still resolves — to a
  * neutral icon and its own raw value — because an audit trail written by a
@@ -55,23 +57,28 @@ export function getEntityMeta(type) {
  * ║ COMMENT-GATED, like `routes/navConfig.jsx`. A chip that links to a route  ║
  * ║ nobody has built lands on the dashboard 404, which is worse than a chip   ║
  * ║ that does not link at all — so each line stays commented until the prompt ║
- * ║ that builds its screen uncomments it. Uncommenting also needs             ║
- * ║ `import { paths } from '@/routes/paths'` at the top of this file (no line ║
- * ║ needs it today, and an unused import fails `npm run lint`).               ║
+ * ║ that builds its screen uncomments it. Prompt 29 added the `paths` import  ║
+ * ║ with the first live case, so uncommenting a line is now the whole change. ║
  * ╚══════════════════════════════════════════════════════════════════════════╝
  *
  * @param {string} type entity type
  * @param {string} id the record's id
  * @returns {string|undefined} a route path, or `undefined` while unbuilt
  */
-// eslint-disable-next-line no-unused-vars -- `id` is read by every commented branch below.
 export function resolveEntityPath(type, id) {
   if (!type || !id) return undefined
 
   switch (type) {
-    // case 'user':              return paths.adminUserDetail(id)          // Prompt 29
-    // case 'creator_profile':   return paths.adminUserDetail(id)          // Prompt 29
-    // case 'buyer_profile':     return paths.adminUserDetail(id)          // Prompt 29
+    case 'user':
+      return paths.adminUserDetail(id)
+    // `creator_profile` and `buyer_profile` stay commented, and not because the
+    // screen is missing: their ids are `cpr_…` / `bpr_…`, and
+    // `/admin/users/:userId` takes a `usr_…`. Linking them needs a profile → owner
+    // lookup, which a chip cannot do synchronously. Prompt 29 left them off
+    // rather than shipping a link to a 404; a caller that already knows the
+    // owner should pass `type="user"` with the `usr_…` instead.
+    // case 'creator_profile':   return paths.adminUserDetail(ownerIdOf(id))
+    // case 'buyer_profile':     return paths.adminUserDetail(ownerIdOf(id))
     // case 'portfolio_item':                                              // Prompt 30
     // case 'moderation_review': return paths.adminModerationDetail(id)    // Prompt 30
     // case 'report':            return paths.ADMIN_REPORTS                // Prompt 30

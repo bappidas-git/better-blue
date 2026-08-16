@@ -21,6 +21,20 @@ import { compact, daysAgo } from '../seed-utils.js'
 /** Shared password for every seeded account (MOCK-AUTH, documented). */
 export const DEMO_PASSWORD = 'Password123!'
 
+/**
+ * Admin ids, so other modules never restate a `usr_admin_…` literal.
+ *
+ * Declared up here rather than beside the other exports at the bottom because
+ * the buyer and creator sources below reference it in `statusChangedById` — a
+ * restricted account records which of us restricted it (Prompt 29).
+ */
+export const ADMIN_ID = Object.freeze({
+  SUPER: 'usr_super',
+  MAYA: 'usr_admin_maya',
+  DANIEL: 'usr_admin_daniel',
+  PRIYA: 'usr_admin_priya',
+})
+
 /** Affiliate codes referenced by `referredByCode` and `affiliateProfiles`. */
 export const AFFILIATE_CODE = Object.freeze({
   AVA: 'AVA-STUDIO',
@@ -197,6 +211,41 @@ const BUYER_SOURCE = [
     createdDaysAgo: 2,
     lastLoginDaysAgo: 0.1,
   },
+  {
+    // **Blacklisted buyer** (Prompt 29 §9): the account-closure state the admin
+    // users console has to be able to show and the login screen has to be able
+    // to refuse. Deliberately given no orders, requests, or payments downstream
+    // — this account exists to demonstrate an account status, and giving it
+    // marketplace history would put a closed account in the middle of live
+    // finance figures.
+    key: 'meridian',
+    id: 'usr_buyer_meridian',
+    name: 'Callum Doyle',
+    email: 'callum.doyle@meridiansupply.test',
+    phone: '+61 2 5550 0248',
+    createdDaysAgo: 76,
+    lastLoginDaysAgo: 41,
+    accountStatus: ACCOUNT_STATUS.BLACKLISTED,
+    statusReason:
+      'Repeated chargebacks after delivery and a brief that misrepresented the licence being purchased. Closed after a written warning.',
+    statusChangedDaysAgo: 40,
+    statusChangedById: ADMIN_ID.MAYA,
+  },
+  {
+    // **Deactivated buyer** (Prompt 29 §9): the one non-active status our team
+    // does *not* set — this member closed their own account from Settings, which
+    // is why its audit line is written with `meta.selfService` (contract §6.26)
+    // and why the admin console offers no way back into it.
+    key: 'foundry',
+    id: 'usr_buyer_foundry',
+    name: 'Priyanka Nair',
+    email: 'priyanka.nair@foundryandco.test',
+    createdDaysAgo: 92,
+    lastLoginDaysAgo: 55,
+    accountStatus: ACCOUNT_STATUS.DEACTIVATED,
+    statusReason: 'Closed their own account from Settings — campaign programme wound down.',
+    statusChangedDaysAgo: 54,
+  },
 ]
 
 /* -------------------------------------------------------------------------- */
@@ -296,7 +345,15 @@ const CREATOR_SOURCE = [
     lastLoginDaysAgo: 29,
     // Suspended while Trust & Safety reviews a licensing complaint (see the
     // `user.suspend` audit entry and the dispute raised against this account).
+    //
+    // The reason, its date, and who set it must match that audit entry — Prompt
+    // 29's detail banner reads them off the account, and an admin comparing the
+    // banner with the audit tab would spot the difference immediately.
     accountStatus: ACCOUNT_STATUS.SUSPENDED,
+    statusReason:
+      'Licensing review following an upheld report and an unresolved non-delivery dispute.',
+    statusChangedDaysAgo: 29,
+    statusChangedById: ADMIN_ID.MAYA,
   },
   {
     key: 'mateo',
@@ -337,6 +394,16 @@ function buildAccount(source, role) {
     phone: source.phone,
     createdAt: daysAgo(source.createdDaysAgo, 10, 15),
     lastLoginAt: daysAgo(source.lastLoginDaysAgo, 8, 30),
+    // Prompt 29: why an account is not `active`, when that was decided, and by
+    // whom. All three are absent on an `active` account rather than present and
+    // empty — `compact` drops them — which is what lets the detail banner test
+    // `statusReason` and render nothing at all for a member in good standing.
+    statusReason: source.statusReason,
+    statusChangedAt:
+      source.statusChangedDaysAgo === undefined
+        ? undefined
+        : daysAgo(source.statusChangedDaysAgo, 11, 20),
+    statusChangedById: source.statusChangedById,
     notificationPrefs: notificationPrefs(source.prefs),
     // `permissions` is an admin-only field (00 §11).
     permissions: source.permissions,
@@ -373,14 +440,6 @@ export function creatorId(key) {
   if (!match) throw new Error(`Unknown creator key: ${key}`)
   return match.id
 }
-
-/** Admin ids, so other modules never restate a `usr_admin_…` literal. */
-export const ADMIN_ID = Object.freeze({
-  SUPER: 'usr_super',
-  MAYA: 'usr_admin_maya',
-  DANIEL: 'usr_admin_daniel',
-  PRIYA: 'usr_admin_priya',
-})
 
 /** ISO account-creation date for a user id — used for chronology validation. */
 export const USER_CREATED_AT = Object.freeze(

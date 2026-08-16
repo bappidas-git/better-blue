@@ -496,6 +496,80 @@
       }
     },
     {
+      "id": "usr_buyer_meridian",
+      "email": "callum.doyle@meridiansupply.test",
+      "password": "Password123!",
+      "role": "buyer",
+      "accountStatus": "blacklisted",
+      "name": "Callum Doyle",
+      "avatarUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23EDE9FE%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%235B21B6%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3ECD%3C%2Ftext%3E%3C%2Fsvg%3E",
+      "phone": "+61 2 5550 0248",
+      "createdAt": "2026-05-30T10:15:00.000Z",
+      "lastLoginAt": "2026-07-04T08:30:00.000Z",
+      "statusReason": "Repeated chargebacks after delivery and a brief that misrepresented the licence being purchased. Closed after a written warning.",
+      "statusChangedAt": "2026-07-05T11:20:00.000Z",
+      "statusChangedById": "usr_admin_maya",
+      "notificationPrefs": {
+        "marketplace": {
+          "inApp": true
+        },
+        "orders": {
+          "inApp": true
+        },
+        "payments": {
+          "inApp": true
+        },
+        "disputes": {
+          "inApp": true
+        },
+        "moderation": {
+          "inApp": true
+        },
+        "affiliate": {
+          "inApp": true
+        },
+        "system": {
+          "inApp": true
+        }
+      }
+    },
+    {
+      "id": "usr_buyer_foundry",
+      "email": "priyanka.nair@foundryandco.test",
+      "password": "Password123!",
+      "role": "buyer",
+      "accountStatus": "deactivated",
+      "name": "Priyanka Nair",
+      "avatarUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23FDF2F8%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%23BE185D%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3EPN%3C%2Ftext%3E%3C%2Fsvg%3E",
+      "createdAt": "2026-05-14T10:15:00.000Z",
+      "lastLoginAt": "2026-06-20T08:30:00.000Z",
+      "statusReason": "Closed their own account from Settings — campaign programme wound down.",
+      "statusChangedAt": "2026-06-21T11:20:00.000Z",
+      "notificationPrefs": {
+        "marketplace": {
+          "inApp": true
+        },
+        "orders": {
+          "inApp": true
+        },
+        "payments": {
+          "inApp": true
+        },
+        "disputes": {
+          "inApp": true
+        },
+        "moderation": {
+          "inApp": true
+        },
+        "affiliate": {
+          "inApp": true
+        },
+        "system": {
+          "inApp": true
+        }
+      }
+    },
+    {
       "id": "usr_creator_ava",
       "email": "creator@betterblue.test",
       "password": "Password123!",
@@ -821,6 +895,9 @@
       "phone": "+33 4 5555 0204",
       "createdAt": "2026-05-02T10:15:00.000Z",
       "lastLoginAt": "2026-07-16T08:30:00.000Z",
+      "statusReason": "Licensing review following an upheld report and an unresolved non-delivery dispute.",
+      "statusChangedAt": "2026-07-16T11:20:00.000Z",
+      "statusChangedById": "usr_admin_maya",
       "notificationPrefs": {
         "marketplace": {
           "inApp": true
@@ -1022,6 +1099,30 @@
       "logoUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23E5E2EC%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%23171223%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3EHB%3C%2Ftext%3E%3C%2Fsvg%3E",
       "totalSpent": 0,
       "createdAt": "2026-08-12T10:40:00.000Z"
+    },
+    {
+      "id": "bpr_meridian",
+      "userId": "usr_buyer_meridian",
+      "companyName": "Meridian Supply Co",
+      "industry": "E-commerce & Retail",
+      "website": "https://meridiansupply.test",
+      "bio": "A wholesale homeware supplier selling through marketplaces across Australia and New Zealand.",
+      "location": "Sydney, Australia",
+      "logoUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23E5E2EC%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%23171223%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3EMC%3C%2Ftext%3E%3C%2Fsvg%3E",
+      "totalSpent": 0,
+      "createdAt": "2026-05-30T10:40:00.000Z"
+    },
+    {
+      "id": "bpr_foundry",
+      "userId": "usr_buyer_foundry",
+      "companyName": "Foundry & Co",
+      "industry": "Professional Services",
+      "website": "https://foundryandco.test",
+      "bio": "A brand consultancy that commissioned campaign content on behalf of its retail clients.",
+      "location": "Bengaluru, India",
+      "logoUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23FDF2F8%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%23BE185D%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3EFC%3C%2Ftext%3E%3C%2Fsvg%3E",
+      "totalSpent": 0,
+      "createdAt": "2026-05-14T10:40:00.000Z"
     }
   ],
   "creatorProfiles": [
@@ -14924,6 +15025,35 @@
     },
     {
       "id": "aud_024",
+      "actorId": "usr_admin_maya",
+      "actorRole": "admin",
+      "action": "user.blacklist",
+      "entityType": "user",
+      "entityId": "usr_buyer_meridian",
+      "meta": {
+        "fromStatus": "suspended",
+        "toStatus": "blacklisted",
+        "reason": "Repeated chargebacks after delivery and a brief that misrepresented the licence being purchased. Closed after a written warning."
+      },
+      "createdAt": "2026-07-05T15:45:00.000Z"
+    },
+    {
+      "id": "aud_025",
+      "actorId": "usr_buyer_foundry",
+      "actorRole": "buyer",
+      "action": "user.deactivate",
+      "entityType": "user",
+      "entityId": "usr_buyer_foundry",
+      "meta": {
+        "fromStatus": "active",
+        "toStatus": "deactivated",
+        "selfService": true,
+        "reason": "Closed their own account from Settings — campaign programme wound down."
+      },
+      "createdAt": "2026-06-21T15:45:00.000Z"
+    },
+    {
+      "id": "aud_026",
       "actorId": "usr_super",
       "actorRole": "super_admin",
       "action": "admin.permissions.update",
@@ -14939,7 +15069,7 @@
       "createdAt": "2026-06-17T15:45:00.000Z"
     },
     {
-      "id": "aud_025",
+      "id": "aud_027",
       "actorId": "usr_super",
       "actorRole": "super_admin",
       "action": "admin.permissions.update",
@@ -14954,7 +15084,7 @@
       "createdAt": "2026-06-30T15:45:00.000Z"
     },
     {
-      "id": "aud_026",
+      "id": "aud_028",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "dispute.assign",
@@ -14967,7 +15097,7 @@
       "createdAt": "2026-07-06T15:45:00.000Z"
     },
     {
-      "id": "aud_027",
+      "id": "aud_029",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "dispute.resolve",
@@ -14980,7 +15110,7 @@
       "createdAt": "2026-07-12T15:45:00.000Z"
     },
     {
-      "id": "aud_028",
+      "id": "aud_030",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "payment.refund",
@@ -14993,7 +15123,7 @@
       "createdAt": "2026-07-12T15:45:00.000Z"
     },
     {
-      "id": "aud_029",
+      "id": "aud_031",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "dispute.assign",
@@ -15006,7 +15136,7 @@
       "createdAt": "2026-07-20T15:45:00.000Z"
     },
     {
-      "id": "aud_030",
+      "id": "aud_032",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "dispute.resolve",
@@ -15019,7 +15149,7 @@
       "createdAt": "2026-07-27T15:45:00.000Z"
     },
     {
-      "id": "aud_031",
+      "id": "aud_033",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "payment.refund",
@@ -15032,7 +15162,7 @@
       "createdAt": "2026-07-27T15:45:00.000Z"
     },
     {
-      "id": "aud_032",
+      "id": "aud_034",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "dispute.assign",
@@ -15045,7 +15175,7 @@
       "createdAt": "2026-07-25T15:45:00.000Z"
     },
     {
-      "id": "aud_033",
+      "id": "aud_035",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "dispute.resolve",
@@ -15058,7 +15188,7 @@
       "createdAt": "2026-07-31T15:45:00.000Z"
     },
     {
-      "id": "aud_034",
+      "id": "aud_036",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "dispute.close",
@@ -15071,7 +15201,7 @@
       "createdAt": "2026-08-02T15:45:00.000Z"
     },
     {
-      "id": "aud_035",
+      "id": "aud_037",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "dispute.assign",
@@ -15084,7 +15214,7 @@
       "createdAt": "2026-07-28T15:45:00.000Z"
     },
     {
-      "id": "aud_036",
+      "id": "aud_038",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "order.cancel",
@@ -15096,7 +15226,7 @@
       "createdAt": "2026-07-24T15:45:00.000Z"
     },
     {
-      "id": "aud_037",
+      "id": "aud_039",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "request.close",
@@ -15108,7 +15238,7 @@
       "createdAt": "2026-07-05T15:45:00.000Z"
     },
     {
-      "id": "aud_038",
+      "id": "aud_040",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "payout.process",
@@ -15122,7 +15252,7 @@
       "createdAt": "2026-07-22T15:45:00.000Z"
     },
     {
-      "id": "aud_039",
+      "id": "aud_041",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "payout.mark_paid",
@@ -15135,7 +15265,7 @@
       "createdAt": "2026-07-24T15:45:00.000Z"
     },
     {
-      "id": "aud_040",
+      "id": "aud_042",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "payout.reject",
@@ -15149,7 +15279,7 @@
       "createdAt": "2026-07-21T15:45:00.000Z"
     },
     {
-      "id": "aud_041",
+      "id": "aud_043",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "payout.process",
@@ -15163,7 +15293,7 @@
       "createdAt": "2026-08-10T15:45:00.000Z"
     },
     {
-      "id": "aud_042",
+      "id": "aud_044",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "affiliate.earning.approve",
@@ -15176,7 +15306,7 @@
       "createdAt": "2026-06-23T15:45:00.000Z"
     },
     {
-      "id": "aud_043",
+      "id": "aud_045",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "affiliate.suspend",
@@ -15189,7 +15319,7 @@
       "createdAt": "2026-07-30T15:45:00.000Z"
     },
     {
-      "id": "aud_044",
+      "id": "aud_046",
       "actorId": "usr_admin_daniel",
       "actorRole": "admin",
       "action": "affiliate.earning.void",
@@ -15202,7 +15332,7 @@
       "createdAt": "2026-07-30T15:45:00.000Z"
     },
     {
-      "id": "aud_045",
+      "id": "aud_047",
       "actorId": "usr_admin_priya",
       "actorRole": "admin",
       "action": "ticket.reply",
@@ -15214,7 +15344,7 @@
       "createdAt": "2026-08-05T15:45:00.000Z"
     },
     {
-      "id": "aud_046",
+      "id": "aud_048",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "ticket.reply",
@@ -15226,7 +15356,7 @@
       "createdAt": "2026-08-04T15:45:00.000Z"
     },
     {
-      "id": "aud_047",
+      "id": "aud_049",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "ticket.close",
@@ -15239,7 +15369,7 @@
       "createdAt": "2026-07-24T15:45:00.000Z"
     },
     {
-      "id": "aud_048",
+      "id": "aud_050",
       "actorId": "usr_super",
       "actorRole": "super_admin",
       "action": "settings.update",
@@ -15254,7 +15384,7 @@
       "createdAt": "2026-08-02T15:45:00.000Z"
     },
     {
-      "id": "aud_049",
+      "id": "aud_051",
       "actorId": "usr_admin_maya",
       "actorRole": "admin",
       "action": "announcement.send",

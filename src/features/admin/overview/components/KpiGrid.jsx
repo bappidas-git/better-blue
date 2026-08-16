@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography'
 import useMediaQuery from '@mui/material/useMediaQuery'
 
 import StatCardGrid from '@/features/dashboard/components/StatCardGrid'
+import { paths } from '@/routes/paths'
 import {
   EMPTY_PLACEHOLDER,
   formatCurrency,
@@ -180,7 +181,11 @@ export default function KpiGrid({ stats, loading = false, onRetry }) {
       format: statCount,
       icon: withIcon('solar:users-group-rounded-linear'),
       iconTone: 'brand',
-      // TODO(Prompt 29): `to: paths.ADMIN_USERS`.
+      // Prompt 29 built the directory, so the tile is a link. It lands on the
+      // unfiltered list rather than on "joined in the last 7 days": the tile is
+      // a way in, and an admin who followed it is usually there to look
+      // somebody up, not to re-read the number they just clicked.
+      to: paths.ADMIN_USERS,
     }),
     tile({
       key: 'disputes',

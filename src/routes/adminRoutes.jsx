@@ -35,6 +35,11 @@ import { paths } from './paths'
 const AdminOverviewPage = lazy(
   () => import('@/features/admin/overview/pages/AdminOverviewPage')
 )
+// Prompt 29 — both gated on `users.manage` inside their `DashboardPage`.
+const AdminUsersPage = lazy(() => import('@/features/admin/users/pages/AdminUsersPage'))
+const AdminUserDetailPage = lazy(
+  () => import('@/features/admin/users/pages/AdminUserDetailPage')
+)
 const NotificationsPage = lazy(
   () => import('@/features/notifications/pages/NotificationsPage')
 )
@@ -42,6 +47,8 @@ const NotFoundPage = lazy(() => import('@/features/staticPages/pages/NotFoundPag
 
 export const adminRoutes = [
   { path: paths.ADMIN, element: <AdminOverviewPage /> },
+  { path: paths.ADMIN_USERS, element: <AdminUsersPage /> },
+  { path: paths.ADMIN_USER_DETAIL_PATTERN, element: <AdminUserDetailPage /> },
   { path: paths.ADMIN_NOTIFICATIONS, element: <NotificationsPage /> },
   // Keeps the whole `/admin` subtree guarded — see buyerRoutes.jsx.
   { path: paths.ADMIN_CATCH_ALL, element: <NotFoundPage /> },

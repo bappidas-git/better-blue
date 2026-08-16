@@ -117,7 +117,7 @@ the reason.
 
 | Event | Emitter | Recipient(s) | Type | Status |
 |---|---|---|---|---|
-| Account suspended / blacklisted / reactivated | — | the account | `account_status_changed` | 🕓 **Prompt 29** (`userService.suspendUser` / `blacklistUser` / `reactivateUser`). |
+| Account suspended / blacklisted / reactivated | admin (`users.manage`) | the account | `account_status_changed` | ✅ **Prompt 29** — one function, `userService.adminSetAccountStatus`, with the verb derived from the destination status (`user.suspend` / `user.blacklist` / `user.reactivate`). The reason is quoted to the member verbatim. |
 | Platform announcement to an audience | — | every member in the audience | `system_announcement` | 🕓 **Prompt 34** (`notificationService.broadcastAnnouncement`). |
 
 ### Affiliate — `affiliate`
