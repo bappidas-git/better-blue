@@ -2932,6 +2932,8 @@ are the reason these belong on the server:
 | 21 | `getEarningsBreakdown` | `paymentService` | 6 | `GET /creator/earnings` |
 | 22 | `createDispute` | `disputeService` | 6 + N | `POST /disputes` |
 | 23 | `postMessage` | `disputeService` | 5 + N | `POST /disputes/:id/messages` |
+| 24 | `getOverviewStats` | `adminService` | 9 | `GET /admin/overview` |
+| 25 | `getAttentionQueues` | `adminService` | 5 | `GET /admin/attention` |
 
 Operations 16 and 17 were added by Prompt 20 (the buyer's order workspace), and
 operation 18 by Prompt 21 (the creator's) — the mirror of operation 14, section
@@ -2952,7 +2954,10 @@ holds a money calculation. Operations 22 and 23 arrived with Prompt 26 (the
 party-facing dispute system) and are the two halves of a case before anyone
 decides it: opening one freezes an order without moving a cent, and posting on
 the thread moves the case's own status rather than the order's. The decision
-itself stays operation 8.
+itself stays operation 8. Operations 24 and 25 arrived with Prompt 28 (the admin
+console's foundation): they are the platform-wide mirror of 14 and 18 — reads
+that never write, and the reason no admin screen ever queries a collection to
+compute a statistic.
 
 ### 7.2 The sequences
 
@@ -3921,6 +3926,113 @@ status; admins move it explicitly (§6.16).
 > move guarded by the same machine, and the notifications dispatched from a
 > model listener. Scope the thread read as
 > `when(!$user->isAdmin(), fn($q) => $q->where('internal', false))`.
+
+---
+
+#### 24. `getOverviewStats()`
+
+Everything the admin console's landing screen prints: six headline figures, a
+weekly order series, a monthly commission series, and the category mix. A
+**read**, and like operations 14 and 18 it never throws — each metric is its own
+section, each failure lands in `errors`, and its field resolves to `null` so one
+card can offer a retry while the other nine keep their numbers. Added by
+Prompt 28.
+
+**Mock — eight independent sections, run in parallel:**
+
+*Money*
+
+1. `GET /transactions?type=charge&createdAt_gte=<month start>&_page=1&_limit=100`
+   → folded client-side: `gmvThisMonth = Σ |amount|`. Charge rows are signed
+   negative from the buyer's perspective (§6.13), so they are summed as
+   absolutes; GMV is what buyers *committed*, not what has since been released
+   or refunded
+2. `GET /commissions?createdAt_gte=<5 months back>&_page=1&_limit=100` → folded
+   into six `YYYY-MM` buckets. `commissionRevenueThisMonth` is the **last
+   bucket**, from the same rows, so the tile and the final bar cannot disagree.
+   A commission is dated when escrow was released: revenue is recognised on
+   settlement
+
+*Volume and mix* — one read, two series, so the two charts are drawn from
+identical rows
+
+3. `GET /orders?createdAt_gte=<5 months back>&_page=1&_limit=100` → counted by
+   the Monday of `createdAt` (eight buckets, zero-filled) and by `categoryId`
+   (largest first, capped at six slices with an "Other" remainder)
+4. `GET /categories?isActive=true` (cached by `categoryService`) — labels only;
+   a failure costs the donut its names, not its data
+
+*Counters* — each one row fetched, read for its `X-Total-Count`
+
+5. `GET /orders?status=pending_payment&status=in_progress&status=delivered&status=revision_requested&status=disputed&_page=1&_limit=1`
+6. `GET /users?createdAt_gte=<7 days back>&_page=1&_limit=1`
+7. `GET /disputes?status=open&status=under_review&status=awaiting_buyer&status=awaiting_creator&status=escalated&_page=1&_limit=1`
+8. `GET /moderationReviews?status=submitted&status=under_review&_page=1&_limit=1`
+9. `GET /payouts?status=requested&_page=1&_limit=1` — `processing` is excluded
+   deliberately: it is already somebody's job, and counting it would inflate a
+   queue depth
+
+**Laravel — `GET /admin/overview`**
+
+```json
+{
+  "currency": "USD",
+  "gmvThisMonth": 4140, "commissionRevenueThisMonth": 466,
+  "activeOrders": 15, "newUsersThisWeek": 1,
+  "openDisputes": 5, "moderationQueueSize": 9, "pendingSettlements": 1,
+  "ordersByWeek": [{ "key": "2026-06-22", "label": "22 Jun", "orders": 4 }],
+  "revenueByMonth": [{ "key": "2026-08", "label": "Aug", "amount": 466 }],
+  "categoryDistribution": [{ "id": "cat_food_beverage", "name": "Food & Beverage", "value": 11 }]
+}
+```
+
+Five `SELECT COUNT(*)`s, two `SUM`s, and two `GROUP BY`s — one round trip, cached
+briefly for the whole team. No single permission gates it: the console's landing
+screen is reachable by anyone who can reach `/admin`, and every figure on it is
+an aggregate rather than a record. The 100-row page ceilings above are a **mock
+limitation** (§4.1) — on a real marketplace those folds would silently truncate,
+which is exactly why this is an endpoint rather than a habit.
+
+The audit feed on the same screen (`adminService.getRecentAuditActivity`) is part
+of this endpoint on the server: `GET /auditLogs?_page=1&_limit=8&_sort=createdAt&_order=desc`
+plus one `GET /users?id=…` to resolve the actors, becoming an eager-loaded
+relation. It is gated on `audit.view` there; the mock stack cannot enforce that
+(§9.1).
+
+---
+
+#### 25. `getAttentionQueues({ limit = 3 })`
+
+The three queues the console exists to keep empty, each returning its oldest
+items — the people the platform has kept waiting longest. A **read**; never
+throws, for the same reason as operation 24. Added by Prompt 28.
+
+**Mock — three sections, run in parallel:**
+
+*Disputes*
+
+1. `GET /disputes?status=open&status=under_review&status=awaiting_buyer&status=awaiting_creator&status=escalated&_sort=createdAt&_order=asc&_page=1&_limit=3`
+2. `GET /orders?id=…&_page=1&_limit=100` — the order titles, so a row reads
+   "Tasting menu stills" rather than `ord_047`
+
+*Moderation*
+
+3. `GET /moderationReviews?status=submitted&status=under_review&_sort=submittedAt&_order=asc&_page=1&_limit=3`
+   — already the order a reviewer works the queue in
+4. `GET /users?id=…&_page=1&_limit=100` — the submitting creators' names
+
+*Overdue orders*
+
+5. `GET /orders?status=in_progress&status=revision_requested&deliveryDueAt_lte=<now>&_sort=deliveryDueAt&_order=asc&_page=1&_limit=3`
+   — only the two states where a missed date means somebody is actually late. A
+   `delivered` order past its date is waiting on the *buyer*; a `disputed` one is
+   waiting on us
+
+**Laravel — `GET /admin/attention?limit=3`** — three `ORDER BY … ASC LIMIT ?`
+reads with their joins, returned together. Each list should be scoped to the
+caller's permissions server-side (`disputes.resolve`, `moderation.review`,
+`orders.manage`), returning an empty list rather than a `403` for a queue the
+admin cannot work — the screen is shared, the rows are not.
 
 ---
 

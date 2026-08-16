@@ -294,28 +294,28 @@ export const creatorNav = Object.freeze([
 
 /**
  * Admin is the grouped variant: Overview sits on its own at the top and every
- * later section lands inside a group, e.g.
+ * later section lands inside a group. Groups whose items are all filtered out
+ * disappear **with their heading**, so a Trust & Safety admin never sees an
+ * empty "Finance" section — and a group whose items are all still commented out
+ * renders nothing at all, which is why the whole skeleton can land at once.
  *
- *   Object.freeze({
- *     key: 'marketplace',
- *     group: 'Marketplace',
- *     items: Object.freeze([
- *       Object.freeze({
- *         key: 'requests',
- *         label: 'Requests',
- *         icon: 'solar:clipboard-list-linear',
- *         path: paths.ADMIN_REQUESTS,
- *         permission: PERMISSIONS.REQUESTS_MANAGE,
- *       }),
- *     ]),
- *   })
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║ Prompt 28 laid out the full console: every group in its final order, with ║
+ * ║ every destination written out and **commented until its screen exists**.  ║
+ * ║ The prompt that builds a screen uncomments its entry — nothing else — and ║
+ * ║ adds `import { PERMISSIONS } from '@/constants/permissions'` at the top   ║
+ * ║ of this file if it is not there yet (no entry needs it today, so it is    ║
+ * ║ not imported: an unused import fails `npm run lint`).                     ║
+ * ║                                                                          ║
+ * ║ Enabled now: Overview, and Notifications (Prompt 27's shared page, which  ║
+ * ║ Prompt 27 already mounted at `paths.ADMIN_NOTIFICATIONS`).                ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
  *
- * Groups whose items are all filtered out disappear with their heading, so a
- * Trust & Safety admin never sees an empty "Finance" section.
- *
- * Prompts append: users (29), moderation/reports (30), marketplace ops (31),
- * finance (32), disputes (33), affiliates (34), platform settings (35),
- * admin team + audit (36).
+ * Order is deliberate — it follows what an admin does with their day: check the
+ * state of things, work the marketplace, then people, then safety, then money,
+ * then talk to members. Platform sits last and is super-admin only; Affiliates
+ * is its own group rather than a Marketplace entry because it is a distinct
+ * programme with a permission of its own.
  */
 export const adminNav = Object.freeze([
   Object.freeze({
@@ -324,6 +324,213 @@ export const adminNav = Object.freeze([
     icon: 'solar:widget-5-linear',
     path: paths.ADMIN,
     exact: true,
+  }),
+
+  Object.freeze({
+    key: 'marketplace',
+    group: 'Marketplace',
+    items: Object.freeze([
+      // Prompt 31
+      // Object.freeze({
+      //   key: 'requests',
+      //   label: 'Requests',
+      //   icon: 'solar:clipboard-list-linear',
+      //   path: paths.ADMIN_REQUESTS,
+      //   permission: PERMISSIONS.REQUESTS_MANAGE,
+      // }),
+      // Prompt 31
+      // Object.freeze({
+      //   key: 'orders',
+      //   label: 'Orders',
+      //   icon: 'solar:box-linear',
+      //   path: paths.ADMIN_ORDERS,
+      //   permission: PERMISSIONS.ORDERS_MANAGE,
+      // }),
+      // Prompt 33 — the admin side of the case queue, not the party-facing
+      // screens Prompt 26 built for buyers and creators.
+      // Object.freeze({
+      //   key: 'disputes',
+      //   label: 'Disputes',
+      //   icon: 'solar:shield-warning-linear',
+      //   path: paths.ADMIN_DISPUTES,
+      //   permission: PERMISSIONS.DISPUTES_RESOLVE,
+      // }),
+    ]),
+  }),
+
+  Object.freeze({
+    key: 'users',
+    group: 'Users',
+    items: Object.freeze([
+      // Prompt 29
+      // Object.freeze({
+      //   key: 'users',
+      //   label: 'Users',
+      //   icon: 'solar:users-group-rounded-linear',
+      //   path: paths.ADMIN_USERS,
+      //   permission: PERMISSIONS.USERS_MANAGE,
+      // }),
+    ]),
+  }),
+
+  Object.freeze({
+    key: 'trust_safety',
+    group: 'Trust & Safety',
+    items: Object.freeze([
+      // Prompt 30
+      // Object.freeze({
+      //   key: 'moderation',
+      //   label: 'Moderation',
+      //   icon: 'tabler:shield-check',
+      //   path: paths.ADMIN_MODERATION,
+      //   permission: PERMISSIONS.MODERATION_REVIEW,
+      // }),
+      // Prompt 30
+      // Object.freeze({
+      //   key: 'reports',
+      //   label: 'Reports',
+      //   icon: 'solar:flag-linear',
+      //   path: paths.ADMIN_REPORTS,
+      //   permission: PERMISSIONS.REPORTS_MANAGE,
+      // }),
+    ]),
+  }),
+
+  Object.freeze({
+    key: 'finance',
+    group: 'Finance',
+    items: Object.freeze([
+      // Prompt 32
+      // Object.freeze({
+      //   key: 'payments',
+      //   label: 'Payments',
+      //   icon: 'solar:card-linear',
+      //   path: paths.ADMIN_PAYMENTS,
+      //   permission: PERMISSIONS.PAYMENTS_MANAGE,
+      // }),
+      // Prompt 32
+      // Object.freeze({
+      //   key: 'settlements',
+      //   label: 'Settlements',
+      //   icon: 'solar:wallet-money-linear',
+      //   path: paths.ADMIN_SETTLEMENTS,
+      //   permission: PERMISSIONS.SETTLEMENTS_PROCESS,
+      // }),
+      // Prompt 32 — commissions are read-only reporting on the same records, so
+      // they ride on `payments.manage` rather than earning a permission.
+      // Object.freeze({
+      //   key: 'commissions',
+      //   label: 'Commissions',
+      //   icon: 'solar:hand-money-linear',
+      //   path: paths.ADMIN_COMMISSIONS,
+      //   permission: PERMISSIONS.PAYMENTS_MANAGE,
+      // }),
+    ]),
+  }),
+
+  Object.freeze({
+    key: 'affiliates',
+    group: 'Affiliates',
+    items: Object.freeze([
+      // Prompt 34
+      // Object.freeze({
+      //   key: 'affiliates',
+      //   label: 'Affiliates',
+      //   icon: 'solar:users-group-two-rounded-linear',
+      //   path: paths.ADMIN_AFFILIATES,
+      //   permission: PERMISSIONS.AFFILIATES_MANAGE,
+      // }),
+    ]),
+  }),
+
+  Object.freeze({
+    key: 'communication',
+    group: 'Communication',
+    items: Object.freeze([
+      // Prompt 31
+      // Object.freeze({
+      //   key: 'announcements',
+      //   label: 'Announcements',
+      //   icon: 'solar:megaphone-linear',
+      //   path: paths.ADMIN_ANNOUNCEMENTS,
+      //   permission: PERMISSIONS.ANNOUNCEMENTS_SEND,
+      // }),
+      // Prompt 31
+      // Object.freeze({
+      //   key: 'support',
+      //   label: 'Support',
+      //   icon: 'solar:chat-round-line-linear',
+      //   path: paths.ADMIN_SUPPORT,
+      //   permission: PERMISSIONS.SUPPORT_MANAGE,
+      // }),
+      Object.freeze({
+        // Prompt 28, using Prompt 27's shared notification centre — the same
+        // page the buyer and creator navs point at, which reads the signed-in
+        // role for its category chips. No permission: a member's own feed is
+        // theirs whatever their console access.
+        key: NAV_KEY.NOTIFICATIONS,
+        label: 'Notifications',
+        icon: 'solar:bell-linear',
+        path: paths.ADMIN_NOTIFICATIONS,
+        badgeKey: BADGE_KEY.NOTIFICATIONS_UNREAD,
+      }),
+    ]),
+  }),
+
+  Object.freeze({
+    key: 'platform',
+    group: 'Platform',
+    // Every entry below also carries `roles: [ROLES.SUPER_ADMIN]`. The group
+    // wrapper cannot gate on its own — `filterNavEntries` reads `roles` per
+    // item — so the restriction is written where it is enforced, and an admin
+    // granted `settings.manage` by mistake still would not see the section.
+    items: Object.freeze([
+      // Prompt 35
+      // Object.freeze({
+      //   key: 'settings',
+      //   label: 'Settings',
+      //   icon: 'solar:settings-linear',
+      //   path: paths.ADMIN_SETTINGS,
+      //   roles: [ROLES.SUPER_ADMIN],
+      //   permission: PERMISSIONS.SETTINGS_MANAGE,
+      // }),
+      // Prompt 35
+      // Object.freeze({
+      //   key: 'categories',
+      //   label: 'Categories',
+      //   icon: 'solar:widget-4-linear',
+      //   path: paths.ADMIN_CATEGORIES,
+      //   roles: [ROLES.SUPER_ADMIN],
+      //   permission: PERMISSIONS.CATEGORIES_MANAGE,
+      // }),
+      // Prompt 36
+      // Object.freeze({
+      //   key: 'admins',
+      //   label: 'Admin team',
+      //   icon: 'solar:shield-user-linear',
+      //   path: paths.ADMIN_ADMINS,
+      //   roles: [ROLES.SUPER_ADMIN],
+      //   permission: PERMISSIONS.ADMINS_MANAGE,
+      // }),
+      // Prompt 36
+      // Object.freeze({
+      //   key: 'roles',
+      //   label: 'Roles',
+      //   icon: 'solar:key-square-linear',
+      //   path: paths.ADMIN_ROLES,
+      //   roles: [ROLES.SUPER_ADMIN],
+      //   permission: PERMISSIONS.ADMINS_MANAGE,
+      // }),
+      // Prompt 36
+      // Object.freeze({
+      //   key: 'audit',
+      //   label: 'Audit log',
+      //   icon: 'solar:history-linear',
+      //   path: paths.ADMIN_AUDIT,
+      //   roles: [ROLES.SUPER_ADMIN],
+      //   permission: PERMISSIONS.AUDIT_VIEW,
+      // }),
+    ]),
   }),
 ])
 
@@ -372,6 +579,14 @@ export const MORE_NAV_KEYS = Object.freeze({
   // Overview · Browse · Proposals · Orders, with More holding Earnings,
   // Disputes, Portfolio, Notifications, Profile, and Settings.
   [ROLES.CREATOR]: Object.freeze([NAV_KEY.PROFILE, NAV_KEY.SETTINGS]),
+  // Prompt 28: the console has two live destinations — Overview and
+  // Notifications — so both fit on the bar and `splitBottomNav` renders no
+  // "More" tile at all. Nothing is deferred **by name** yet on purpose: which
+  // four of the console's eventual fifteen destinations deserve a thumb slot
+  // depends on which ones a given admin's permissions leave standing, and
+  // overflow-by-position already handles that correctly. Prompts 29–36 should
+  // add a key here only if their screen is one an admin would open on a phone
+  // *less* often than whatever it would otherwise push out.
   [ROLES.ADMIN]: Object.freeze([]),
   [ROLES.SUPER_ADMIN]: Object.freeze([]),
 })
