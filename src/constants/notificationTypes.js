@@ -27,6 +27,11 @@ export const NOTIFICATION_TYPE = Object.freeze({
   // their brief would simply have stopped being open, with the reason visible
   // only to somebody who went looking for it.
   REQUEST_CLOSED: 'request_closed',
+  // Storefront V2 addition (prompts-v2/03): a creator opened a reply thread on
+  // one of this buyer's feeds. Deliberately **not** `proposal_received` — a
+  // reply is a conversation, not a priced offer, and putting the two under one
+  // type would tell a buyer they have an offer to review when they do not.
+  FEED_REPLY_RECEIVED: 'feed_reply_received',
   ORDER_PAID: 'order_paid',
   DELIVERY_SUBMITTED: 'delivery_submitted',
   REVISION_REQUESTED: 'revision_requested',
@@ -112,6 +117,12 @@ export const NOTIFICATION_META = Object.freeze({
     label: 'Proposal accepted',
     icon: 'solar:check-circle-linear',
     tone: 'success',
+    category: NOTIFICATION_CATEGORY.MARKETPLACE,
+  }),
+  [NOTIFICATION_TYPE.FEED_REPLY_RECEIVED]: Object.freeze({
+    label: 'New reply on your feed',
+    icon: 'solar:chat-round-line-linear',
+    tone: 'info',
     category: NOTIFICATION_CATEGORY.MARKETPLACE,
   }),
   [NOTIFICATION_TYPE.PROPOSAL_DECLINED]: Object.freeze({

@@ -29,6 +29,7 @@ import {
   addDays,
   compact,
   daysAgo,
+  pick,
   seqId,
 } from '../seed-utils.js'
 import { creatorProfileId } from './profiles.js'
@@ -954,6 +955,145 @@ const HISTORY_BRIEF = {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Storefront V2 — feed tags and the headline offer                           */
+/* -------------------------------------------------------------------------- */
+
+// A brief rendered on the V2 feed board is a "feed", and a feed card leads with
+// three things the old board did not carry: a row of **tags**, one headline
+// **offer price**, and a **replies count**. All three are additive fields on the
+// same `contentRequests` record — nothing here renames or replaces the budget
+// pair, and every existing consumer (the wizard, the buyer's request list, the
+// admin console) keeps reading exactly what it read before.
+//
+// `repliesCount` is *not* set here: like `proposalsCount`, it is derived in
+// `seed-db.js` from the `feedReplies` collection, so the number on a feed and
+// the threads underneath it cannot drift.
+
+/**
+ * Hand-written tags for the scenario briefs — the ones that appear on the feed
+ * board, the home page strip, and the feed detail page, so they are worth
+ * writing rather than deriving.
+ *
+ * Kept as a keyed table rather than a `tags` line inside each source object:
+ * the sources above are long, and one table is far easier to review for
+ * duplicates, house style, and the 3–6 tag budget the cards are laid out for.
+ *
+ * Tags are lowercase kebab-case slugs — a stored value, not a label. The UI
+ * renders them as written (that is the convention creators recognise from every
+ * other marketplace), so a display-name lookup would be a layer with nothing in
+ * it.
+ */
+const SCENARIO_FEED_TAGS = {
+  open_verde_menu: ['menu-photography', 'food-styling', 'on-location', 'print-ready', 'hospitality'],
+  open_nimbus_class: ['short-form-video', 'vertical-video', 'captions', 'paid-ads', 'fitness'],
+  open_atlas_itinerary: ['travel', 'hospitality', 'brand-film', 'on-location', 'photo-and-video'],
+  open_bloom_routine: ['explainer', 'vertical-video', 'beauty', 'on-camera-talent', 'paid-ads'],
+  open_pulse_walkthrough: ['screen-capture', 'motion-graphics', 'explainer', 'b2b', 'voiceover'],
+  draft_craftware_bench: ['product-photo', 'ecommerce', 'white-background', 'catalogue'],
+  draft_verde_launch: ['interiors', 'food-styling', 'on-location', 'hospitality', 'launch'],
+  draft_verde_supplier: ['documentary', 'on-location', 'short-form-video', 'brand-story'],
+  draft_urbannest_sofa: ['interiors', 'room-sets', 'lifestyle', 'photo-and-video', 'furniture'],
+  closed_cocoa_easter: ['product-photo', 'packaging', 'seasonal', 'ecommerce'],
+  awarded_cocoa_gift: ['lifestyle', 'product-photo', 'packaging', 'social-media', 'ecommerce'],
+  awarded_nimbus_equipment: ['demonstration', 'studio', 'short-form-video', 'fitness', 'captions'],
+  awarded_bloom_texture: ['macro', 'product-photo', 'swatches', 'beauty', 'studio'],
+  awarded_fernwood_pastry: ['food-styling', 'product-photo', 'natural-light', 'bakery'],
+  awarded_atlas_hotel: ['interiors', 'hospitality', 'travel', 'on-location', 'property'],
+  awarded_verde_reel: ['vertical-video', 'short-form-video', 'social-media', 'food-styling'],
+  awarded_verde_supper: ['event-coverage', 'brand-film', 'photo-and-video', 'hospitality'],
+  awarded_verde_market: ['documentary', 'on-location', 'brand-story', 'food-beverage'],
+  awarded_urbannest_shelf: ['catalogue', 'product-photo', 'interiors', 'studio', 'furniture'],
+  awarded_pulse_explainer: ['explainer', 'screen-capture', 'motion-graphics', 'b2b', 'series'],
+  awarded_craftware_demo: ['demonstration', 'short-form-video', 'ecommerce', 'studio'],
+  awarded_nimbus_app: ['brand-film', 'motion-graphics', 'app-preview', 'fitness'],
+  completed_bloom_campaign: ['brand-film', 'beauty', 'talent-casting', 'colour-grading', 'paid-ads'],
+  completed_atlas_villa: ['property', 'travel', 'interiors', 'on-location', 'hospitality'],
+  completed_urbannest_loft: ['interiors', 'property', 'architecture', 'showroom'],
+  cancelled_atlas_winter: ['event-coverage', 'brand-film', 'travel', 'b-roll'],
+  cancelled_bloom_serum: ['packaging', 'product-photo', 'studio', 'beauty'],
+  open_cocoa_truffle: ['product-photo', 'food-styling', 'packaging', 'ecommerce', 'studio'],
+  open_craftware_giftset: ['product-photo', 'ecommerce', 'white-background', 'seasonal', 'catalogue'],
+  open_verde_invite_ava: ['food-styling', 'photo-and-video', 'vertical-video', 'on-location', 'hospitality'],
+  open_urbannest_studio: ['room-sets', 'interiors', 'lifestyle', 'natural-light', 'furniture'],
+  awarded_verde_pastry: ['food-styling', 'product-photo', 'natural-light', 'hospitality'],
+  awarded_verde_tasting: ['food-styling', 'on-location', 'fine-dining', 'print-ready'],
+  awarded_verde_courtyard: ['short-form-video', 'vertical-video', 'hospitality', 'ambient-sound'],
+  awarded_atlas_marina: ['property', 'hospitality', 'travel', 'interiors', 'print-ready'],
+}
+
+/** One tag per content type — always the first tag a derived feed carries. */
+const CONTENT_TYPE_TAG = {
+  [PHOTO]: 'photography',
+  [VIDEO]: 'video-production',
+  [BUNDLE]: 'photo-and-video',
+}
+
+/**
+ * Four tags per category, rotated into the derived feeds. Kept to four so the
+ * archive reads as a marketplace with a house vocabulary rather than as 30 rows
+ * of the same three words.
+ */
+const CATEGORY_TAGS = {
+  [CATEGORY_ID.FOOD_BEVERAGE]: ['food-styling', 'menu-photography', 'hospitality', 'on-location'],
+  [CATEGORY_ID.ECOMMERCE_PRODUCTS]: ['product-photo', 'ecommerce', 'catalogue', 'white-background'],
+  [CATEGORY_ID.BEAUTY_SKINCARE]: ['beauty', 'macro', 'studio', 'swatches'],
+  [CATEGORY_ID.FITNESS_WELLNESS]: ['fitness', 'demonstration', 'studio', 'captions'],
+  [CATEGORY_ID.TRAVEL_HOSPITALITY]: ['travel', 'property', 'on-location', 'hospitality'],
+  [CATEGORY_ID.TECHNOLOGY_SAAS]: ['b2b', 'explainer', 'screen-capture', 'motion-graphics'],
+  [CATEGORY_ID.HOME_LIFESTYLE]: ['interiors', 'room-sets', 'lifestyle', 'furniture'],
+  [CATEGORY_ID.EDUCATION_COACHING]: ['explainer', 'on-camera-talent', 'captions', 'series'],
+  [CATEGORY_ID.EVENTS_ENTERTAINMENT]: ['event-coverage', 'b-roll', 'on-location', 'documentary'],
+  [CATEGORY_ID.REAL_ESTATE]: ['property', 'interiors', 'architecture', 'showroom'],
+  [CATEGORY_ID.FASHION_APPAREL]: ['lookbook', 'talent-casting', 'studio', 'lifestyle'],
+  [CATEGORY_ID.AUTOMOTIVE]: ['automotive', 'on-location', 'colour-grading', 'detail-work'],
+}
+
+/** Every derived feed also carries one of these — the placement it is shot for. */
+const PLACEMENT_TAGS = ['social-media', 'website', 'paid-ads', 'print-ready']
+
+/**
+ * The tags on one feed: the hand-written set when there is one, otherwise a
+ * deterministic four — content type, two category tags, and a placement —
+ * rotated by the feed's position so consecutive archive rows never match.
+ *
+ * @param {string} key the seed key of the brief
+ * @param {object} source `{ category, contentType }` off the brief
+ * @param {number} index the brief's position in its own array
+ * @returns {string[]} 3–6 tags, in card order
+ */
+function feedTags(key, { category, contentType }, index) {
+  const explicit = SCENARIO_FEED_TAGS[key]
+  if (explicit) return explicit
+
+  const categoryTags = CATEGORY_TAGS[category] ?? CATEGORY_TAGS[CATEGORY_ID.ECOMMERCE_PRODUCTS]
+  return [
+    CONTENT_TYPE_TAG[contentType] ?? CONTENT_TYPE_TAG[PHOTO],
+    pick(categoryTags, index),
+    pick(categoryTags, index + 2),
+    pick(PLACEMENT_TAGS, index),
+  ]
+}
+
+/**
+ * The single number a feed card leads with.
+ *
+ * Derived from the budget the brief already carries rather than stored
+ * independently, so the two can never disagree: a `fixed` brief offers its one
+ * price (`budgetMin === budgetMax` by construction), and a `range` brief offers
+ * the **top** of the range — that is the figure a creator is deciding whether
+ * to answer, and quoting the floor as "the offer" would misrepresent it.
+ *
+ * `undefined` on a draft that has not answered the budget question yet, which
+ * `compact` then drops: an absent offer, never `$0`.
+ *
+ * @param {{budgetMin?: number, budgetMax?: number}} source
+ * @returns {number|undefined}
+ */
+function offerPriceOf({ budgetMin, budgetMax }) {
+  return budgetMax ?? budgetMin ?? undefined
+}
+
+/* -------------------------------------------------------------------------- */
 /* Assembly                                                                   */
 /* -------------------------------------------------------------------------- */
 
@@ -967,7 +1107,7 @@ function nextRequestId(key) {
   return id
 }
 
-const scenarioRequests = SCENARIO_SOURCE.map((source) => {
+const scenarioRequests = SCENARIO_SOURCE.map((source, index) => {
   const createdAt = daysAgo(source.createdDaysAgo, 13, 30)
   const isDraft = source.status === REQUEST_STATUS.DRAFT
   return compact({
@@ -988,6 +1128,10 @@ const scenarioRequests = SCENARIO_SOURCE.map((source) => {
     budgetType: source.budgetType,
     budgetMin: source.budgetMin,
     budgetMax: source.budgetMax,
+    // Storefront V2 (see the section above): the headline offer and the feed
+    // tags. Additive — the budget pair above is untouched.
+    offerPrice: offerPriceOf(source),
+    tags: feedTags(source.key, source, index),
     currency: CURRENCY,
     // A draft may not have picked a date yet (Prompt 18's incomplete draft), so
     // `null` stays `null` rather than becoming "today" via `-null === -0`.
@@ -999,15 +1143,17 @@ const scenarioRequests = SCENARIO_SOURCE.map((source) => {
       ? creatorProfileId(source.invitedCreator)
       : undefined,
     status: source.status,
-    // Derived in seed-db.js from the proposals on this request.
+    // Derived in seed-db.js from the proposals on this request, and — V2 —
+    // from the `feedReplies` threads on it.
     proposalsCount: 0,
+    repliesCount: 0,
     awardedProposalId: null,
     createdAt,
     publishedAt: isDraft ? null : addDays(createdAt, 0.25),
   })
 })
 
-const historyRequests = HISTORY_ENGAGEMENTS.map((engagement) => {
+const historyRequests = HISTORY_ENGAGEMENTS.map((engagement, index) => {
   const createdAt = daysAgo(engagement.createdDaysAgo + 6, 13, 30)
   const brief = HISTORY_BRIEF[engagement.contentType]
   return compact({
@@ -1029,10 +1175,13 @@ const historyRequests = HISTORY_ENGAGEMENTS.map((engagement) => {
     budgetType: BUDGET_TYPE.FIXED,
     budgetMin: engagement.price,
     budgetMax: engagement.price,
+    offerPrice: engagement.price,
+    tags: feedTags(engagement.key, engagement, index),
     currency: CURRENCY,
     deadline: daysAgo(engagement.createdDaysAgo - engagement.deliveryDays, 17, 0),
     status: REQUEST_STATUS.COMPLETED,
     proposalsCount: 0,
+    repliesCount: 0,
     awardedProposalId: null,
     createdAt,
     publishedAt: addDays(createdAt, 0.25),
@@ -1129,7 +1278,7 @@ const LATE_SCENARIO_SOURCE = [
   },
 ]
 
-const lateScenarioRequests = LATE_SCENARIO_SOURCE.map((source) => {
+const lateScenarioRequests = LATE_SCENARIO_SOURCE.map((source, index) => {
   const createdAt = daysAgo(source.createdDaysAgo, 13, 30)
   return compact({
     id: nextRequestId(source.key),
@@ -1149,12 +1298,15 @@ const lateScenarioRequests = LATE_SCENARIO_SOURCE.map((source) => {
     budgetType: source.budgetType,
     budgetMin: source.budgetMin,
     budgetMax: source.budgetMax,
+    offerPrice: offerPriceOf(source),
+    tags: feedTags(source.key, source, index),
     currency: CURRENCY,
     // Every one of these briefs is already past its delivery date — which is
     // most of the reason each ended up in dispute.
     deadline: daysAgo(source.deadlineDaysAgo, 17, 0),
     status: source.status,
     proposalsCount: 0,
+    repliesCount: 0,
     awardedProposalId: null,
     createdAt,
     publishedAt: addDays(createdAt, 0.25),

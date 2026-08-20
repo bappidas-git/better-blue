@@ -9,7 +9,7 @@
       "name": "Elena Marsh",
       "avatarUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23E5E2EC%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%23171223%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3EEM%3C%2Ftext%3E%3C%2Fsvg%3E",
       "createdAt": "2026-04-18T10:15:00.000Z",
-      "lastLoginAt": "2026-08-20T06:07:12.884Z",
+      "lastLoginAt": "2026-08-13T08:30:00.000Z",
       "notificationPrefs": {
         "marketplace": {
           "inApp": true
@@ -267,7 +267,7 @@
       "avatarUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23F5F3FF%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%237C3AED%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3ENW%3C%2Ftext%3E%3C%2Fsvg%3E",
       "phone": "+1 503 555 0142",
       "createdAt": "2026-04-22T10:15:00.000Z",
-      "lastLoginAt": "2026-08-14T08:30:00.000Z",
+      "lastLoginAt": "2026-08-20T09:57:12.871Z",
       "notificationPrefs": {
         "marketplace": {
           "inApp": true
@@ -693,7 +693,7 @@
       "avatarUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23E5E2EC%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%23171223%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3EAM%3C%2Ftext%3E%3C%2Fsvg%3E",
       "phone": "+1 512 555 0110",
       "createdAt": "2026-04-23T10:15:00.000Z",
-      "lastLoginAt": "2026-08-14T08:30:00.000Z",
+      "lastLoginAt": "2026-08-20T09:57:25.158Z",
       "notificationPrefs": {
         "marketplace": {
           "inApp": true
@@ -1281,6 +1281,14 @@
       "ratingAvg": 4.4,
       "ratingCount": 7,
       "completedOrders": 8,
+      "isOnline": true,
+      "deliveriesCount": 42,
+      "totalEarned": 13124,
+      "contributionCounts": {
+        "images": 112,
+        "videos": 67
+      },
+      "level": 3,
       "payoutMethod": {
         "type": "bank",
         "accountName": "Ava Martinez",
@@ -1316,6 +1324,14 @@
       "ratingAvg": 4.7,
       "ratingCount": 3,
       "completedOrders": 3,
+      "isOnline": false,
+      "deliveriesCount": 29,
+      "totalEarned": 13556,
+      "contributionCounts": {
+        "images": 43,
+        "videos": 122
+      },
+      "level": 3,
       "payoutMethod": {
         "type": "bank",
         "accountName": "Liam Chen",
@@ -1350,6 +1366,14 @@
       "ratingAvg": 4.7,
       "ratingCount": 3,
       "completedOrders": 3,
+      "isOnline": true,
+      "deliveriesCount": 26,
+      "totalEarned": 10800,
+      "contributionCounts": {
+        "images": 91,
+        "videos": 55
+      },
+      "level": 3,
       "payoutMethod": {
         "type": "bank",
         "accountName": "Zoe Okonkwo",
@@ -1385,6 +1409,14 @@
       "ratingAvg": 4.5,
       "ratingCount": 2,
       "completedOrders": 2,
+      "isOnline": false,
+      "deliveriesCount": 14,
+      "totalEarned": 5048,
+      "contributionCounts": {
+        "images": 18,
+        "videos": 75
+      },
+      "level": 2,
       "payoutMethod": {
         "type": "bank",
         "accountName": "Diego Ramirez",
@@ -1420,6 +1452,14 @@
       "ratingAvg": 5,
       "ratingCount": 2,
       "completedOrders": 2,
+      "isOnline": true,
+      "deliveriesCount": 18,
+      "totalEarned": 7944,
+      "contributionCounts": {
+        "images": 128,
+        "videos": 9
+      },
+      "level": 2,
       "payoutMethod": {
         "type": "bank",
         "accountName": "Isla Bergstrom",
@@ -1454,6 +1494,14 @@
       "ratingAvg": 4.5,
       "ratingCount": 2,
       "completedOrders": 3,
+      "isOnline": true,
+      "deliveriesCount": 15,
+      "totalEarned": 5364,
+      "contributionCounts": {
+        "images": 66,
+        "videos": 29
+      },
+      "level": 2,
       "payoutMethod": {
         "type": "bank",
         "accountName": "Noah Feldman",
@@ -1488,6 +1536,14 @@
       "ratingAvg": 4.3,
       "ratingCount": 3,
       "completedOrders": 3,
+      "isOnline": false,
+      "deliveriesCount": 12,
+      "totalEarned": 4224,
+      "contributionCounts": {
+        "images": 83,
+        "videos": 6
+      },
+      "level": 2,
       "payoutMethod": {
         "type": "bank",
         "accountName": "Yuki Tanaka",
@@ -1525,6 +1581,14 @@
       "ratingAvg": 4.8,
       "ratingCount": 4,
       "completedOrders": 4,
+      "isOnline": true,
+      "deliveriesCount": 26,
+      "totalEarned": 10658,
+      "contributionCounts": {
+        "images": 59,
+        "videos": 47
+      },
+      "level": 3,
       "payoutMethod": {
         "type": "bank",
         "accountName": "Amara Diallo",
@@ -1559,6 +1623,14 @@
       "ratingAvg": 4.5,
       "ratingCount": 2,
       "completedOrders": 2,
+      "isOnline": false,
+      "deliveriesCount": 11,
+      "totalEarned": 3332,
+      "contributionCounts": {
+        "images": 12,
+        "videos": 52
+      },
+      "level": 2,
       "payoutMethod": {
         "type": "bank",
         "accountName": "Sara Lindqvist",
@@ -1593,6 +1665,14 @@
       "ratingAvg": 3.5,
       "ratingCount": 2,
       "completedOrders": 2,
+      "isOnline": true,
+      "deliveriesCount": 6,
+      "totalEarned": 1868,
+      "contributionCounts": {
+        "images": 37,
+        "videos": 5
+      },
+      "level": 1,
       "payoutMethod": {
         "type": "bank",
         "accountName": "Chloe Dubois",
@@ -1628,6 +1708,14 @@
       "ratingAvg": 3,
       "ratingCount": 1,
       "completedOrders": 1,
+      "isOnline": false,
+      "deliveriesCount": 3,
+      "totalEarned": 1052,
+      "contributionCounts": {
+        "images": 9,
+        "videos": 14
+      },
+      "level": 1,
       "createdAt": "2026-07-01T11:05:00.000Z"
     },
     {
@@ -1657,6 +1745,14 @@
       "ratingAvg": 0,
       "ratingCount": 0,
       "completedOrders": 0,
+      "isOnline": false,
+      "deliveriesCount": 0,
+      "totalEarned": 0,
+      "contributionCounts": {
+        "images": 5,
+        "videos": 2
+      },
+      "level": 1,
       "createdAt": "2026-07-07T11:05:00.000Z"
     }
   ],
@@ -3276,10 +3372,19 @@
       "budgetType": "range",
       "budgetMin": 600,
       "budgetMax": 900,
+      "offerPrice": 900,
+      "tags": [
+        "menu-photography",
+        "food-styling",
+        "on-location",
+        "print-ready",
+        "hospitality"
+      ],
       "currency": "USD",
       "deadline": "2026-09-01T17:00:00.000Z",
       "status": "open",
       "proposalsCount": 4,
+      "repliesCount": 3,
       "awardedProposalId": null,
       "createdAt": "2026-08-05T13:30:00.000Z",
       "publishedAt": "2026-08-05T19:30:00.000Z"
@@ -3304,10 +3409,19 @@
       "budgetType": "range",
       "budgetMin": 900,
       "budgetMax": 1400,
+      "offerPrice": 1400,
+      "tags": [
+        "short-form-video",
+        "vertical-video",
+        "captions",
+        "paid-ads",
+        "fitness"
+      ],
       "currency": "USD",
       "deadline": "2026-09-07T17:00:00.000Z",
       "status": "open",
       "proposalsCount": 3,
+      "repliesCount": 3,
       "awardedProposalId": null,
       "createdAt": "2026-08-07T13:30:00.000Z",
       "publishedAt": "2026-08-07T19:30:00.000Z"
@@ -3332,10 +3446,19 @@
       "budgetType": "range",
       "budgetMin": 1200,
       "budgetMax": 1800,
+      "offerPrice": 1800,
+      "tags": [
+        "travel",
+        "hospitality",
+        "brand-film",
+        "on-location",
+        "photo-and-video"
+      ],
       "currency": "USD",
       "deadline": "2026-09-14T17:00:00.000Z",
       "status": "open",
       "proposalsCount": 3,
+      "repliesCount": 3,
       "awardedProposalId": null,
       "createdAt": "2026-08-09T13:30:00.000Z",
       "publishedAt": "2026-08-09T19:30:00.000Z"
@@ -3360,10 +3483,19 @@
       "budgetType": "fixed",
       "budgetMin": 750,
       "budgetMax": 750,
+      "offerPrice": 750,
+      "tags": [
+        "explainer",
+        "vertical-video",
+        "beauty",
+        "on-camera-talent",
+        "paid-ads"
+      ],
       "currency": "USD",
       "deadline": "2026-08-28T17:00:00.000Z",
       "status": "open",
       "proposalsCount": 2,
+      "repliesCount": 2,
       "awardedProposalId": null,
       "createdAt": "2026-08-10T13:30:00.000Z",
       "publishedAt": "2026-08-10T19:30:00.000Z"
@@ -3388,10 +3520,19 @@
       "budgetType": "range",
       "budgetMin": 800,
       "budgetMax": 1200,
+      "offerPrice": 1200,
+      "tags": [
+        "screen-capture",
+        "motion-graphics",
+        "explainer",
+        "b2b",
+        "voiceover"
+      ],
       "currency": "USD",
       "deadline": "2026-09-04T17:00:00.000Z",
       "status": "open",
       "proposalsCount": 4,
+      "repliesCount": 2,
       "awardedProposalId": null,
       "createdAt": "2026-08-11T13:30:00.000Z",
       "publishedAt": "2026-08-11T19:30:00.000Z"
@@ -3413,10 +3554,18 @@
       "budgetType": "range",
       "budgetMin": 450,
       "budgetMax": 700,
+      "offerPrice": 700,
+      "tags": [
+        "product-photo",
+        "ecommerce",
+        "white-background",
+        "catalogue"
+      ],
       "currency": "USD",
       "deadline": "2026-09-23T17:00:00.000Z",
       "status": "draft",
       "proposalsCount": 0,
+      "repliesCount": 0,
       "awardedProposalId": null,
       "createdAt": "2026-08-08T13:30:00.000Z",
       "publishedAt": null
@@ -3438,10 +3587,19 @@
       "budgetType": "range",
       "budgetMin": 700,
       "budgetMax": 1100,
+      "offerPrice": 1100,
+      "tags": [
+        "interiors",
+        "food-styling",
+        "on-location",
+        "hospitality",
+        "launch"
+      ],
       "currency": "USD",
       "deadline": "2026-09-17T17:00:00.000Z",
       "status": "draft",
       "proposalsCount": 0,
+      "repliesCount": 0,
       "awardedProposalId": null,
       "createdAt": "2026-08-11T13:30:00.000Z",
       "publishedAt": null
@@ -3459,10 +3617,17 @@
       "donts": "",
       "referenceUrls": [],
       "budgetType": "fixed",
+      "tags": [
+        "documentary",
+        "on-location",
+        "short-form-video",
+        "brand-story"
+      ],
       "currency": "USD",
       "deadline": null,
       "status": "draft",
       "proposalsCount": 0,
+      "repliesCount": 0,
       "awardedProposalId": null,
       "createdAt": "2026-08-13T13:30:00.000Z",
       "publishedAt": null
@@ -3485,10 +3650,19 @@
       "budgetType": "range",
       "budgetMin": 900,
       "budgetMax": 1300,
+      "offerPrice": 1300,
+      "tags": [
+        "interiors",
+        "room-sets",
+        "lifestyle",
+        "photo-and-video",
+        "furniture"
+      ],
       "currency": "USD",
       "deadline": "2026-09-28T17:00:00.000Z",
       "status": "draft",
       "proposalsCount": 0,
+      "repliesCount": 0,
       "awardedProposalId": null,
       "createdAt": "2026-08-12T13:30:00.000Z",
       "publishedAt": null
@@ -3510,10 +3684,18 @@
       "budgetType": "fixed",
       "budgetMin": 480,
       "budgetMax": 480,
+      "offerPrice": 480,
+      "tags": [
+        "product-photo",
+        "packaging",
+        "seasonal",
+        "ecommerce"
+      ],
       "currency": "USD",
       "deadline": "2026-08-02T17:00:00.000Z",
       "status": "closed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": null,
       "createdAt": "2026-06-23T13:30:00.000Z",
       "publishedAt": "2026-06-23T19:30:00.000Z"
@@ -3537,10 +3719,19 @@
       "budgetType": "range",
       "budgetMin": 700,
       "budgetMax": 1000,
+      "offerPrice": 1000,
+      "tags": [
+        "lifestyle",
+        "product-photo",
+        "packaging",
+        "social-media",
+        "ecommerce"
+      ],
       "currency": "USD",
       "deadline": "2026-08-26T17:00:00.000Z",
       "status": "awarded",
       "proposalsCount": 3,
+      "repliesCount": 0,
       "awardedProposalId": "prp_019",
       "createdAt": "2026-07-23T13:30:00.000Z",
       "publishedAt": "2026-07-23T19:30:00.000Z"
@@ -3565,10 +3756,19 @@
       "budgetType": "fixed",
       "budgetMin": 1080,
       "budgetMax": 1080,
+      "offerPrice": 1080,
+      "tags": [
+        "demonstration",
+        "studio",
+        "short-form-video",
+        "fitness",
+        "captions"
+      ],
       "currency": "USD",
       "deadline": "2026-08-23T17:00:00.000Z",
       "status": "awarded",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_022",
       "createdAt": "2026-07-26T13:30:00.000Z",
       "publishedAt": "2026-07-26T19:30:00.000Z"
@@ -3592,10 +3792,19 @@
       "budgetType": "fixed",
       "budgetMin": 880,
       "budgetMax": 880,
+      "offerPrice": 880,
+      "tags": [
+        "macro",
+        "product-photo",
+        "swatches",
+        "beauty",
+        "studio"
+      ],
       "currency": "USD",
       "deadline": "2026-08-18T17:00:00.000Z",
       "status": "awarded",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_024",
       "createdAt": "2026-07-19T13:30:00.000Z",
       "publishedAt": "2026-07-19T19:30:00.000Z"
@@ -3619,10 +3828,18 @@
       "budgetType": "fixed",
       "budgetMin": 640,
       "budgetMax": 640,
+      "offerPrice": 640,
+      "tags": [
+        "food-styling",
+        "product-photo",
+        "natural-light",
+        "bakery"
+      ],
       "currency": "USD",
       "deadline": "2026-08-19T17:00:00.000Z",
       "status": "awarded",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_026",
       "createdAt": "2026-08-04T13:30:00.000Z",
       "publishedAt": "2026-08-04T19:30:00.000Z"
@@ -3646,10 +3863,19 @@
       "budgetType": "range",
       "budgetMin": 1300,
       "budgetMax": 1700,
+      "offerPrice": 1700,
+      "tags": [
+        "interiors",
+        "hospitality",
+        "travel",
+        "on-location",
+        "property"
+      ],
       "currency": "USD",
       "deadline": "2026-08-20T17:00:00.000Z",
       "status": "awarded",
       "proposalsCount": 3,
+      "repliesCount": 0,
       "awardedProposalId": "prp_028",
       "createdAt": "2026-07-15T13:30:00.000Z",
       "publishedAt": "2026-07-15T19:30:00.000Z"
@@ -3674,10 +3900,18 @@
       "budgetType": "fixed",
       "budgetMin": 720,
       "budgetMax": 720,
+      "offerPrice": 720,
+      "tags": [
+        "vertical-video",
+        "short-form-video",
+        "social-media",
+        "food-styling"
+      ],
       "currency": "USD",
       "deadline": "2026-08-17T17:00:00.000Z",
       "status": "awarded",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_031",
       "createdAt": "2026-07-21T13:30:00.000Z",
       "publishedAt": "2026-07-21T19:30:00.000Z"
@@ -3702,10 +3936,18 @@
       "budgetType": "fixed",
       "budgetMin": 1180,
       "budgetMax": 1180,
+      "offerPrice": 1180,
+      "tags": [
+        "event-coverage",
+        "brand-film",
+        "photo-and-video",
+        "hospitality"
+      ],
       "currency": "USD",
       "deadline": "2026-08-16T17:00:00.000Z",
       "status": "awarded",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_033",
       "createdAt": "2026-07-31T13:30:00.000Z",
       "publishedAt": "2026-07-31T19:30:00.000Z"
@@ -3727,10 +3969,18 @@
       "budgetType": "fixed",
       "budgetMin": 560,
       "budgetMax": 560,
+      "offerPrice": 560,
+      "tags": [
+        "documentary",
+        "on-location",
+        "brand-story",
+        "food-beverage"
+      ],
       "currency": "USD",
       "deadline": "2026-08-28T17:00:00.000Z",
       "status": "awarded",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_035",
       "createdAt": "2026-08-08T13:30:00.000Z",
       "publishedAt": "2026-08-08T19:30:00.000Z"
@@ -3754,10 +4004,19 @@
       "budgetType": "fixed",
       "budgetMin": 760,
       "budgetMax": 760,
+      "offerPrice": 760,
+      "tags": [
+        "catalogue",
+        "product-photo",
+        "interiors",
+        "studio",
+        "furniture"
+      ],
       "currency": "USD",
       "deadline": "2026-08-19T17:00:00.000Z",
       "status": "awarded",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_037",
       "createdAt": "2026-07-24T13:30:00.000Z",
       "publishedAt": "2026-07-24T19:30:00.000Z"
@@ -3782,10 +4041,19 @@
       "budgetType": "fixed",
       "budgetMin": 1150,
       "budgetMax": 1150,
+      "offerPrice": 1150,
+      "tags": [
+        "explainer",
+        "screen-capture",
+        "motion-graphics",
+        "b2b",
+        "series"
+      ],
       "currency": "USD",
       "deadline": "2026-08-08T17:00:00.000Z",
       "status": "awarded",
       "proposalsCount": 3,
+      "repliesCount": 0,
       "awardedProposalId": "prp_039",
       "createdAt": "2026-07-11T13:30:00.000Z",
       "publishedAt": "2026-07-11T19:30:00.000Z"
@@ -3810,10 +4078,18 @@
       "budgetType": "fixed",
       "budgetMin": 980,
       "budgetMax": 980,
+      "offerPrice": 980,
+      "tags": [
+        "demonstration",
+        "short-form-video",
+        "ecommerce",
+        "studio"
+      ],
       "currency": "USD",
       "deadline": "2026-08-05T17:00:00.000Z",
       "status": "awarded",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_042",
       "createdAt": "2026-07-07T13:30:00.000Z",
       "publishedAt": "2026-07-07T19:30:00.000Z"
@@ -3838,10 +4114,18 @@
       "budgetType": "fixed",
       "budgetMin": 940,
       "budgetMax": 940,
+      "offerPrice": 940,
+      "tags": [
+        "brand-film",
+        "motion-graphics",
+        "app-preview",
+        "fitness"
+      ],
       "currency": "USD",
       "deadline": "2026-09-03T17:00:00.000Z",
       "status": "awarded",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_044",
       "createdAt": "2026-08-10T13:30:00.000Z",
       "publishedAt": "2026-08-10T19:30:00.000Z"
@@ -3866,10 +4150,19 @@
       "budgetType": "fixed",
       "budgetMin": 1020,
       "budgetMax": 1020,
+      "offerPrice": 1020,
+      "tags": [
+        "brand-film",
+        "beauty",
+        "talent-casting",
+        "colour-grading",
+        "paid-ads"
+      ],
       "currency": "USD",
       "deadline": "2026-07-23T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_046",
       "createdAt": "2026-06-27T13:30:00.000Z",
       "publishedAt": "2026-06-27T19:30:00.000Z"
@@ -3893,10 +4186,19 @@
       "budgetType": "fixed",
       "budgetMin": 820,
       "budgetMax": 820,
+      "offerPrice": 820,
+      "tags": [
+        "property",
+        "travel",
+        "interiors",
+        "on-location",
+        "hospitality"
+      ],
       "currency": "USD",
       "deadline": "2026-07-19T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_048",
       "createdAt": "2026-07-03T13:30:00.000Z",
       "publishedAt": "2026-07-03T19:30:00.000Z"
@@ -3920,10 +4222,18 @@
       "budgetType": "fixed",
       "budgetMin": 640,
       "budgetMax": 640,
+      "offerPrice": 640,
+      "tags": [
+        "interiors",
+        "property",
+        "architecture",
+        "showroom"
+      ],
       "currency": "USD",
       "deadline": "2026-07-25T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 2,
       "awardedProposalId": "prp_050",
       "createdAt": "2026-07-11T13:30:00.000Z",
       "publishedAt": "2026-07-11T19:30:00.000Z"
@@ -3946,10 +4256,18 @@
       "budgetType": "fixed",
       "budgetMin": 560,
       "budgetMax": 560,
+      "offerPrice": 560,
+      "tags": [
+        "event-coverage",
+        "brand-film",
+        "travel",
+        "b-roll"
+      ],
       "currency": "USD",
       "deadline": "2026-08-10T17:00:00.000Z",
       "status": "cancelled",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_052",
       "createdAt": "2026-07-17T13:30:00.000Z",
       "publishedAt": "2026-07-17T19:30:00.000Z"
@@ -3973,10 +4291,18 @@
       "budgetType": "fixed",
       "budgetMin": 610,
       "budgetMax": 610,
+      "offerPrice": 610,
+      "tags": [
+        "packaging",
+        "product-photo",
+        "studio",
+        "beauty"
+      ],
       "currency": "USD",
       "deadline": "2026-07-27T17:00:00.000Z",
       "status": "cancelled",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_054",
       "createdAt": "2026-06-19T13:30:00.000Z",
       "publishedAt": "2026-06-19T19:30:00.000Z"
@@ -4000,10 +4326,19 @@
       "budgetType": "range",
       "budgetMin": 520,
       "budgetMax": 780,
+      "offerPrice": 780,
+      "tags": [
+        "product-photo",
+        "food-styling",
+        "packaging",
+        "ecommerce",
+        "studio"
+      ],
       "currency": "USD",
       "deadline": "2026-08-30T17:00:00.000Z",
       "status": "open",
       "proposalsCount": 2,
+      "repliesCount": 4,
       "awardedProposalId": null,
       "createdAt": "2026-08-08T13:30:00.000Z",
       "publishedAt": "2026-08-08T19:30:00.000Z"
@@ -4027,10 +4362,19 @@
       "budgetType": "range",
       "budgetMin": 480,
       "budgetMax": 700,
+      "offerPrice": 700,
+      "tags": [
+        "product-photo",
+        "ecommerce",
+        "white-background",
+        "seasonal",
+        "catalogue"
+      ],
       "currency": "USD",
       "deadline": "2026-09-04T17:00:00.000Z",
       "status": "open",
       "proposalsCount": 3,
+      "repliesCount": 4,
       "awardedProposalId": null,
       "createdAt": "2026-08-10T13:30:00.000Z",
       "publishedAt": "2026-08-10T19:30:00.000Z"
@@ -4055,11 +4399,20 @@
       "budgetType": "range",
       "budgetMin": 900,
       "budgetMax": 1300,
+      "offerPrice": 1300,
+      "tags": [
+        "food-styling",
+        "photo-and-video",
+        "vertical-video",
+        "on-location",
+        "hospitality"
+      ],
       "currency": "USD",
       "deadline": "2026-09-03T17:00:00.000Z",
       "invitedCreatorId": "cpr_ava",
       "status": "open",
       "proposalsCount": 1,
+      "repliesCount": 3,
       "awardedProposalId": null,
       "createdAt": "2026-08-12T13:30:00.000Z",
       "publishedAt": "2026-08-12T19:30:00.000Z"
@@ -4083,10 +4436,19 @@
       "budgetType": "fixed",
       "budgetMin": 450,
       "budgetMax": 450,
+      "offerPrice": 450,
+      "tags": [
+        "room-sets",
+        "interiors",
+        "lifestyle",
+        "natural-light",
+        "furniture"
+      ],
       "currency": "USD",
       "deadline": "2026-08-25T17:00:00.000Z",
       "status": "open",
       "proposalsCount": 2,
+      "repliesCount": 3,
       "awardedProposalId": null,
       "createdAt": "2026-08-11T13:30:00.000Z",
       "publishedAt": "2026-08-11T19:30:00.000Z"
@@ -4110,10 +4472,18 @@
       "budgetType": "fixed",
       "budgetMin": 620,
       "budgetMax": 620,
+      "offerPrice": 620,
+      "tags": [
+        "food-styling",
+        "product-photo",
+        "natural-light",
+        "hospitality"
+      ],
       "currency": "USD",
       "deadline": "2026-08-18T17:00:00.000Z",
       "status": "awarded",
       "proposalsCount": 2,
+      "repliesCount": 2,
       "awardedProposalId": "prp_109",
       "createdAt": "2026-08-02T13:30:00.000Z",
       "publishedAt": "2026-08-02T19:30:00.000Z"
@@ -4135,10 +4505,18 @@
       "budgetType": "fixed",
       "budgetMin": 640,
       "budgetMax": 640,
+      "offerPrice": 640,
+      "tags": [
+        "photography",
+        "food-styling",
+        "hospitality",
+        "social-media"
+      ],
       "currency": "USD",
       "deadline": "2026-05-14T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_056",
       "createdAt": "2026-04-30T13:30:00.000Z",
       "publishedAt": "2026-04-30T19:30:00.000Z"
@@ -4161,10 +4539,18 @@
       "budgetType": "fixed",
       "budgetMin": 980,
       "budgetMax": 980,
+      "offerPrice": 980,
+      "tags": [
+        "video-production",
+        "explainer",
+        "motion-graphics",
+        "website"
+      ],
       "currency": "USD",
       "deadline": "2026-05-19T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 1,
+      "repliesCount": 0,
       "awardedProposalId": "prp_058",
       "createdAt": "2026-05-03T13:30:00.000Z",
       "publishedAt": "2026-05-03T19:30:00.000Z"
@@ -4186,10 +4572,18 @@
       "budgetType": "fixed",
       "budgetMin": 720,
       "budgetMax": 720,
+      "offerPrice": 720,
+      "tags": [
+        "photography",
+        "studio",
+        "beauty",
+        "paid-ads"
+      ],
       "currency": "USD",
       "deadline": "2026-05-19T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_059",
       "createdAt": "2026-05-06T13:30:00.000Z",
       "publishedAt": "2026-05-06T19:30:00.000Z"
@@ -4212,10 +4606,18 @@
       "budgetType": "fixed",
       "budgetMin": 540,
       "budgetMax": 540,
+      "offerPrice": 540,
+      "tags": [
+        "video-production",
+        "captions",
+        "demonstration",
+        "print-ready"
+      ],
       "currency": "USD",
       "deadline": "2026-05-24T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 1,
+      "repliesCount": 0,
       "awardedProposalId": "prp_061",
       "createdAt": "2026-05-09T13:30:00.000Z",
       "publishedAt": "2026-05-09T19:30:00.000Z"
@@ -4237,10 +4639,18 @@
       "budgetType": "fixed",
       "budgetMin": 1150,
       "budgetMax": 1150,
+      "offerPrice": 1150,
+      "tags": [
+        "photography",
+        "travel",
+        "on-location",
+        "social-media"
+      ],
       "currency": "USD",
       "deadline": "2026-05-30T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_062",
       "createdAt": "2026-05-12T13:30:00.000Z",
       "publishedAt": "2026-05-12T19:30:00.000Z"
@@ -4262,10 +4672,18 @@
       "budgetType": "fixed",
       "budgetMin": 480,
       "budgetMax": 480,
+      "offerPrice": 480,
+      "tags": [
+        "photography",
+        "ecommerce",
+        "white-background",
+        "website"
+      ],
       "currency": "USD",
       "deadline": "2026-05-27T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 1,
+      "repliesCount": 0,
       "awardedProposalId": "prp_064",
       "createdAt": "2026-05-15T13:30:00.000Z",
       "publishedAt": "2026-05-15T19:30:00.000Z"
@@ -4287,10 +4705,18 @@
       "budgetType": "fixed",
       "budgetMin": 610,
       "budgetMax": 610,
+      "offerPrice": 610,
+      "tags": [
+        "photography",
+        "lifestyle",
+        "interiors",
+        "paid-ads"
+      ],
       "currency": "USD",
       "deadline": "2026-06-01T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_065",
       "createdAt": "2026-05-18T13:30:00.000Z",
       "publishedAt": "2026-05-18T19:30:00.000Z"
@@ -4313,10 +4739,18 @@
       "budgetType": "fixed",
       "budgetMin": 890,
       "budgetMax": 890,
+      "offerPrice": 890,
+      "tags": [
+        "video-production",
+        "documentary",
+        "b-roll",
+        "print-ready"
+      ],
       "currency": "USD",
       "deadline": "2026-06-03T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 1,
+      "repliesCount": 0,
       "awardedProposalId": "prp_067",
       "createdAt": "2026-05-21T13:30:00.000Z",
       "publishedAt": "2026-05-21T19:30:00.000Z"
@@ -4338,10 +4772,18 @@
       "budgetType": "fixed",
       "budgetMin": 520,
       "budgetMax": 520,
+      "offerPrice": 520,
+      "tags": [
+        "photography",
+        "beauty",
+        "studio",
+        "social-media"
+      ],
       "currency": "USD",
       "deadline": "2026-06-05T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_068",
       "createdAt": "2026-05-24T13:30:00.000Z",
       "publishedAt": "2026-05-24T19:30:00.000Z"
@@ -4364,10 +4806,18 @@
       "budgetType": "fixed",
       "budgetMin": 700,
       "budgetMax": 700,
+      "offerPrice": 700,
+      "tags": [
+        "video-production",
+        "menu-photography",
+        "on-location",
+        "website"
+      ],
       "currency": "USD",
       "deadline": "2026-06-10T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 1,
+      "repliesCount": 0,
       "awardedProposalId": "prp_070",
       "createdAt": "2026-05-27T13:30:00.000Z",
       "publishedAt": "2026-05-27T19:30:00.000Z"
@@ -4390,10 +4840,18 @@
       "budgetType": "fixed",
       "budgetMin": 660,
       "budgetMax": 660,
+      "offerPrice": 660,
+      "tags": [
+        "video-production",
+        "captions",
+        "explainer",
+        "paid-ads"
+      ],
       "currency": "USD",
       "deadline": "2026-06-14T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_071",
       "createdAt": "2026-05-30T13:30:00.000Z",
       "publishedAt": "2026-05-30T19:30:00.000Z"
@@ -4415,10 +4873,18 @@
       "budgetType": "fixed",
       "budgetMin": 980,
       "budgetMax": 980,
+      "offerPrice": 980,
+      "tags": [
+        "photography",
+        "hospitality",
+        "property",
+        "print-ready"
+      ],
       "currency": "USD",
       "deadline": "2026-06-19T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 1,
+      "repliesCount": 0,
       "awardedProposalId": "prp_073",
       "createdAt": "2026-06-03T13:30:00.000Z",
       "publishedAt": "2026-06-03T19:30:00.000Z"
@@ -4441,10 +4907,18 @@
       "budgetType": "fixed",
       "budgetMin": 750,
       "budgetMax": 750,
+      "offerPrice": 750,
+      "tags": [
+        "video-production",
+        "product-photo",
+        "catalogue",
+        "social-media"
+      ],
       "currency": "USD",
       "deadline": "2026-06-20T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_074",
       "createdAt": "2026-06-06T13:30:00.000Z",
       "publishedAt": "2026-06-06T19:30:00.000Z"
@@ -4466,10 +4940,18 @@
       "budgetType": "fixed",
       "budgetMin": 580,
       "budgetMax": 580,
+      "offerPrice": 580,
+      "tags": [
+        "photography",
+        "room-sets",
+        "furniture",
+        "website"
+      ],
       "currency": "USD",
       "deadline": "2026-06-22T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 1,
+      "repliesCount": 0,
       "awardedProposalId": "prp_076",
       "createdAt": "2026-06-09T13:30:00.000Z",
       "publishedAt": "2026-06-09T19:30:00.000Z"
@@ -4491,10 +4973,18 @@
       "budgetType": "fixed",
       "budgetMin": 690,
       "budgetMax": 690,
+      "offerPrice": 690,
+      "tags": [
+        "photography",
+        "catalogue",
+        "product-photo",
+        "paid-ads"
+      ],
       "currency": "USD",
       "deadline": "2026-06-26T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_077",
       "createdAt": "2026-06-12T13:30:00.000Z",
       "publishedAt": "2026-06-12T19:30:00.000Z"
@@ -4517,10 +5007,18 @@
       "budgetType": "fixed",
       "budgetMin": 1100,
       "budgetMax": 1100,
+      "offerPrice": 1100,
+      "tags": [
+        "video-production",
+        "motion-graphics",
+        "explainer",
+        "print-ready"
+      ],
       "currency": "USD",
       "deadline": "2026-07-03T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 1,
+      "repliesCount": 0,
       "awardedProposalId": "prp_079",
       "createdAt": "2026-06-15T13:30:00.000Z",
       "publishedAt": "2026-06-15T19:30:00.000Z"
@@ -4543,10 +5041,18 @@
       "budgetType": "fixed",
       "budgetMin": 810,
       "budgetMax": 810,
+      "offerPrice": 810,
+      "tags": [
+        "video-production",
+        "beauty",
+        "studio",
+        "social-media"
+      ],
       "currency": "USD",
       "deadline": "2026-07-03T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_080",
       "createdAt": "2026-06-18T13:30:00.000Z",
       "publishedAt": "2026-06-18T19:30:00.000Z"
@@ -4568,10 +5074,18 @@
       "budgetType": "fixed",
       "budgetMin": 540,
       "budgetMax": 540,
+      "offerPrice": 540,
+      "tags": [
+        "photography",
+        "ecommerce",
+        "white-background",
+        "website"
+      ],
       "currency": "USD",
       "deadline": "2026-07-04T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 1,
+      "repliesCount": 0,
       "awardedProposalId": "prp_082",
       "createdAt": "2026-06-21T13:30:00.000Z",
       "publishedAt": "2026-06-21T19:30:00.000Z"
@@ -4594,10 +5108,18 @@
       "budgetType": "fixed",
       "budgetMin": 620,
       "budgetMax": 620,
+      "offerPrice": 620,
+      "tags": [
+        "video-production",
+        "studio",
+        "fitness",
+        "paid-ads"
+      ],
       "currency": "USD",
       "deadline": "2026-07-08T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_083",
       "createdAt": "2026-06-24T13:30:00.000Z",
       "publishedAt": "2026-06-24T19:30:00.000Z"
@@ -4619,10 +5141,18 @@
       "budgetType": "fixed",
       "budgetMin": 740,
       "budgetMax": 740,
+      "offerPrice": 740,
+      "tags": [
+        "photography",
+        "documentary",
+        "b-roll",
+        "print-ready"
+      ],
       "currency": "USD",
       "deadline": "2026-07-09T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 1,
+      "repliesCount": 0,
       "awardedProposalId": "prp_085",
       "createdAt": "2026-06-27T13:30:00.000Z",
       "publishedAt": "2026-06-27T19:30:00.000Z"
@@ -4644,10 +5174,18 @@
       "budgetType": "fixed",
       "budgetMin": 500,
       "budgetMax": 500,
+      "offerPrice": 500,
+      "tags": [
+        "photography",
+        "product-photo",
+        "catalogue",
+        "social-media"
+      ],
       "currency": "USD",
       "deadline": "2026-07-14T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_086",
       "createdAt": "2026-07-01T13:30:00.000Z",
       "publishedAt": "2026-07-01T19:30:00.000Z"
@@ -4670,10 +5208,18 @@
       "budgetType": "fixed",
       "budgetMin": 580,
       "budgetMax": 580,
+      "offerPrice": 580,
+      "tags": [
+        "video-production",
+        "on-camera-talent",
+        "series",
+        "website"
+      ],
       "currency": "USD",
       "deadline": "2026-07-20T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 1,
+      "repliesCount": 0,
       "awardedProposalId": "prp_088",
       "createdAt": "2026-07-05T13:30:00.000Z",
       "publishedAt": "2026-07-05T19:30:00.000Z"
@@ -4696,10 +5242,18 @@
       "budgetType": "fixed",
       "budgetMin": 690,
       "budgetMax": 690,
+      "offerPrice": 690,
+      "tags": [
+        "video-production",
+        "screen-capture",
+        "b2b",
+        "paid-ads"
+      ],
       "currency": "USD",
       "deadline": "2026-07-21T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_089",
       "createdAt": "2026-07-09T13:30:00.000Z",
       "publishedAt": "2026-07-09T19:30:00.000Z"
@@ -4721,10 +5275,18 @@
       "budgetType": "fixed",
       "budgetMin": 660,
       "budgetMax": 660,
+      "offerPrice": 660,
+      "tags": [
+        "photography",
+        "documentary",
+        "b-roll",
+        "print-ready"
+      ],
       "currency": "USD",
       "deadline": "2026-07-25T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 1,
+      "repliesCount": 0,
       "awardedProposalId": "prp_091",
       "createdAt": "2026-07-13T13:30:00.000Z",
       "publishedAt": "2026-07-13T19:30:00.000Z"
@@ -4746,10 +5308,18 @@
       "budgetType": "fixed",
       "budgetMin": 610,
       "budgetMax": 610,
+      "offerPrice": 610,
+      "tags": [
+        "photography",
+        "product-photo",
+        "catalogue",
+        "social-media"
+      ],
       "currency": "USD",
       "deadline": "2026-07-28T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_092",
       "createdAt": "2026-07-15T13:30:00.000Z",
       "publishedAt": "2026-07-15T19:30:00.000Z"
@@ -4772,10 +5342,18 @@
       "budgetType": "fixed",
       "budgetMin": 720,
       "budgetMax": 720,
+      "offerPrice": 720,
+      "tags": [
+        "video-production",
+        "menu-photography",
+        "on-location",
+        "website"
+      ],
       "currency": "USD",
       "deadline": "2026-08-01T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 1,
+      "repliesCount": 0,
       "awardedProposalId": "prp_094",
       "createdAt": "2026-07-18T13:30:00.000Z",
       "publishedAt": "2026-07-18T19:30:00.000Z"
@@ -4797,10 +5375,18 @@
       "budgetType": "fixed",
       "budgetMin": 560,
       "budgetMax": 560,
+      "offerPrice": 560,
+      "tags": [
+        "photography",
+        "hospitality",
+        "food-styling",
+        "paid-ads"
+      ],
       "currency": "USD",
       "deadline": "2026-08-02T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_095",
       "createdAt": "2026-07-21T13:30:00.000Z",
       "publishedAt": "2026-07-21T19:30:00.000Z"
@@ -4822,10 +5408,18 @@
       "budgetType": "fixed",
       "budgetMin": 530,
       "budgetMax": 530,
+      "offerPrice": 530,
+      "tags": [
+        "photography",
+        "white-background",
+        "ecommerce",
+        "print-ready"
+      ],
       "currency": "USD",
       "deadline": "2026-08-05T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 1,
+      "repliesCount": 0,
       "awardedProposalId": "prp_097",
       "createdAt": "2026-07-24T13:30:00.000Z",
       "publishedAt": "2026-07-24T19:30:00.000Z"
@@ -4847,10 +5441,18 @@
       "budgetType": "fixed",
       "budgetMin": 520,
       "budgetMax": 520,
+      "offerPrice": 520,
+      "tags": [
+        "photography",
+        "event-coverage",
+        "on-location",
+        "social-media"
+      ],
       "currency": "USD",
       "deadline": "2026-08-10T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_098",
       "createdAt": "2026-07-30T13:30:00.000Z",
       "publishedAt": "2026-07-30T19:30:00.000Z"
@@ -4872,10 +5474,18 @@
       "budgetType": "fixed",
       "budgetMin": 480,
       "budgetMax": 480,
+      "offerPrice": 480,
+      "tags": [
+        "photography",
+        "menu-photography",
+        "on-location",
+        "website"
+      ],
       "currency": "USD",
       "deadline": "2026-05-06T17:00:00.000Z",
       "status": "completed",
       "proposalsCount": 1,
+      "repliesCount": 0,
       "awardedProposalId": "prp_100",
       "createdAt": "2026-04-23T13:30:00.000Z",
       "publishedAt": "2026-04-23T19:30:00.000Z"
@@ -4899,10 +5509,18 @@
       "budgetType": "fixed",
       "budgetMin": 700,
       "budgetMax": 700,
+      "offerPrice": 700,
+      "tags": [
+        "food-styling",
+        "on-location",
+        "fine-dining",
+        "print-ready"
+      ],
       "currency": "USD",
       "deadline": "2026-08-05T17:00:00.000Z",
       "status": "awarded",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_111",
       "createdAt": "2026-07-15T13:30:00.000Z",
       "publishedAt": "2026-07-15T19:30:00.000Z"
@@ -4927,10 +5545,18 @@
       "budgetType": "fixed",
       "budgetMin": 820,
       "budgetMax": 820,
+      "offerPrice": 820,
+      "tags": [
+        "short-form-video",
+        "vertical-video",
+        "hospitality",
+        "ambient-sound"
+      ],
       "currency": "USD",
       "deadline": "2026-08-08T17:00:00.000Z",
       "status": "awarded",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_113",
       "createdAt": "2026-07-21T13:30:00.000Z",
       "publishedAt": "2026-07-21T19:30:00.000Z"
@@ -4954,13 +5580,1076 @@
       "budgetType": "fixed",
       "budgetMin": 1180,
       "budgetMax": 1180,
+      "offerPrice": 1180,
+      "tags": [
+        "property",
+        "hospitality",
+        "travel",
+        "interiors",
+        "print-ready"
+      ],
       "currency": "USD",
       "deadline": "2026-07-29T17:00:00.000Z",
       "status": "awarded",
       "proposalsCount": 2,
+      "repliesCount": 0,
       "awardedProposalId": "prp_115",
       "createdAt": "2026-07-01T13:30:00.000Z",
       "publishedAt": "2026-07-01T19:30:00.000Z"
+    }
+  ],
+  "feedReplies": [
+    {
+      "id": "frp_001",
+      "feedId": "req_001",
+      "creatorId": "cpr_ava",
+      "buyerId": "usr_buyer_verde",
+      "messages": [
+        {
+          "id": "frm_001",
+          "authorRole": "creator",
+          "authorId": "usr_creator_ava",
+          "body": "Hello Verde Kitchen team — this is close to the work I do most weeks, and the window in your brief is open in my calendar. I would plan a full day on site plus two days of editing, and deliver graded and flat versions of every frame.",
+          "at": "2026-08-06T00:30:00.000Z"
+        },
+        {
+          "id": "frm_002",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_verde",
+          "body": "Thanks for coming back so quickly. The shot list is nearly final — we are still deciding whether the wider scenes are in scope. Could you hold the week either side while we confirm internally?",
+          "at": "2026-08-06T07:30:00.000Z"
+        },
+        {
+          "id": "frm_003",
+          "authorRole": "creator",
+          "authorId": "usr_creator_ava",
+          "body": "I can hold that week. If the wider scenes come in they add about half a day rather than a second visit, so the quote would barely move.",
+          "at": "2026-08-06T22:30:00.000Z"
+        },
+        {
+          "id": "frm_004",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_verde",
+          "body": "That is helpful, Ava Martinez. We will confirm the list in the next couple of days and come straight back to you.",
+          "at": "2026-08-07T03:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-06T00:30:00.000Z",
+      "updatedAt": "2026-08-07T03:30:00.000Z"
+    },
+    {
+      "id": "frp_002",
+      "feedId": "req_001",
+      "creatorId": "cpr_chloe",
+      "buyerId": "usr_buyer_verde",
+      "messages": [
+        {
+          "id": "frm_005",
+          "authorRole": "creator",
+          "authorId": "usr_creator_chloe",
+          "body": "Hi — this sits squarely in what I shoot, and the most recent set on my profile was made for a brief very like Verde Kitchen's. Happy to match your reference frames exactly if a like-for-like look is what you need.",
+          "at": "2026-08-06T16:30:00.000Z"
+        },
+        {
+          "id": "frm_006",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_verde",
+          "body": "That set is close to what we had in mind. What turnaround would you expect from the shoot day itself?",
+          "at": "2026-08-06T23:30:00.000Z"
+        },
+        {
+          "id": "frm_007",
+          "authorRole": "creator",
+          "authorId": "usr_creator_chloe",
+          "body": "First selects within forty-eight hours and the full graded delivery inside five working days. If you need a handful of frames sooner for the announcement, I can prioritise those.",
+          "at": "2026-08-07T14:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-06T16:30:00.000Z",
+      "updatedAt": "2026-08-07T14:30:00.000Z"
+    },
+    {
+      "id": "frp_003",
+      "feedId": "req_001",
+      "creatorId": "cpr_noah",
+      "buyerId": "usr_buyer_verde",
+      "messages": [
+        {
+          "id": "frm_008",
+          "authorRole": "creator",
+          "authorId": "usr_creator_noah",
+          "body": "Hi Verde Kitchen — I have shot this category for the last few years and the brief reads like something I could deliver without a discovery call. My recent work is on my profile if it is useful.",
+          "at": "2026-08-07T15:30:00.000Z"
+        },
+        {
+          "id": "frm_009",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_verde",
+          "body": "Thank you for the note. We are reading through the replies this week and will come back to everyone either way.",
+          "at": "2026-08-07T22:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-07T15:30:00.000Z",
+      "updatedAt": "2026-08-07T22:30:00.000Z"
+    },
+    {
+      "id": "frp_004",
+      "feedId": "req_002",
+      "creatorId": "cpr_diego",
+      "buyerId": "usr_buyer_nimbus",
+      "messages": [
+        {
+          "id": "frm_010",
+          "authorRole": "creator",
+          "authorId": "usr_creator_diego",
+          "body": "Hello Nimbus Fitness — I have read the brief twice and it is clear, which is rarer than it should be. One question before I quote: is the quantity you list the number of finished assets, or the number of set-ups?",
+          "at": "2026-08-07T22:30:00.000Z"
+        },
+        {
+          "id": "frm_011",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_nimbus",
+          "body": "Finished assets. We would expect a few more set-ups than that to get there, and we are not counting the alternates.",
+          "at": "2026-08-08T05:30:00.000Z"
+        },
+        {
+          "id": "frm_012",
+          "authorRole": "creator",
+          "authorId": "usr_creator_diego",
+          "body": "Understood — that is the reading I hoped for. On that basis I would plan the day around the harder set-ups first and keep the simpler ones for the back half, so nothing important is shot against the clock.",
+          "at": "2026-08-08T20:30:00.000Z"
+        },
+        {
+          "id": "frm_013",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_nimbus",
+          "body": "That matches how the last shoot went. Send us your availability and we will look at dates.",
+          "at": "2026-08-09T01:30:00.000Z"
+        },
+        {
+          "id": "frm_014",
+          "authorRole": "creator",
+          "authorId": "usr_creator_diego",
+          "body": "I will put a note through with my open dates for the next three weeks. Two of them sit either side of your deadline, so there is room to move if the schedule slips at your end.",
+          "at": "2026-08-09T22:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-07T22:30:00.000Z",
+      "updatedAt": "2026-08-09T22:30:00.000Z"
+    },
+    {
+      "id": "frp_005",
+      "feedId": "req_002",
+      "creatorId": "cpr_sara",
+      "buyerId": "usr_buyer_nimbus",
+      "messages": [
+        {
+          "id": "frm_015",
+          "authorRole": "creator",
+          "authorId": "usr_creator_sara",
+          "body": "Hello — I can meet the deadline in this brief, and I would rather flag now than later that it is a firm date for me rather than a comfortable one. Nimbus Fitness would have the full set on the day you have written.",
+          "at": "2026-08-08T14:30:00.000Z"
+        },
+        {
+          "id": "frm_016",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_nimbus",
+          "body": "That honesty is welcome. Is there anything at our end that would put it at risk?",
+          "at": "2026-08-08T21:30:00.000Z"
+        },
+        {
+          "id": "frm_017",
+          "authorRole": "creator",
+          "authorId": "usr_creator_sara",
+          "body": "Only sign-off. If feedback on the first selects comes back within a day, the schedule holds comfortably.",
+          "at": "2026-08-09T12:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-08T14:30:00.000Z",
+      "updatedAt": "2026-08-09T12:30:00.000Z"
+    },
+    {
+      "id": "frp_006",
+      "feedId": "req_002",
+      "creatorId": "cpr_amara",
+      "buyerId": "usr_buyer_nimbus",
+      "messages": [
+        {
+          "id": "frm_018",
+          "authorRole": "creator",
+          "authorId": "usr_creator_amara",
+          "body": "Hi Nimbus Fitness — I have shot this category for the last few years and the brief reads like something I could deliver without a discovery call. My recent work is on my profile if it is useful.",
+          "at": "2026-08-09T11:30:00.000Z"
+        },
+        {
+          "id": "frm_019",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_nimbus",
+          "body": "Thank you for the note. We are reading through the replies this week and will come back to everyone either way.",
+          "at": "2026-08-09T18:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-09T11:30:00.000Z",
+      "updatedAt": "2026-08-09T18:30:00.000Z"
+    },
+    {
+      "id": "frp_007",
+      "feedId": "req_003",
+      "creatorId": "cpr_isla",
+      "buyerId": "usr_buyer_atlas",
+      "messages": [
+        {
+          "id": "frm_020",
+          "authorRole": "creator",
+          "authorId": "usr_creator_isla",
+          "body": "Hi — I am interested in this one. Before anything else: is the location in your brief the only site, or would Atlas Travel Co want the same treatment repeated elsewhere later?",
+          "at": "2026-08-10T01:30:00.000Z"
+        },
+        {
+          "id": "frm_021",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_atlas",
+          "body": "One site for now. If it goes well there is a good chance we repeat it at two more, but we are not committing to that in this brief.",
+          "at": "2026-08-10T08:30:00.000Z"
+        },
+        {
+          "id": "frm_022",
+          "authorRole": "creator",
+          "authorId": "usr_creator_isla",
+          "body": "Good to know. I will quote for the one site, and I will keep the set-up notes and settings so a repeat later matches rather than approximates.",
+          "at": "2026-08-10T23:30:00.000Z"
+        },
+        {
+          "id": "frm_023",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_atlas",
+          "body": "That is exactly the sort of thing we were hoping to hear. Thank you.",
+          "at": "2026-08-11T04:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-10T01:30:00.000Z",
+      "updatedAt": "2026-08-11T04:30:00.000Z"
+    },
+    {
+      "id": "frp_008",
+      "feedId": "req_003",
+      "creatorId": "cpr_mateo",
+      "buyerId": "usr_buyer_atlas",
+      "messages": [
+        {
+          "id": "frm_024",
+          "authorRole": "creator",
+          "authorId": "usr_creator_mateo",
+          "body": "Hello Atlas Travel Co — thank you for a brief with an actual budget on it. It is workable for the scope as written, and I would rather say that plainly than open with a number and negotiate down.",
+          "at": "2026-08-10T21:30:00.000Z"
+        },
+        {
+          "id": "frm_025",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_atlas",
+          "body": "Appreciated. Where would you expect the cost to move if we added a second day?",
+          "at": "2026-08-11T04:30:00.000Z"
+        },
+        {
+          "id": "frm_026",
+          "authorRole": "creator",
+          "authorId": "usr_creator_mateo",
+          "body": "A second day is the day rate again, less the set-up, so it is not double. Editing scales with the number of finished frames rather than the days, so that part moves less than people expect.",
+          "at": "2026-08-11T19:30:00.000Z"
+        },
+        {
+          "id": "frm_027",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_atlas",
+          "body": "That is clearer than the last three answers we have had to the same question. Is the second day something you would recommend?",
+          "at": "2026-08-12T00:30:00.000Z"
+        },
+        {
+          "id": "frm_028",
+          "authorRole": "creator",
+          "authorId": "usr_creator_mateo",
+          "body": "Only if the list grows. For the scope you have written, one day is enough and a second would mostly buy alternates you will not use.",
+          "at": "2026-08-12T21:30:00.000Z"
+        },
+        {
+          "id": "frm_029",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_atlas",
+          "body": "Noted, Mateo Rossi. We will hold at one day and keep the option in reserve.",
+          "at": "2026-08-13T08:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-10T21:30:00.000Z",
+      "updatedAt": "2026-08-13T08:30:00.000Z"
+    },
+    {
+      "id": "frp_009",
+      "feedId": "req_003",
+      "creatorId": "cpr_amara",
+      "buyerId": "usr_buyer_atlas",
+      "messages": [
+        {
+          "id": "frm_030",
+          "authorRole": "creator",
+          "authorId": "usr_creator_amara",
+          "body": "Hello — one practical note up front: for a brief this size I would bring an assistant, which is included in what I quote rather than added to it. It is the difference between finishing on the day and running over.",
+          "at": "2026-08-11T18:30:00.000Z"
+        },
+        {
+          "id": "frm_031",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_atlas",
+          "body": "That is useful to know. Would the assistant need their own access pass for the site?",
+          "at": "2026-08-12T01:30:00.000Z"
+        },
+        {
+          "id": "frm_032",
+          "authorRole": "creator",
+          "authorId": "usr_creator_amara",
+          "body": "Yes, one extra name on the list. I will send both sets of details as soon as dates are agreed so nothing is held up at the door.",
+          "at": "2026-08-12T16:30:00.000Z"
+        },
+        {
+          "id": "frm_033",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_atlas",
+          "body": "Perfect. Our operations team will want them a week ahead, which sounds like it fits.",
+          "at": "2026-08-12T21:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-11T18:30:00.000Z",
+      "updatedAt": "2026-08-12T21:30:00.000Z"
+    },
+    {
+      "id": "frp_010",
+      "feedId": "req_004",
+      "creatorId": "cpr_zoe",
+      "buyerId": "usr_buyer_bloom",
+      "messages": [
+        {
+          "id": "frm_034",
+          "authorRole": "creator",
+          "authorId": "usr_creator_zoe",
+          "body": "Hi — I am keen on this one. My usual arrangement is one round of revisions on the graded set included, and I have found that is almost always enough when the brief is as specific as yours.",
+          "at": "2026-08-10T23:30:00.000Z"
+        },
+        {
+          "id": "frm_035",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_bloom",
+          "body": "One round is standard for us too. What happens if we need a second?",
+          "at": "2026-08-11T06:30:00.000Z"
+        },
+        {
+          "id": "frm_036",
+          "authorRole": "creator",
+          "authorId": "usr_creator_zoe",
+          "body": "A second round is charged at an hourly rate rather than as a new job, and I would tell you before starting it rather than after. It has come up twice in the last year.",
+          "at": "2026-08-11T21:30:00.000Z"
+        },
+        {
+          "id": "frm_037",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_bloom",
+          "body": "Thanks Zoe Okonkwo — that is a fair way to handle it. We will be in touch once the internal review is done.",
+          "at": "2026-08-12T02:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-10T23:30:00.000Z",
+      "updatedAt": "2026-08-12T02:30:00.000Z"
+    },
+    {
+      "id": "frp_011",
+      "feedId": "req_004",
+      "creatorId": "cpr_amara",
+      "buyerId": "usr_buyer_bloom",
+      "messages": [
+        {
+          "id": "frm_038",
+          "authorRole": "creator",
+          "authorId": "usr_creator_amara",
+          "body": "Hi — this sits squarely in what I shoot, and the most recent set on my profile was made for a brief very like Bloom Beauty's. Happy to match your reference frames exactly if a like-for-like look is what you need.",
+          "at": "2026-08-11T22:30:00.000Z"
+        },
+        {
+          "id": "frm_039",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_bloom",
+          "body": "That set is close to what we had in mind. What turnaround would you expect from the shoot day itself?",
+          "at": "2026-08-12T05:30:00.000Z"
+        },
+        {
+          "id": "frm_040",
+          "authorRole": "creator",
+          "authorId": "usr_creator_amara",
+          "body": "First selects within forty-eight hours and the full graded delivery inside five working days. If you need a handful of frames sooner for the announcement, I can prioritise those.",
+          "at": "2026-08-12T20:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-11T22:30:00.000Z",
+      "updatedAt": "2026-08-12T20:30:00.000Z"
+    },
+    {
+      "id": "frp_012",
+      "feedId": "req_005",
+      "creatorId": "cpr_liam",
+      "buyerId": "usr_buyer_pulse",
+      "messages": [
+        {
+          "id": "frm_041",
+          "authorRole": "creator",
+          "authorId": "usr_creator_liam",
+          "body": "Hello Pulse SaaS — I have read the brief twice and it is clear, which is rarer than it should be. One question before I quote: is the quantity you list the number of finished assets, or the number of set-ups?",
+          "at": "2026-08-12T02:30:00.000Z"
+        },
+        {
+          "id": "frm_042",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_pulse",
+          "body": "Finished assets. We would expect a few more set-ups than that to get there, and we are not counting the alternates.",
+          "at": "2026-08-12T09:30:00.000Z"
+        },
+        {
+          "id": "frm_043",
+          "authorRole": "creator",
+          "authorId": "usr_creator_liam",
+          "body": "Understood — that is the reading I hoped for. On that basis I would plan the day around the harder set-ups first and keep the simpler ones for the back half, so nothing important is shot against the clock.",
+          "at": "2026-08-13T00:30:00.000Z"
+        },
+        {
+          "id": "frm_044",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_pulse",
+          "body": "That matches how the last shoot went. Send us your availability and we will look at dates.",
+          "at": "2026-08-13T05:30:00.000Z"
+        },
+        {
+          "id": "frm_045",
+          "authorRole": "creator",
+          "authorId": "usr_creator_liam",
+          "body": "I will put a note through with my open dates for the next three weeks. Two of them sit either side of your deadline, so there is room to move if the schedule slips at your end.",
+          "at": "2026-08-14T02:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-12T02:30:00.000Z",
+      "updatedAt": "2026-08-14T02:30:00.000Z"
+    },
+    {
+      "id": "frp_013",
+      "feedId": "req_005",
+      "creatorId": "cpr_sara",
+      "buyerId": "usr_buyer_pulse",
+      "messages": [
+        {
+          "id": "frm_046",
+          "authorRole": "creator",
+          "authorId": "usr_creator_sara",
+          "body": "Hello — the usage rights on this brief are clear, which makes quoting straightforward. I work to the terms as written and I clear any releases needed on the day rather than after it.",
+          "at": "2026-08-12T18:30:00.000Z"
+        },
+        {
+          "id": "frm_047",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_pulse",
+          "body": "Good. We have been caught out before by releases arriving weeks later, so that matters to us more than it probably should.",
+          "at": "2026-08-13T01:30:00.000Z"
+        },
+        {
+          "id": "frm_048",
+          "authorRole": "creator",
+          "authorId": "usr_creator_sara",
+          "body": "It is worth caring about. Signed releases come back with the delivery, not separately, so the whole set is usable the moment you have it.",
+          "at": "2026-08-13T16:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-12T18:30:00.000Z",
+      "updatedAt": "2026-08-13T16:30:00.000Z"
+    },
+    {
+      "id": "frp_014",
+      "feedId": "req_028",
+      "creatorId": "cpr_ava",
+      "buyerId": "usr_buyer_cocoa",
+      "messages": [
+        {
+          "id": "frm_049",
+          "authorRole": "creator",
+          "authorId": "usr_creator_ava",
+          "body": "Hello Cocoa & Co — thank you for a brief with an actual budget on it. It is workable for the scope as written, and I would rather say that plainly than open with a number and negotiate down.",
+          "at": "2026-08-08T23:30:00.000Z"
+        },
+        {
+          "id": "frm_050",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_cocoa",
+          "body": "Appreciated. Where would you expect the cost to move if we added a second day?",
+          "at": "2026-08-09T06:30:00.000Z"
+        },
+        {
+          "id": "frm_051",
+          "authorRole": "creator",
+          "authorId": "usr_creator_ava",
+          "body": "A second day is the day rate again, less the set-up, so it is not double. Editing scales with the number of finished frames rather than the days, so that part moves less than people expect.",
+          "at": "2026-08-09T21:30:00.000Z"
+        },
+        {
+          "id": "frm_052",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_cocoa",
+          "body": "That is clearer than the last three answers we have had to the same question. Is the second day something you would recommend?",
+          "at": "2026-08-10T02:30:00.000Z"
+        },
+        {
+          "id": "frm_053",
+          "authorRole": "creator",
+          "authorId": "usr_creator_ava",
+          "body": "Only if the list grows. For the scope you have written, one day is enough and a second would mostly buy alternates you will not use.",
+          "at": "2026-08-10T23:30:00.000Z"
+        },
+        {
+          "id": "frm_054",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_cocoa",
+          "body": "Noted, Ava Martinez. We will hold at one day and keep the option in reserve.",
+          "at": "2026-08-11T10:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-08T23:30:00.000Z",
+      "updatedAt": "2026-08-11T10:30:00.000Z"
+    },
+    {
+      "id": "frp_015",
+      "feedId": "req_028",
+      "creatorId": "cpr_chloe",
+      "buyerId": "usr_buyer_cocoa",
+      "messages": [
+        {
+          "id": "frm_055",
+          "authorRole": "creator",
+          "authorId": "usr_creator_chloe",
+          "body": "Hello — one practical note up front: for a brief this size I would bring an assistant, which is included in what I quote rather than added to it. It is the difference between finishing on the day and running over.",
+          "at": "2026-08-09T13:30:00.000Z"
+        },
+        {
+          "id": "frm_056",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_cocoa",
+          "body": "That is useful to know. Would the assistant need their own access pass for the site?",
+          "at": "2026-08-09T20:30:00.000Z"
+        },
+        {
+          "id": "frm_057",
+          "authorRole": "creator",
+          "authorId": "usr_creator_chloe",
+          "body": "Yes, one extra name on the list. I will send both sets of details as soon as dates are agreed so nothing is held up at the door.",
+          "at": "2026-08-10T11:30:00.000Z"
+        },
+        {
+          "id": "frm_058",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_cocoa",
+          "body": "Perfect. Our operations team will want them a week ahead, which sounds like it fits.",
+          "at": "2026-08-10T16:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-09T13:30:00.000Z",
+      "updatedAt": "2026-08-10T16:30:00.000Z"
+    },
+    {
+      "id": "frp_016",
+      "feedId": "req_028",
+      "creatorId": "cpr_noah",
+      "buyerId": "usr_buyer_cocoa",
+      "messages": [
+        {
+          "id": "frm_059",
+          "authorRole": "creator",
+          "authorId": "usr_creator_noah",
+          "body": "Hello — the usage rights on this brief are clear, which makes quoting straightforward. I work to the terms as written and I clear any releases needed on the day rather than after it.",
+          "at": "2026-08-10T04:30:00.000Z"
+        },
+        {
+          "id": "frm_060",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_cocoa",
+          "body": "Good. We have been caught out before by releases arriving weeks later, so that matters to us more than it probably should.",
+          "at": "2026-08-10T11:30:00.000Z"
+        },
+        {
+          "id": "frm_061",
+          "authorRole": "creator",
+          "authorId": "usr_creator_noah",
+          "body": "It is worth caring about. Signed releases come back with the delivery, not separately, so the whole set is usable the moment you have it.",
+          "at": "2026-08-11T02:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-10T04:30:00.000Z",
+      "updatedAt": "2026-08-11T02:30:00.000Z"
+    },
+    {
+      "id": "frp_017",
+      "feedId": "req_028",
+      "creatorId": "cpr_yuki",
+      "buyerId": "usr_buyer_cocoa",
+      "messages": [
+        {
+          "id": "frm_062",
+          "authorRole": "creator",
+          "authorId": "usr_creator_yuki",
+          "body": "Hi Cocoa & Co — I have shot this category for the last few years and the brief reads like something I could deliver without a discovery call. My recent work is on my profile if it is useful.",
+          "at": "2026-08-10T20:30:00.000Z"
+        },
+        {
+          "id": "frm_063",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_cocoa",
+          "body": "Thank you for the note. We are reading through the replies this week and will come back to everyone either way.",
+          "at": "2026-08-11T03:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-10T20:30:00.000Z",
+      "updatedAt": "2026-08-11T03:30:00.000Z"
+    },
+    {
+      "id": "frp_018",
+      "feedId": "req_029",
+      "creatorId": "cpr_noah",
+      "buyerId": "usr_buyer_craftware",
+      "messages": [
+        {
+          "id": "frm_064",
+          "authorRole": "creator",
+          "authorId": "usr_creator_noah",
+          "body": "Hello Craftware Tools team — this is close to the work I do most weeks, and the window in your brief is open in my calendar. I would plan a full day on site plus two days of editing, and deliver graded and flat versions of every frame.",
+          "at": "2026-08-10T22:30:00.000Z"
+        },
+        {
+          "id": "frm_065",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_craftware",
+          "body": "Thanks for coming back so quickly. The shot list is nearly final — we are still deciding whether the wider scenes are in scope. Could you hold the week either side while we confirm internally?",
+          "at": "2026-08-11T05:30:00.000Z"
+        },
+        {
+          "id": "frm_066",
+          "authorRole": "creator",
+          "authorId": "usr_creator_noah",
+          "body": "I can hold that week. If the wider scenes come in they add about half a day rather than a second visit, so the quote would barely move.",
+          "at": "2026-08-11T20:30:00.000Z"
+        },
+        {
+          "id": "frm_067",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_craftware",
+          "body": "That is helpful, Noah Feldman. We will confirm the list in the next couple of days and come straight back to you.",
+          "at": "2026-08-12T01:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-10T22:30:00.000Z",
+      "updatedAt": "2026-08-12T01:30:00.000Z"
+    },
+    {
+      "id": "frp_019",
+      "feedId": "req_029",
+      "creatorId": "cpr_chloe",
+      "buyerId": "usr_buyer_craftware",
+      "messages": [
+        {
+          "id": "frm_068",
+          "authorRole": "creator",
+          "authorId": "usr_creator_chloe",
+          "body": "Hello — I can meet the deadline in this brief, and I would rather flag now than later that it is a firm date for me rather than a comfortable one. Craftware Tools would have the full set on the day you have written.",
+          "at": "2026-08-11T11:30:00.000Z"
+        },
+        {
+          "id": "frm_069",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_craftware",
+          "body": "That honesty is welcome. Is there anything at our end that would put it at risk?",
+          "at": "2026-08-11T18:30:00.000Z"
+        },
+        {
+          "id": "frm_070",
+          "authorRole": "creator",
+          "authorId": "usr_creator_chloe",
+          "body": "Only sign-off. If feedback on the first selects comes back within a day, the schedule holds comfortably.",
+          "at": "2026-08-12T09:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-11T11:30:00.000Z",
+      "updatedAt": "2026-08-12T09:30:00.000Z"
+    },
+    {
+      "id": "frp_020",
+      "feedId": "req_029",
+      "creatorId": "cpr_ava",
+      "buyerId": "usr_buyer_craftware",
+      "messages": [
+        {
+          "id": "frm_071",
+          "authorRole": "creator",
+          "authorId": "usr_creator_ava",
+          "body": "Hi — I am interested in this one. Before anything else: is the location in your brief the only site, or would Craftware Tools want the same treatment repeated elsewhere later?",
+          "at": "2026-08-12T01:30:00.000Z"
+        },
+        {
+          "id": "frm_072",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_craftware",
+          "body": "One site for now. If it goes well there is a good chance we repeat it at two more, but we are not committing to that in this brief.",
+          "at": "2026-08-12T08:30:00.000Z"
+        },
+        {
+          "id": "frm_073",
+          "authorRole": "creator",
+          "authorId": "usr_creator_ava",
+          "body": "Good to know. I will quote for the one site, and I will keep the set-up notes and settings so a repeat later matches rather than approximates.",
+          "at": "2026-08-12T23:30:00.000Z"
+        },
+        {
+          "id": "frm_074",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_craftware",
+          "body": "That is exactly the sort of thing we were hoping to hear. Thank you.",
+          "at": "2026-08-13T04:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-12T01:30:00.000Z",
+      "updatedAt": "2026-08-13T04:30:00.000Z"
+    },
+    {
+      "id": "frp_021",
+      "feedId": "req_029",
+      "creatorId": "cpr_yuki",
+      "buyerId": "usr_buyer_craftware",
+      "messages": [
+        {
+          "id": "frm_075",
+          "authorRole": "creator",
+          "authorId": "usr_creator_yuki",
+          "body": "Hi — this sits squarely in what I shoot, and the most recent set on my profile was made for a brief very like Craftware Tools's. Happy to match your reference frames exactly if a like-for-like look is what you need.",
+          "at": "2026-08-12T16:30:00.000Z"
+        },
+        {
+          "id": "frm_076",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_craftware",
+          "body": "That set is close to what we had in mind. What turnaround would you expect from the shoot day itself?",
+          "at": "2026-08-12T23:30:00.000Z"
+        },
+        {
+          "id": "frm_077",
+          "authorRole": "creator",
+          "authorId": "usr_creator_yuki",
+          "body": "First selects within forty-eight hours and the full graded delivery inside five working days. If you need a handful of frames sooner for the announcement, I can prioritise those.",
+          "at": "2026-08-13T14:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-12T16:30:00.000Z",
+      "updatedAt": "2026-08-13T14:30:00.000Z"
+    },
+    {
+      "id": "frp_022",
+      "feedId": "req_030",
+      "creatorId": "cpr_ava",
+      "buyerId": "usr_buyer_verde",
+      "messages": [
+        {
+          "id": "frm_078",
+          "authorRole": "creator",
+          "authorId": "usr_creator_ava",
+          "body": "Hi — this sits squarely in what I shoot, and the most recent set on my profile was made for a brief very like Verde Kitchen's. Happy to match your reference frames exactly if a like-for-like look is what you need.",
+          "at": "2026-08-12T21:30:00.000Z"
+        },
+        {
+          "id": "frm_079",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_verde",
+          "body": "That set is close to what we had in mind. What turnaround would you expect from the shoot day itself?",
+          "at": "2026-08-13T04:30:00.000Z"
+        },
+        {
+          "id": "frm_080",
+          "authorRole": "creator",
+          "authorId": "usr_creator_ava",
+          "body": "First selects within forty-eight hours and the full graded delivery inside five working days. If you need a handful of frames sooner for the announcement, I can prioritise those.",
+          "at": "2026-08-13T19:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-12T21:30:00.000Z",
+      "updatedAt": "2026-08-13T19:30:00.000Z"
+    },
+    {
+      "id": "frp_023",
+      "feedId": "req_030",
+      "creatorId": "cpr_isla",
+      "buyerId": "usr_buyer_verde",
+      "messages": [
+        {
+          "id": "frm_081",
+          "authorRole": "creator",
+          "authorId": "usr_creator_isla",
+          "body": "Hello — the usage rights on this brief are clear, which makes quoting straightforward. I work to the terms as written and I clear any releases needed on the day rather than after it.",
+          "at": "2026-08-13T01:30:00.000Z"
+        },
+        {
+          "id": "frm_082",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_verde",
+          "body": "Good. We have been caught out before by releases arriving weeks later, so that matters to us more than it probably should.",
+          "at": "2026-08-13T08:30:00.000Z"
+        },
+        {
+          "id": "frm_083",
+          "authorRole": "creator",
+          "authorId": "usr_creator_isla",
+          "body": "It is worth caring about. Signed releases come back with the delivery, not separately, so the whole set is usable the moment you have it.",
+          "at": "2026-08-13T23:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-13T01:30:00.000Z",
+      "updatedAt": "2026-08-13T23:30:00.000Z"
+    },
+    {
+      "id": "frp_024",
+      "feedId": "req_030",
+      "creatorId": "cpr_amara",
+      "buyerId": "usr_buyer_verde",
+      "messages": [
+        {
+          "id": "frm_084",
+          "authorRole": "creator",
+          "authorId": "usr_creator_amara",
+          "body": "Hi Verde Kitchen — I have shot this category for the last few years and the brief reads like something I could deliver without a discovery call. My recent work is on my profile if it is useful.",
+          "at": "2026-08-13T09:30:00.000Z"
+        },
+        {
+          "id": "frm_085",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_verde",
+          "body": "Thank you for the note. We are reading through the replies this week and will come back to everyone either way.",
+          "at": "2026-08-13T16:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-13T09:30:00.000Z",
+      "updatedAt": "2026-08-13T16:30:00.000Z"
+    },
+    {
+      "id": "frp_025",
+      "feedId": "req_031",
+      "creatorId": "cpr_yuki",
+      "buyerId": "usr_buyer_urbannest",
+      "messages": [
+        {
+          "id": "frm_086",
+          "authorRole": "creator",
+          "authorId": "usr_creator_yuki",
+          "body": "Hello — the usage rights on this brief are clear, which makes quoting straightforward. I work to the terms as written and I clear any releases needed on the day rather than after it.",
+          "at": "2026-08-12T00:30:00.000Z"
+        },
+        {
+          "id": "frm_087",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_urbannest",
+          "body": "Good. We have been caught out before by releases arriving weeks later, so that matters to us more than it probably should.",
+          "at": "2026-08-12T07:30:00.000Z"
+        },
+        {
+          "id": "frm_088",
+          "authorRole": "creator",
+          "authorId": "usr_creator_yuki",
+          "body": "It is worth caring about. Signed releases come back with the delivery, not separately, so the whole set is usable the moment you have it.",
+          "at": "2026-08-12T22:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-12T00:30:00.000Z",
+      "updatedAt": "2026-08-12T22:30:00.000Z"
+    },
+    {
+      "id": "frp_026",
+      "feedId": "req_031",
+      "creatorId": "cpr_isla",
+      "buyerId": "usr_buyer_urbannest",
+      "messages": [
+        {
+          "id": "frm_089",
+          "authorRole": "creator",
+          "authorId": "usr_creator_isla",
+          "body": "Hi — I am keen on this one. My usual arrangement is one round of revisions on the graded set included, and I have found that is almost always enough when the brief is as specific as yours.",
+          "at": "2026-08-12T15:30:00.000Z"
+        },
+        {
+          "id": "frm_090",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_urbannest",
+          "body": "One round is standard for us too. What happens if we need a second?",
+          "at": "2026-08-12T22:30:00.000Z"
+        },
+        {
+          "id": "frm_091",
+          "authorRole": "creator",
+          "authorId": "usr_creator_isla",
+          "body": "A second round is charged at an hourly rate rather than as a new job, and I would tell you before starting it rather than after. It has come up twice in the last year.",
+          "at": "2026-08-13T13:30:00.000Z"
+        },
+        {
+          "id": "frm_092",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_urbannest",
+          "body": "Thanks Isla Bergstrom — that is a fair way to handle it. We will be in touch once the internal review is done.",
+          "at": "2026-08-13T18:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-12T15:30:00.000Z",
+      "updatedAt": "2026-08-13T18:30:00.000Z"
+    },
+    {
+      "id": "frp_027",
+      "feedId": "req_031",
+      "creatorId": "cpr_ethan",
+      "buyerId": "usr_buyer_urbannest",
+      "messages": [
+        {
+          "id": "frm_093",
+          "authorRole": "creator",
+          "authorId": "usr_creator_ethan",
+          "body": "Hi UrbanNest Interiors — I have shot this category for the last few years and the brief reads like something I could deliver without a discovery call. My recent work is on my profile if it is useful.",
+          "at": "2026-08-13T09:30:00.000Z"
+        },
+        {
+          "id": "frm_094",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_urbannest",
+          "body": "Thank you for the note. We are reading through the replies this week and will come back to everyone either way.",
+          "at": "2026-08-13T16:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-13T09:30:00.000Z",
+      "updatedAt": "2026-08-13T16:30:00.000Z"
+    },
+    {
+      "id": "frp_028",
+      "feedId": "req_032",
+      "creatorId": "cpr_ava",
+      "buyerId": "usr_buyer_verde",
+      "messages": [
+        {
+          "id": "frm_095",
+          "authorRole": "creator",
+          "authorId": "usr_creator_ava",
+          "body": "Hello — I can meet the deadline in this brief, and I would rather flag now than later that it is a firm date for me rather than a comfortable one. Verde Kitchen would have the full set on the day you have written.",
+          "at": "2026-08-03T01:30:00.000Z"
+        },
+        {
+          "id": "frm_096",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_verde",
+          "body": "That honesty is welcome. Is there anything at our end that would put it at risk?",
+          "at": "2026-08-03T08:30:00.000Z"
+        },
+        {
+          "id": "frm_097",
+          "authorRole": "creator",
+          "authorId": "usr_creator_ava",
+          "body": "Only sign-off. If feedback on the first selects comes back within a day, the schedule holds comfortably.",
+          "at": "2026-08-03T23:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-03T01:30:00.000Z",
+      "updatedAt": "2026-08-03T23:30:00.000Z"
+    },
+    {
+      "id": "frp_029",
+      "feedId": "req_032",
+      "creatorId": "cpr_chloe",
+      "buyerId": "usr_buyer_verde",
+      "messages": [
+        {
+          "id": "frm_098",
+          "authorRole": "creator",
+          "authorId": "usr_creator_chloe",
+          "body": "Hi Verde Kitchen — I have shot this category for the last few years and the brief reads like something I could deliver without a discovery call. My recent work is on my profile if it is useful.",
+          "at": "2026-08-03T23:30:00.000Z"
+        },
+        {
+          "id": "frm_099",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_verde",
+          "body": "Thank you for the note. We are reading through the replies this week and will come back to everyone either way.",
+          "at": "2026-08-04T06:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-08-03T23:30:00.000Z",
+      "updatedAt": "2026-08-04T06:30:00.000Z"
+    },
+    {
+      "id": "frp_030",
+      "feedId": "req_025",
+      "creatorId": "cpr_yuki",
+      "buyerId": "usr_buyer_urbannest",
+      "messages": [
+        {
+          "id": "frm_100",
+          "authorRole": "creator",
+          "authorId": "usr_creator_yuki",
+          "body": "Hello — one practical note up front: for a brief this size I would bring an assistant, which is included in what I quote rather than added to it. It is the difference between finishing on the day and running over.",
+          "at": "2026-07-12T03:30:00.000Z"
+        },
+        {
+          "id": "frm_101",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_urbannest",
+          "body": "That is useful to know. Would the assistant need their own access pass for the site?",
+          "at": "2026-07-12T10:30:00.000Z"
+        },
+        {
+          "id": "frm_102",
+          "authorRole": "creator",
+          "authorId": "usr_creator_yuki",
+          "body": "Yes, one extra name on the list. I will send both sets of details as soon as dates are agreed so nothing is held up at the door.",
+          "at": "2026-07-13T01:30:00.000Z"
+        },
+        {
+          "id": "frm_103",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_urbannest",
+          "body": "Perfect. Our operations team will want them a week ahead, which sounds like it fits.",
+          "at": "2026-07-13T06:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-07-12T03:30:00.000Z",
+      "updatedAt": "2026-07-13T06:30:00.000Z"
+    },
+    {
+      "id": "frp_031",
+      "feedId": "req_025",
+      "creatorId": "cpr_ethan",
+      "buyerId": "usr_buyer_urbannest",
+      "messages": [
+        {
+          "id": "frm_104",
+          "authorRole": "creator",
+          "authorId": "usr_creator_ethan",
+          "body": "Hi — this sits squarely in what I shoot, and the most recent set on my profile was made for a brief very like UrbanNest Interiors's. Happy to match your reference frames exactly if a like-for-like look is what you need.",
+          "at": "2026-07-13T02:30:00.000Z"
+        },
+        {
+          "id": "frm_105",
+          "authorRole": "buyer",
+          "authorId": "usr_buyer_urbannest",
+          "body": "That set is close to what we had in mind. What turnaround would you expect from the shoot day itself?",
+          "at": "2026-07-13T09:30:00.000Z"
+        },
+        {
+          "id": "frm_106",
+          "authorRole": "creator",
+          "authorId": "usr_creator_ethan",
+          "body": "First selects within forty-eight hours and the full graded delivery inside five working days. If you need a handful of frames sooner for the announcement, I can prioritise those.",
+          "at": "2026-07-14T00:30:00.000Z"
+        }
+      ],
+      "createdAt": "2026-07-13T02:30:00.000Z",
+      "updatedAt": "2026-07-14T00:30:00.000Z"
     }
   ],
   "proposals": [

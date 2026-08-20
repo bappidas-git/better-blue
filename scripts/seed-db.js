@@ -24,6 +24,8 @@ import { ROLES, ROLE_VALUES } from '../src/constants/roles.js'
 import { PERMISSION_VALUES } from '../src/constants/permissions.js'
 import { NOTIFICATION_TYPE } from '../src/constants/notificationTypes.js'
 import { REJECTION_REASON_CODE } from '../src/constants/policy.js'
+import { getCreatorLevel } from '../src/constants/creatorLevels.js'
+import { getFeedDealStatus } from '../src/constants/feedStatus.js'
 import {
   ACCOUNT_STATUS,
   AFFILIATE_EARNING_STATUS,
@@ -62,10 +64,11 @@ import {
 } from './seed-utils.js'
 
 import { users } from './seed-data/users.js'
-import { buyerProfiles, creatorProfiles } from './seed-data/profiles.js'
+import { CREATOR_CARRIED_OVER, buyerProfiles, creatorProfiles } from './seed-data/profiles.js'
 import { categories } from './seed-data/categories.js'
 import { portfolioItems } from './seed-data/portfolio.js'
 import { contentRequests } from './seed-data/requests.js'
+import { feedReplies } from './seed-data/feedReplies.js'
 import { proposals } from './seed-data/proposals.js'
 import { deliveries, orders, revisions } from './seed-data/orders.js'
 import { commissions, payments, payouts, transactions } from './seed-data/finance.js'
@@ -103,6 +106,7 @@ const db = {
   portfolioItems,
   categories,
   contentRequests,
+  feedReplies,
   proposals,
   orders,
   deliveries,
@@ -165,7 +169,16 @@ function computeAggregates() {
     request.awardedProposalId = accepted ? accepted.id : null
   })
 
-  // --- Creators: rating + completed order count -----------------------------
+  // --- Feeds: how many creators have opened a reply thread (V2) -------------
+  const repliesByFeed = feedReplies.reduce(
+    (counts, reply) => counts.set(reply.feedId, (counts.get(reply.feedId) ?? 0) + 1),
+    new Map()
+  )
+  contentRequests.forEach((request) => {
+    request.repliesCount = repliesByFeed.get(request.id) ?? 0
+  })
+
+  // --- Creators: rating, completed orders, and the V2 storefront figures ----
   creatorProfiles.forEach((profile) => {
     const creatorReviews = reviews.filter(
       (review) => review.creatorId === profile.userId
@@ -180,6 +193,44 @@ function computeAggregates() {
         order.creatorId === profile.userId &&
         order.status === ORDER_STATUS.COMPLETED
     ).length
+
+    // Storefront V2 (prompts-v2/03). Each figure is what this database
+    // actually contains **plus** the record the creator carried over when they
+    // joined (`CREATOR_CARRIED_OVER`, which explains why the padding exists) —
+    // never a number invented in place of one.
+    const carried = CREATOR_CARRIED_OVER[profile.id] ?? {
+      deliveries: 0,
+      earned: 0,
+      images: 0,
+      videos: 0,
+    }
+
+    // Lifetime earnings the way `paymentService.getEarningsSummary` computes
+    // them: every release, net of the commission taken off it.
+    const ledgerEarned = transactions
+      .filter(
+        (transaction) =>
+          transaction.userId === profile.userId &&
+          (transaction.type === TRANSACTION_TYPE.RELEASE ||
+            transaction.type === TRANSACTION_TYPE.COMMISSION)
+      )
+      .reduce((sum, transaction) => sum + transaction.amount, 0)
+
+    const published = portfolioItems.filter(
+      (item) => item.creatorId === profile.id && item.status === CONTENT_STATUS.PUBLISHED
+    )
+    const publishedOf = (mediaType) =>
+      published.filter((item) => item.mediaType === mediaType).length
+
+    profile.deliveriesCount = profile.completedOrders + carried.deliveries
+    profile.totalEarned = round2(ledgerEarned + carried.earned)
+    profile.contributionCounts = {
+      images: publishedOf(MEDIA_TYPE.IMAGE) + carried.images,
+      videos: publishedOf(MEDIA_TYPE.VIDEO) + carried.videos,
+    }
+    // The single source of the rule, shared with the app (00 §5): the seed
+    // never hard-codes a level.
+    profile.level = getCreatorLevel(profile)
   })
 
   // --- Buyers: lifetime spend, net of refunds -------------------------------
@@ -255,6 +306,7 @@ const ID_PREFIXES = {
   portfolioItems: 'pfi',
   categories: 'cat',
   contentRequests: 'req',
+  feedReplies: 'frp',
   proposals: 'prp',
   orders: 'ord',
   deliveries: 'dlv',
@@ -316,6 +368,12 @@ const FOREIGN_KEYS = [
   ['contentRequests', 'buyerId', 'users'],
   ['contentRequests', 'categoryId', 'categories'],
   ['contentRequests', 'awardedProposalId', 'proposals', { optional: true }],
+  // Storefront V2 — a reply belongs to a feed, a storefront, and the account
+  // that posted the feed. `creatorId` points at `creatorProfiles`, not `users`,
+  // like `portfolioItems.creatorId` (see docs/data-model.md §3).
+  ['feedReplies', 'feedId', 'contentRequests'],
+  ['feedReplies', 'creatorId', 'creatorProfiles'],
+  ['feedReplies', 'buyerId', 'users'],
   ['proposals', 'requestId', 'contentRequests'],
   ['proposals', 'creatorId', 'users'],
   ['proposals', 'sampleItemIds', 'portfolioItems', { many: true }],
@@ -1239,6 +1297,238 @@ function validateWorkflow() {
 }
 
 /* ========================================================================== */
+/* Validation: Storefront V2 feeds, replies, and creator levels               */
+/* ========================================================================== */
+
+/** Tag slugs are lowercase kebab-case — a stored value, not a display label. */
+const TAG_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+/** The demo creator's storefront — their thread has to render on day one (§9). */
+const DEMO_CREATOR_PROFILE_ID = 'cpr_ava'
+
+function validateFeeds() {
+  /* --- contentRequests: the three fields V2 added ------------------------- */
+  const repliesByFeed = feedReplies.reduce(
+    (counts, reply) => counts.set(reply.feedId, (counts.get(reply.feedId) ?? 0) + 1),
+    new Map()
+  )
+  const dealStatusesSeen = new Set()
+
+  contentRequests.forEach((request) => {
+    const tags = request.tags
+    if (!Array.isArray(tags) || tags.length < 3 || tags.length > 6) {
+      fail(`contentRequests.tags on ${request.id} must hold 3–6 tags (V2-03 §1)`)
+    } else {
+      if (new Set(tags).size !== tags.length) {
+        fail(`contentRequests.tags on ${request.id} repeats a tag`)
+      }
+      tags.forEach((tag) => {
+        if (typeof tag !== 'string' || !TAG_SLUG.test(tag)) {
+          fail(`contentRequests.tags on ${request.id}: "${tag}" is not a kebab-case slug`)
+        }
+      })
+    }
+
+    // The offer is derived from the budget, so it can never contradict it.
+    const expectedOffer = request.budgetMax ?? request.budgetMin ?? undefined
+    if (request.offerPrice !== expectedOffer) {
+      fail(
+        `contentRequests.offerPrice on ${request.id} is ${request.offerPrice}, ` +
+          `but the budget says ${expectedOffer}`
+      )
+    }
+    if (request.offerPrice === undefined && request.status !== REQUEST_STATUS.DRAFT) {
+      fail(`contentRequests.offerPrice is absent on ${request.id}, which is not a draft`)
+    }
+
+    const expectedReplies = repliesByFeed.get(request.id) ?? 0
+    if (request.repliesCount !== expectedReplies) {
+      fail(
+        `contentRequests.repliesCount on ${request.id} is ${request.repliesCount}, ` +
+          `but ${expectedReplies} feedReplies point at it`
+      )
+    }
+
+    if (request.status !== REQUEST_STATUS.DRAFT) {
+      dealStatusesSeen.add(getFeedDealStatus(request))
+    }
+  })
+
+  // The board is meant to demonstrate all three deal states (V2-03 §1).
+  ;['open', 'closed', 'delivered'].forEach((dealStatus) => {
+    if (!dealStatusesSeen.has(dealStatus)) {
+      fail(`no feed maps to deal status "${dealStatus}" — the V2 board needs all three`)
+    }
+  })
+
+  /* --- feedReplies: one per creator per feed, two-sided, in order --------- */
+  const requestById = byId(contentRequests)
+  const creatorProfileById = byId(creatorProfiles)
+  const pairs = new Set()
+  const messageIds = new Set()
+  const demoThreads = feedReplies.filter(
+    (reply) => reply.creatorId === DEMO_CREATOR_PROFILE_ID
+  ).length
+
+  if (demoThreads < 2) {
+    fail(
+      `the demo creator (${DEMO_CREATOR_PROFILE_ID}) has ${demoThreads} reply thread(s); ` +
+        'at least 2 are needed for the feed detail page to render one'
+    )
+  }
+
+  feedReplies.forEach((reply) => {
+    const pair = `${reply.feedId}::${reply.creatorId}`
+    if (pairs.has(pair)) {
+      fail(`feedReplies: ${reply.creatorId} has more than one reply on ${reply.feedId}`)
+    }
+    pairs.add(pair)
+
+    const feed = requestById.get(reply.feedId)
+    const profile = creatorProfileById.get(reply.creatorId)
+    if (!feed || !profile) return
+
+    if (reply.buyerId !== feed.buyerId) {
+      fail(`feedReplies ${reply.id}: buyerId does not match the buyer who posted ${feed.id}`)
+    }
+    if (feed.status === REQUEST_STATUS.DRAFT) {
+      fail(`feedReplies ${reply.id} answers ${feed.id}, which is a private draft`)
+    }
+
+    const messages = reply.messages
+    if (!Array.isArray(messages) || messages.length < 2 || messages.length > 6) {
+      fail(`feedReplies ${reply.id} must carry a 2–6 message conversation`)
+      return
+    }
+    if (messages[0].authorRole !== 'creator') {
+      fail(`feedReplies ${reply.id}: a reply is opened by the creator, not the buyer`)
+    }
+    if (!messages.some((message) => message.authorRole === 'buyer')) {
+      fail(`feedReplies ${reply.id}: the conversation is one-sided`)
+    }
+
+    messages.forEach((message, index) => {
+      if (typeof message.id !== 'string' || !message.id.startsWith('frm_')) {
+        fail(`feedReplies ${reply.id}: message ${index} has no "frm_" id`)
+      } else if (messageIds.has(message.id)) {
+        fail(`feedReplies: duplicate message id "${message.id}"`)
+      } else {
+        messageIds.add(message.id)
+      }
+
+      if (!['creator', 'buyer'].includes(message.authorRole)) {
+        fail(`feedReplies ${reply.id}: unknown authorRole "${message.authorRole}"`)
+      }
+      const expectedAuthor =
+        message.authorRole === 'creator' ? profile.userId : feed.buyerId
+      if (message.authorId !== expectedAuthor) {
+        fail(
+          `feedReplies ${reply.id}: message ${message.id} is authored by ` +
+            `${message.authorId}, expected ${expectedAuthor}`
+        )
+      }
+      if (typeof message.body !== 'string' || message.body.trim().length < 20) {
+        fail(`feedReplies ${reply.id}: message ${message.id} has no real body`)
+      }
+      if (index > 0 && ms(message.at) < ms(messages[index - 1].at)) {
+        fail(`feedReplies ${reply.id}: message ${message.id} is dated before the one above it`)
+      }
+      if (ms(message.at) > ANCHOR_MS || ms(message.at) < WINDOW_START_MS) {
+        fail(`feedReplies ${reply.id}: message ${message.id} falls outside the seed window`)
+      }
+    })
+
+    if (reply.createdAt !== messages[0].at) {
+      fail(`feedReplies ${reply.id}: createdAt does not match its first message`)
+    }
+    if (reply.updatedAt !== messages[messages.length - 1].at) {
+      fail(`feedReplies ${reply.id}: updatedAt does not match its last message`)
+    }
+    if (feed.publishedAt && ms(reply.createdAt) < ms(feed.publishedAt)) {
+      fail(`feedReplies ${reply.id} predates the feed it answers`)
+    }
+    if (ms(reply.createdAt) < ms(profile.createdAt)) {
+      fail(`feedReplies ${reply.id} predates the storefront that wrote it`)
+    }
+  })
+
+  /* --- creatorProfiles: the V2 storefront figures ------------------------- */
+  const levelsSeen = new Set()
+  let onlineCount = 0
+
+  creatorProfiles.forEach((profile) => {
+    if (typeof profile.isOnline !== 'boolean') {
+      fail(`creatorProfiles.isOnline on ${profile.id} must be a boolean`)
+    }
+    if (profile.isOnline) onlineCount += 1
+
+    if (!Number.isInteger(profile.deliveriesCount) || profile.deliveriesCount < profile.completedOrders) {
+      fail(
+        `creatorProfiles.deliveriesCount on ${profile.id} (${profile.deliveriesCount}) ` +
+          `is below the ${profile.completedOrders} completed orders in this database`
+      )
+    }
+
+    const ledgerEarned = round2(
+      transactions
+        .filter(
+          (transaction) =>
+            transaction.userId === profile.userId &&
+            (transaction.type === TRANSACTION_TYPE.RELEASE ||
+              transaction.type === TRANSACTION_TYPE.COMMISSION)
+        )
+        .reduce((sum, transaction) => sum + transaction.amount, 0)
+    )
+    if (!(profile.totalEarned >= ledgerEarned)) {
+      fail(
+        `creatorProfiles.totalEarned on ${profile.id} (${profile.totalEarned}) ` +
+          `is below the ${ledgerEarned} the ledger already credits them`
+      )
+    }
+    if (round2(profile.totalEarned) !== profile.totalEarned) {
+      fail(`creatorProfiles.totalEarned on ${profile.id} is not rounded to cents`)
+    }
+
+    const counts = profile.contributionCounts
+    if (!counts || !Number.isInteger(counts.images) || !Number.isInteger(counts.videos)) {
+      fail(`creatorProfiles.contributionCounts on ${profile.id} needs integer images/videos`)
+    } else {
+      const publishedOf = (mediaType) =>
+        portfolioItems.filter(
+          (item) =>
+            item.creatorId === profile.id &&
+            item.status === CONTENT_STATUS.PUBLISHED &&
+            item.mediaType === mediaType
+        ).length
+      if (counts.images < publishedOf(MEDIA_TYPE.IMAGE)) {
+        fail(`creatorProfiles.contributionCounts.images on ${profile.id} is below their portfolio`)
+      }
+      if (counts.videos < publishedOf(MEDIA_TYPE.VIDEO)) {
+        fail(`creatorProfiles.contributionCounts.videos on ${profile.id} is below their portfolio`)
+      }
+    }
+
+    const expectedLevel = getCreatorLevel(profile)
+    if (profile.level !== expectedLevel) {
+      fail(
+        `creatorProfiles.level on ${profile.id} is ${profile.level}, but the rule in ` +
+          `src/constants/creatorLevels.js says ${expectedLevel}`
+      )
+    }
+    levelsSeen.add(profile.level)
+  })
+
+  ;[1, 2, 3].forEach((level) => {
+    if (!levelsSeen.has(level)) fail(`no creator reaches level ${level} — the badge has nothing to show`)
+  })
+  if (onlineCount < 3) fail(`only ${onlineCount} creator(s) are online; several should be`)
+  const demoProfile = creatorProfileById.get(DEMO_CREATOR_PROFILE_ID)
+  if (demoProfile && !demoProfile.isOnline) {
+    fail(`the demo creator (${DEMO_CREATOR_PROFILE_ID}) should be online (V2-03 §1)`)
+  }
+}
+
+/* ========================================================================== */
 /* Validation: content policy                                                 */
 /* ========================================================================== */
 
@@ -1277,6 +1567,7 @@ if (failures.length === 0) {
   validateMoney()
   validateChronology()
   validateWorkflow()
+  validateFeeds()
   validateContentPolicy()
 }
 

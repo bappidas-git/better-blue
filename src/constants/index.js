@@ -9,6 +9,10 @@
 export * from './roles.js'
 export * from './statuses.js'
 export * from './stateMachines.js'
+// Storefront V2 (prompts-v2/03): presentation-layer projections of the domain
+// enums above — the three states a feed is shown in, and the creator level rule.
+export * from './feedStatus.js'
+export * from './creatorLevels.js'
 export * from './permissions.js'
 export * from './auditActions.js'
 export * from './notificationTypes.js'
