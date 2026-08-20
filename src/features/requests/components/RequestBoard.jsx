@@ -36,9 +36,9 @@ import BoardFilters, { ActiveBoardFilters } from './BoardFilters'
 import RequestBoardCard, { RequestBoardCardSkeleton } from './RequestBoardCard'
 
 // The request board itself — 00 §12's list pattern at full size, and the one
-// implementation behind **both** places it appears: the public `/requests` page
-// and the creator's `/creator/browse` view. Only the chrome around it and the
-// defaults it starts from differ (§7).
+// implementation behind **both** places it appears: the public `/feeds` page
+// and the creator's `/creator/browse` view. Only the chrome around it, the
+// words it uses, and the defaults it starts from differ (§7).
 //
 // Two requests drive it, deliberately independent: the taxonomy (cached for the
 // session by `categoryService`) and the page of briefs. The grid paints as soon
@@ -47,13 +47,37 @@ import RequestBoardCard, { RequestBoardCardSkeleton } from './RequestBoardCard'
 /** Desktop filter rail width (§11). */
 const RAIL_WIDTH = 280
 
+/**
+ * What this board calls the things on it, per shell (V2-02).
+ *
+ * The storefront renamed the board to **Feeds**; the creator dashboard did not,
+ * and must not — "My Requests", `contentRequests`, and `requestService` all
+ * still say request. One component, two vocabularies, chosen by the `variant`
+ * that already decides the chrome. The `dashboard` strings are exactly the
+ * strings this component shipped with, so nothing inside a dashboard changed.
+ */
+const BOARD_COPY = {
+  public: {
+    one: 'feed',
+    many: 'feeds',
+    boardName: 'the feeds',
+    filtersLabel: 'Feed filters',
+  },
+  dashboard: {
+    one: 'request',
+    many: 'requests',
+    boardName: 'the request board',
+    filtersLabel: 'Request filters',
+  },
+}
+
 /** Skeletons while a page loads — one full grid at the widest layout. */
 const SKELETON_COUNT = BOARD_PAGE_SIZE
 
 /**
  * @param {object} props
  * @param {'public'|'dashboard'} [props.variant='public'] which shell it sits in —
- *   only the sticky toolbar offset depends on it
+ *   it picks the sticky toolbar offset and the vocabulary (`BOARD_COPY`)
  * @param {string} [props.creatorProfileId] the viewing creator's `cpr_…`, which
  *   is what makes the "Invited" badge and the invitations filter mean anything
  * @param {string[]} [props.defaultCategoryIds] the creator's own categories,
@@ -75,6 +99,8 @@ export default function RequestBoard({
   emptyAction,
 }) {
   const [isSheetOpen, setSheetOpen] = useState(false)
+
+  const copy = BOARD_COPY[variant] ?? BOARD_COPY.public
 
   const { data: categories, isLoading: isCategoriesLoading } = useApiQuery(
     () => categoryService.listActive(),
@@ -126,14 +152,14 @@ export default function RequestBoard({
 
   const isScopedToMine = values[BOARD_PARAM.SCOPE] === BOARD_SCOPE.MINE
   const countLabel = isLoading
-    ? 'Finding open requests…'
-    : `${formatNumber(total)} open ${total === 1 ? 'request' : 'requests'}`
+    ? `Finding open ${copy.many}…`
+    : `${formatNumber(total)} open ${total === 1 ? copy.one : copy.many}`
 
   const renderGrid = () => {
     if (error) {
       return (
         <ErrorState
-          title="We could not load the request board"
+          title={`We could not load ${copy.boardName}`}
           message="The board is temporarily unavailable. Your filters are kept in the address bar, so a retry picks up exactly where you were."
           error={error}
           onRetry={refetch}
@@ -147,8 +173,8 @@ export default function RequestBoard({
           icon="solar:clipboard-list-linear"
           title={
             isFiltered || (isScopedToMine && defaultCategoryIds?.length)
-              ? 'No open requests match these filters'
-              : 'No open requests right now'
+              ? `No open ${copy.many} match these filters`
+              : `No open ${copy.many} right now`
           }
           description={
             isFiltered || (isScopedToMine && defaultCategoryIds?.length)
@@ -222,7 +248,7 @@ export default function RequestBoard({
             value={values[BOARD_PARAM.SEARCH]}
             onChange={(next) => setValue(BOARD_PARAM.SEARCH, next)}
             placeholder="Search briefs by title or description"
-            label="Search open requests"
+            label={`Search open ${copy.many}`}
             size="medium"
             sx={{ flexGrow: 1 }}
           />
@@ -296,7 +322,7 @@ export default function RequestBoard({
       >
         <Box
           component="aside"
-          aria-label="Request filters"
+          aria-label={copy.filtersLabel}
           sx={{
             display: { xs: 'none', lg: 'block' },
             position: 'sticky',
@@ -342,7 +368,7 @@ export default function RequestBoard({
               (00 §13). Visually hidden: the count line above already says
               this to anyone who can see it. */}
           <Typography component="h2" sx={visuallyHidden}>
-            Open requests
+            {`Open ${copy.many}`}
           </Typography>
 
           {renderGrid()}
@@ -353,7 +379,7 @@ export default function RequestBoard({
               pageSize={BOARD_PAGE_SIZE}
               total={total}
               onPageChange={(next) => setValues({ [BOARD_PARAM.PAGE]: next })}
-              itemLabel="requests"
+              itemLabel={copy.many}
               disabled={isLoading}
               hideOnSinglePage
             />
@@ -380,7 +406,7 @@ export default function RequestBoard({
             <Button variant="gradient" onClick={closeSheet} sx={{ flexGrow: 1 }}>
               {isLoading
                 ? 'Show results'
-                : `Show ${formatNumber(total)} ${total === 1 ? 'request' : 'requests'}`}
+                : `Show ${formatNumber(total)} ${total === 1 ? copy.one : copy.many}`}
             </Button>
           </>
         }

@@ -23,6 +23,14 @@ import { getStatusMeta, REQUEST_STATUS } from '@/constants/statuses'
 import ProposalDialog from '@/features/proposals/components/ProposalDialog'
 import useProposeGate, { VIEWER } from '@/features/proposals/hooks/useProposeGate'
 import { LIVE_PROPOSAL_STATUSES } from '@/features/proposals/utils/proposalDisplay'
+import BoardUnavailable from '@/features/requests/components/BoardUnavailable'
+import RequestBriefPanel from '@/features/requests/components/RequestBriefPanel'
+import { isInvitedTo } from '@/features/requests/utils/boardFilters'
+import {
+  describeDeadline,
+  formatBudget,
+  formatQuantity,
+} from '@/features/requests/utils/requestDisplay'
 import useApiQuery from '@/hooks/useApiQuery'
 import useDocumentTitle from '@/hooks/useDocumentTitle'
 import useFeatureFlag from '@/hooks/useFeatureFlag'
@@ -31,13 +39,15 @@ import { categoryService } from '@/services/categoryService'
 import { requestService } from '@/services/requestService'
 import { EMPTY_PLACEHOLDER, formatDate, formatNumber } from '@/utils/formatters'
 
-import BoardUnavailable from '../components/BoardUnavailable'
-import RequestBriefPanel from '../components/RequestBriefPanel'
-import { isInvitedTo } from '../utils/boardFilters'
-import { describeDeadline, formatBudget, formatQuantity } from '../utils/requestDisplay'
 
-// One brief, read from the outside — the public counterpart of the buyer's own
-// detail screen (Prompt 18).
+// One **feed**, read from the outside — the public counterpart of the buyer's
+// own detail screen (Prompt 18).
+//
+// V2-02 renamed this screen: it was `RequestBoardDetailPage` at
+// `/requests/:requestId`, it is `FeedDetailPage` at `/feeds/:feedId`, and the
+// old URL redirects here. Presentation only — `:feedId` still carries the
+// `req_…` id `requestService` expects, and the brief renderer, the propose
+// gate, and the services behind them are untouched.
 //
 // The **brief itself is identical** on both: `RequestBriefPanel` is the shared
 // renderer, so a creator reads exactly what the buyer wrote and the two screens
@@ -207,8 +217,10 @@ function ActionPanel({ request, gate, onPropose }) {
   )
 }
 
-export default function RequestBoardDetailPage() {
-  const { requestId } = useParams()
+export default function FeedDetailPage() {
+  // A feed is a content request, so the storefront-facing `:feedId` is read
+  // under the name the service layer uses for it.
+  const { feedId: requestId } = useParams()
   const { isEnabled, isLoading: isFlagLoading } = useFeatureFlag('publicRequestBoard')
 
   const [isDialogOpen, setDialogOpen] = useState(false)
@@ -226,7 +238,7 @@ export default function RequestBoardDetailPage() {
   const request = board?.request ?? null
   const buyer = board?.buyer ?? null
 
-  useDocumentTitle(request?.title ?? 'Content request')
+  useDocumentTitle(request?.title ?? 'Feed')
 
   const { data: categories } = useApiQuery(() => categoryService.listActive(), [])
   const categoryLabel = useMemo(
@@ -251,8 +263,8 @@ export default function RequestBoardDetailPage() {
     return (
       <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 }, py: { xs: 4, md: 6 } }}>
         <ErrorState
-          title="We could not open this request"
-          message="It may have been withdrawn, or the link may be wrong. The rest of the board is unaffected."
+          title="We could not open this feed"
+          message="It may have been withdrawn, or the link may be wrong. The rest of the feeds are unaffected."
           error={error}
           onRetry={refetch}
         />
@@ -267,7 +279,7 @@ export default function RequestBoardDetailPage() {
   if (!request) {
     return (
       <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 }, py: { xs: 4, md: 6 } }}>
-        <CardSkeleton media={false} lines={6} label="Loading this request" />
+        <CardSkeleton media={false} lines={6} label="Loading this feed" />
       </Container>
     )
   }
@@ -279,8 +291,10 @@ export default function RequestBoardDetailPage() {
     <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 }, py: { xs: 4, md: 6 } }}>
       <PageHeader
         title={request.title}
-        backTo={gate.viewer === VIEWER.CREATOR ? paths.CREATOR_BROWSE : paths.REQUESTS}
-        backLabel="Back to the request board"
+        backTo={gate.viewer === VIEWER.CREATOR ? paths.CREATOR_BROWSE : paths.FEEDS}
+        backLabel={
+          gate.viewer === VIEWER.CREATOR ? 'Back to the request board' : 'Back to feeds'
+        }
         meta={
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
             <StatusChip status={request.status} tooltip />
