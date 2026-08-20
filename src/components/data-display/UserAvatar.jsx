@@ -62,7 +62,7 @@ export default function UserAvatar({
         fontSize: Math.max(11, Math.round(pixels * 0.36)),
         fontWeight: 600,
         bgcolor: 'primary.surface',
-        color: 'primary.dark',
+        color: 'primary.light',
         ...sx,
       }}
       {...rest}

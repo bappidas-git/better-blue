@@ -69,7 +69,7 @@ function AccountSummary({ user }) {
               fontSize: '0.6875rem',
               fontWeight: 600,
               bgcolor: 'primary.surface',
-              color: 'primary.dark',
+              color: 'primary.light',
             }}
           />
           <Typography variant="caption" color="text.secondary" noWrap>
@@ -157,7 +157,7 @@ const desktopLinkSx = {
   px: 1.75,
   color: 'text.secondary',
   '&:hover': { color: 'text.primary' },
-  '&.active': { color: 'primary.dark', backgroundColor: 'primary.surface' },
+  '&.active': { color: 'primary.light', backgroundColor: 'primary.surface' },
 }
 
 const drawerLinkSx = {
@@ -166,7 +166,7 @@ const drawerLinkSx = {
   px: 2,
   color: 'text.primary',
   fontSize: '1rem',
-  '&.active': { color: 'primary.dark', backgroundColor: 'primary.surface' },
+  '&.active': { color: 'primary.light', backgroundColor: 'primary.surface' },
 }
 
 export default function PublicTopNav() {

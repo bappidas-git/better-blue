@@ -140,7 +140,10 @@ export default function MediaLightbox({
           position: 'relative',
           display: 'grid',
           placeItems: 'center',
-          bgcolor: (muiTheme) => alpha(muiTheme.palette.text.primary, 0.94),
+          // A media stage is always a near-black well, whatever the theme's ink
+          // is: on dark, `text.primary` is the *light* token and would blow the
+          // viewer out to white.
+          bgcolor: (muiTheme) => alpha(muiTheme.palette.common.black, 0.9),
           minHeight: { xs: 260, md: 420 },
           p: { xs: 1, md: 2 },
         }}

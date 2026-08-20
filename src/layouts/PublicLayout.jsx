@@ -37,7 +37,9 @@ function SkipToContentLink() {
         display: 'inline-flex',
         alignItems: 'center',
         borderRadius: 1.5,
-        bgcolor: 'primary.main',
+        // The deeper brand shade, not `main`: white on #A855F7 is 3.96:1 and
+        // this is 14px body text.
+        bgcolor: 'primary.dark',
         color: 'primary.contrastText',
         fontWeight: 600,
         fontSize: '0.875rem',

@@ -1,6 +1,7 @@
 /*
  * Global stylesheet — supplements MUI CssBaseline.
- * Color/radius/motion values come from src/styles/tokens.css.
+ * Color/radius/motion values come from src/styles/tokens.css; the usage rules
+ * for the utilities at the bottom live in docs/theme-v2.md.
  */
 
 /* Fonts — self-hosted via @fontsource, no external font CDN. */
@@ -44,9 +45,10 @@ video {
 }
 
 /* Visible keyboard focus everywhere (MUI ButtonBase gets the same ring via
-   the theme's Mui-focusVisible override). */
+   the theme's Mui-focusVisible override). The light purple clears 6.6:1 on
+   every one of the three dark surfaces. */
 :focus-visible {
-  outline: 2px solid var(--bb-primary);
+  outline: 2px solid var(--bb-primary-light);
   outline-offset: 2px;
 }
 
@@ -55,7 +57,21 @@ video {
   color: var(--bb-text);
 }
 
-/* Thin, quiet scrollbars. */
+/* Chrome paints autofilled fields with its own near-white background, which
+   punches a light hole straight through the dark theme. The inset shadow is
+   the only way to repaint it. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--bb-text);
+  -webkit-box-shadow: 0 0 0 1000px var(--bb-field) inset;
+  box-shadow: 0 0 0 1000px var(--bb-field) inset;
+  caret-color: var(--bb-text);
+}
+
+/* Thin, quiet scrollbars — a light track on the dark surface. */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--bb-divider) transparent;
@@ -76,7 +92,73 @@ video {
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background-color: var(--bb-text-secondary);
+  background-color: var(--bb-primary-dark);
+}
+
+/* ---------------------------------------------------------------------------
+   Animated gradient
+   ---------------------------------------------------------------------------
+   One keyframe drives every animated brand gradient. The gradient token has two
+   stops and the position ping-pongs 0% → 100% → 0%, so the loop has no seam and
+   no direction flip. Always pair it with `background-size: 200% 200%` — at the
+   default `auto` there is nothing to slide.
+*/
+@keyframes bb-gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Gradient-filled text. Display sizes only (h1–h3 / ≥24px): the fill runs from
+   #A855F7 to #EC4899, which is AA-large on the dark surfaces and never AA for
+   body copy. Never use it for a paragraph, a label, or a control. */
+.bb-gradient-text {
+  background-image: var(--bb-gradient-brand-animated);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: bb-gradient-shift var(--bb-duration-gradient) var(--bb-ease) infinite;
+}
+
+/* 1px animated gradient border. Two backgrounds on one box: the fill is clipped
+   to the padding box, the gradient to the border box, so the border *is* the
+   gradient. Override --bb-gradient-border-bg when the element sits on a surface
+   other than the elevated one. */
+.bb-gradient-border {
+  --bb-gradient-border-bg: var(--bb-elevated);
+
+  border: 1px solid transparent;
+  border-radius: var(--bb-radius-lg);
+  background-image:
+    linear-gradient(var(--bb-gradient-border-bg), var(--bb-gradient-border-bg)),
+    var(--bb-gradient-brand-animated);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  background-size:
+    auto,
+    200% 200%;
+  animation: bb-gradient-shift var(--bb-duration-gradient) var(--bb-ease) infinite;
+}
+
+/* Dark glassmorphism surface — a translucent pane over whatever it covers. Give
+   it something to blur (an AmbientGlow, an image, a scrolling page); over a flat
+   surface it is just a 4% white wash. */
+.bb-glass {
+  background-color: var(--bb-glass-bg);
+  backdrop-filter: blur(var(--bb-glass-blur));
+  -webkit-backdrop-filter: blur(var(--bb-glass-blur));
+  border: 1px solid var(--bb-glass-border);
+  border-radius: var(--bb-radius-lg);
 }
 
 /* Reduced motion: zero out non-Framer CSS effects. Framer Motion honors the
@@ -89,5 +171,14 @@ video {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* The utilities above stay fully rendered — only the shift stops. The
+     gradient is pinned to its starting position so the fill and the border are
+     the plain brand gradient, and nothing above is left mid-sweep. */
+  .bb-gradient-text,
+  .bb-gradient-border {
+    animation: none !important;
+    background-position: 0% 50%;
   }
 }

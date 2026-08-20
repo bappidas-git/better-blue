@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0B0710" />
+    <!-- The page background, restated here so the first paint is already dark:
+         in dev the bundle injects styles from JS, and without this the browser
+         flashes its own white canvas first. Mirrors --bb-bg. -->
+    <style>
+      html {
+        background-color: #0b0710;
+      }
+    </style>
     <meta
       name="description"
       content="BetterBlue is a professional marketplace where businesses commission trusted creators for commercial photos, videos, and UGC marketing content."

@@ -14,10 +14,20 @@ Start here.
 | to understand the money | [`payments.md`](payments.md) |
 | to verify the product works | [`e2e-walkthrough.md`](e2e-walkthrough.md) |
 | to know why the code looks like this | [`../prompts/00-architecture-and-rules.md`](../prompts/00-architecture-and-rules.md) |
+| to build a screen that matches the design | [`theme-v2.md`](theme-v2.md) |
 
 ---
 
 ## The documents
+
+### [`theme-v2.md`](theme-v2.md)
+**The visual-token authority.** The Storefront V2 dark theme: the three
+surfaces, the purple/pink/magenta palette with every tint and text shade, the
+gradient, glow and glass tokens, the animation utilities and what reduced motion
+does to them, the measured WCAG table for every pair, the component treatments
+the MUI override sweep applies, and the deliberate exceptions. Supersedes the
+light palette in `prompts/00-architecture-and-rules.md` §6; V2 prompts 02–10
+build on it.
 
 ### [`laravel-migration-guide.md`](laravel-migration-guide.md)
 **The backend handoff.** A ten-step plan for replacing JSON Server with

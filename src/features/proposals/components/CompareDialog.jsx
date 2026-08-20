@@ -176,7 +176,7 @@ function Cell({ row, proposal }) {
               py: 0.25,
               borderRadius: 999,
               bgcolor: 'success.main',
-              color: 'common.white',
+              color: 'success.contrastText',
               fontWeight: 600,
             }}
           >

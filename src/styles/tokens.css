@@ -1,40 +1,70 @@
 /*
- * BetterBlue CSS custom-property tokens.
- * Mirrors the locked design tokens in src/theme/palette.js — the only other
- * place hex values may live (prompts/00-architecture-and-rules.md §6).
- * Intended for CSS Modules and global styles; MUI components consume the
- * theme instead.
+ * BetterBlue CSS custom-property tokens — Storefront V2 dark theme.
+ * Mirrors the locked design tokens in src/theme/palette.js; docs/theme-v2.md is
+ * the written authority for both. These two files (plus the avatar tints in
+ * src/constants/images.js) are the only places hex values may live.
+ * Intended for CSS Modules and global styles; MUI components consume the theme.
+ *
+ * Dark only — there is no light palette and no toggle.
  */
 
 :root {
+  /* Native widgets (scrollbars, autofill, date pickers) follow the theme. */
+  color-scheme: dark;
+
   /* Brand — purple */
-  --bb-primary: #7c3aed;
-  --bb-primary-light: #a78bfa;
-  --bb-primary-dark: #5b21b6;
-  --bb-primary-tint: #ede9fe;
-  --bb-primary-surface: #f5f3ff;
+  --bb-primary: #a855f7;
+  --bb-primary-light: #c084fc;
+  --bb-primary-dark: #7c3aed;
+  --bb-primary-tint: rgba(168, 85, 247, 0.14);
+  --bb-primary-surface: rgba(168, 85, 247, 0.07);
 
   /* Brand — pink */
   --bb-secondary: #ec4899;
-  --bb-secondary-light: #f9a8d4;
+  --bb-secondary-light: #f472b6;
   --bb-secondary-dark: #be185d;
-  --bb-secondary-surface: #fdf2f8;
+  --bb-secondary-tint: rgba(236, 72, 153, 0.14);
+  --bb-secondary-surface: rgba(236, 72, 153, 0.07);
+
+  /* Brand — magenta accent (the third hue, between purple and pink) */
+  --bb-accent: #d946ef;
+  --bb-accent-light: #e879f9;
+  --bb-accent-dark: #a21caf;
 
   /* Gradient — accent use only (CTAs, logo, small highlights) */
-  --bb-gradient-brand: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+  --bb-gradient-brand: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  /* Same stops; pair with background-size: 200% 200% + bb-gradient-shift. */
+  --bb-gradient-brand-animated: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
 
-  /* Neutrals */
-  --bb-bg: #fafafc;
-  --bb-paper: #ffffff;
-  --bb-text: #171223;
-  --bb-text-secondary: #6e6880;
-  --bb-divider: #e5e2ec;
+  /* Glow — interactive emphasis only, never behind body text */
+  --bb-glow-purple: 0 0 24px rgba(168, 85, 247, 0.35);
+  --bb-glow-pink: 0 0 24px rgba(236, 72, 153, 0.3);
 
-  /* Semantic */
-  --bb-success: #16a34a;
-  --bb-warning: #f59e0b;
-  --bb-error: #dc2626;
-  --bb-info: #0ea5e9;
+  /* Glass — dark glassmorphism surface pair */
+  --bb-glass-bg: rgba(255, 255, 255, 0.04);
+  --bb-glass-border: rgba(236, 72, 153, 0.14);
+  --bb-glass-blur: 16px;
+
+  /* Neutrals — three surfaces, page → paper → elevated */
+  --bb-bg: #0b0710;
+  --bb-paper: #151020;
+  --bb-elevated: #1d1530;
+  --bb-field: #171126;
+  --bb-backdrop: rgba(6, 3, 10, 0.7);
+  --bb-text: #f5f2fa;
+  --bb-text-secondary: #b8aecb;
+  --bb-text-disabled: #6e6486;
+  --bb-divider: #2a2140;
+
+  /* Semantic — dark-tuned. `-text` is the shade a label uses on a dark surface. */
+  --bb-success: #34d399;
+  --bb-success-text: #10b981;
+  --bb-warning: #fbbf24;
+  --bb-warning-text: #f59e0b;
+  --bb-error: #f87171;
+  --bb-error-text: #ef4444;
+  --bb-info: #38bdf8;
+  --bb-info-text: #0ea5e9;
 
   /* Radii — buttons/inputs 10, base 12, cards 16, dialogs/sheets 20 */
   --bb-radius-sm: 10px;
@@ -43,15 +73,18 @@
   --bb-radius-xl: 20px;
   --bb-radius-pill: 999px;
 
-  /* Elevation — 3 subtle levels (theme.customShadows) */
-  --bb-shadow-1: 0 1px 2px rgba(23, 18, 35, 0.05), 0 1px 3px rgba(23, 18, 35, 0.06);
-  --bb-shadow-2: 0 6px 16px rgba(23, 18, 35, 0.08);
-  --bb-shadow-3: 0 16px 40px rgba(23, 18, 35, 0.14);
+  /* Elevation — 3 levels (theme.customShadows). Deep black, because a 5%
+     ink shadow is invisible on a near-black page. */
+  --bb-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.36);
+  --bb-shadow-2: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --bb-shadow-3: 0 24px 60px rgba(0, 0, 0, 0.66);
 
   /* Motion — mirrors src/theme/motionTokens.js */
   --bb-duration-fast: 150ms;
   --bb-duration-base: 250ms;
+  --bb-duration-lift: 200ms;
   --bb-duration-slow: 400ms;
   --bb-duration-hero: 650ms;
+  --bb-duration-gradient: 8s;
   --bb-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }

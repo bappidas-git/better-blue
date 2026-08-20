@@ -35,7 +35,7 @@ function StatTile({ label, value, isLoading }) {
       data-landing-reveal
       sx={{ textAlign: { xs: 'left', md: 'center' }, minWidth: 0 }}
     >
-      <Typography variant="h2" component="p" sx={{ color: 'primary.dark' }}>
+      <Typography variant="h2" component="p" sx={{ color: 'primary.light' }}>
         {isLoading ? (
           <Skeleton variant="text" width="4ch" sx={{ display: 'inline-block' }} />
         ) : (

@@ -76,7 +76,7 @@ export default function MessageBubble({ message, author, isOwn }) {
                 display: 'grid',
                 placeItems: 'center',
                 bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
-                color: 'primary.dark',
+                color: 'primary.light',
               }}
             >
               <Icon icon="solar:shield-user-linear" width={20} />

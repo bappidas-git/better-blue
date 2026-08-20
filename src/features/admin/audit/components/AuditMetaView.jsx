@@ -239,7 +239,7 @@ function ValueDelta({ label, from, to }) {
             py: 0.25,
             borderRadius: 1,
             bgcolor: 'primary.surface',
-            color: 'primary.dark',
+            color: 'primary.light',
             typography: 'body2',
             fontWeight: 600,
             wordBreak: 'break-word',

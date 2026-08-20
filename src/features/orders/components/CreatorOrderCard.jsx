@@ -169,7 +169,7 @@ export default function CreatorOrderCard({ order, buyer }) {
               <Typography
                 variant="body2"
                 sx={{
-                  color: progress.accent ? 'primary.dark' : 'text.secondary',
+                  color: progress.accent ? 'primary.light' : 'text.secondary',
                   fontWeight: progress.accent ? 600 : 400,
                 }}
               >

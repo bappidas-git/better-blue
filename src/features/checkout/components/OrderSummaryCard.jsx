@@ -137,7 +137,7 @@ export default function OrderSummaryCard({
             py: 1.5,
           }}
         >
-          <Box sx={{ color: 'primary.dark', display: 'flex', mt: 0.125 }}>
+          <Box sx={{ color: 'primary.light', display: 'flex', mt: 0.125 }}>
             <Icon icon="solar:shield-check-bold" width={20} aria-hidden="true" />
           </Box>
           <Box>

@@ -190,7 +190,8 @@ export default function SubjectPreview({ subject, subjectType, title }) {
           placeItems: zoom === ZOOM.FIT ? 'center' : 'start',
           height: FRAME_HEIGHT,
           overflow: zoom === ZOOM.FIT ? 'hidden' : 'auto',
-          bgcolor: (theme) => alpha(theme.palette.text.primary, 0.94),
+          // Near-black stage — `text.primary` is the light ink on this theme.
+          bgcolor: (theme) => alpha(theme.palette.common.black, 0.9),
         }}
       >
         {isBroken || !active?.src ? (

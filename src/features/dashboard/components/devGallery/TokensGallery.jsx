@@ -29,6 +29,7 @@ import {
 import Logo from '@/components/brand/Logo'
 import StatusChip from '@/components/data-display/StatusChip'
 import UserAvatar from '@/components/data-display/UserAvatar'
+import AmbientGlow from '@/components/motion/AmbientGlow'
 import {
   ACCOUNT_STATUS,
   AFFILIATE_EARNING_STATUS,
@@ -46,7 +47,7 @@ import {
   categoryImageUrl,
   getFallbackCategory,
 } from '@/constants'
-import { brandGradient, palette } from '@/theme/palette'
+import { brandGradient, glassBorder, palette } from '@/theme/palette'
 import {
   formatCurrency,
   formatDate,
@@ -76,25 +77,42 @@ const SWATCH_GROUPS = [
     title: 'Secondary — pink',
     items: [
       ['secondary.surface', palette.secondary.surface],
+      ['secondary.lighter', palette.secondary.lighter],
       ['secondary.light', palette.secondary.light],
       ['secondary.main', palette.secondary.main],
       ['secondary.dark', palette.secondary.dark],
     ],
   },
   {
-    title: 'Semantic',
+    title: 'Accent — magenta',
     items: [
-      ['success.main', palette.success.main],
-      ['warning.main', palette.warning.main],
-      ['error.main', palette.error.main],
-      ['info.main', palette.info.main],
+      ['accent.surface', palette.accent.surface],
+      ['accent.lighter', palette.accent.lighter],
+      ['accent.light', palette.accent.light],
+      ['accent.main', palette.accent.main],
+      ['accent.dark', palette.accent.dark],
     ],
   },
   {
-    title: 'Neutrals',
+    title: 'Semantic — main fills the dot, dark paints the label',
+    items: [
+      ['success.main', palette.success.main],
+      ['success.dark', palette.success.dark],
+      ['warning.main', palette.warning.main],
+      ['warning.dark', palette.warning.dark],
+      ['error.main', palette.error.main],
+      ['error.dark', palette.error.dark],
+      ['info.main', palette.info.main],
+      ['info.dark', palette.info.dark],
+    ],
+  },
+  {
+    title: 'Neutrals — page, paper, elevated',
     items: [
       ['background.default', palette.background.default],
       ['background.paper', palette.background.paper],
+      ['background.elevated', palette.background.elevated],
+      ['background.input', palette.background.input],
       ['text.primary', palette.text.primary],
       ['text.secondary', palette.text.secondary],
       ['text.disabled', palette.text.disabled],
@@ -200,6 +218,9 @@ const TONE_SAMPLES = [
   },
 ]
 
+/** Every placement AmbientGlow ships with, rendered side by side below. */
+const AMBIENT_PLACEMENTS = ['hero', 'top', 'center', 'bottom']
+
 const AVATAR_SAMPLES = ['Ava Martinez', 'Marcus Bell', 'Verde Kitchen', 'Nimbus Fitness', 'Atlas Travel Co']
 
 const IMAGE_SAMPLES = [
@@ -245,6 +266,34 @@ function Swatch({ label, value, background }) {
   )
 }
 
+/** A glow token is a shadow, not a fill — so it is shown lit rather than filled. */
+function GlowSwatch({ label, value, shadowKey }) {
+  return (
+    <Stack spacing={0.75}>
+      <Box
+        role="img"
+        aria-label={`${label} glow sample`}
+        sx={{
+          height: 64,
+          borderRadius: 1,
+          bgcolor: 'background.elevated',
+          border: 1,
+          borderColor: 'divider',
+          boxShadow: (theme) => theme.customShadows[shadowKey],
+        }}
+      />
+      <Typography variant="subtitle2">{label}</Typography>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}
+      >
+        {value}
+      </Typography>
+    </Stack>
+  )
+}
+
 function TabsDemo() {
   const [tab, setTab] = useState(0)
   return (
@@ -261,7 +310,7 @@ export default function TokensGallery() {
     <Stack spacing={{ xs: 6, md: 8 }} divider={<Divider />}>
       <GalleryBlock
         title="Color tokens"
-        caption="Neutral surfaces carry the UI; purple/pink appears as disciplined accents. The gradient is reserved for CTAs, the logo, and small highlights."
+        caption="Dark only — three surfaces (page #0B0710, paper #151020, elevated #1D1530) carry the UI, and purple/pink/magenta appear as vibrant accents. The tints are alpha washes so they composite correctly on all three. The gradient is reserved for CTAs, the logo, and small highlights."
       >
         <Stack spacing={4}>
           {SWATCH_GROUPS.map((group) => (
@@ -288,20 +337,130 @@ export default function TokensGallery() {
           ))}
           <Box>
             <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-              Brand gradient
+              Brand gradient & glow
             </Typography>
             <Box
               sx={{
                 display: 'grid',
                 gap: 2,
-                gridTemplateColumns: { xs: '1fr', md: '2fr 3fr' },
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
               }}
             >
               <Swatch
                 label="brandGradient"
-                value="135deg · #7C3AED → #EC4899"
+                value="135deg · #A855F7 → #EC4899"
                 background={brandGradient}
               />
+              <GlowSwatch
+                label="customShadows.glowPurple"
+                value="0 0 24px rgba(168,85,247,0.35)"
+                shadowKey="glowPurple"
+              />
+              <GlowSwatch
+                label="customShadows.glowPink"
+                value="0 0 24px rgba(236,72,153,0.30)"
+                shadowKey="glowPink"
+              />
+            </Box>
+          </Box>
+        </Stack>
+      </GalleryBlock>
+
+      <GalleryBlock
+        title="Surfaces, glass & animated gradients"
+        caption="The V2 utilities from src/styles/global.css plus AmbientGlow. The gradient text and border sweep on an 8s loop; under prefers-reduced-motion they render as a static gradient. Glow is interactive emphasis only — never behind body copy."
+      >
+        <Stack spacing={4}>
+          <Box>
+            <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+              .bb-gradient-text — display sizes only
+            </Typography>
+            <Typography variant="h2" component="p" className="bb-gradient-text">
+              Content that converts
+            </Typography>
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+              .bb-gradient-border
+            </Typography>
+            <Box
+              className="bb-gradient-border"
+              sx={{ p: 3, maxWidth: 420, display: 'grid', gap: 0.5 }}
+            >
+              <Typography variant="subtitle2">Featured creator</Typography>
+              <Typography variant="body2" color="text.secondary">
+                A 1px animated gradient edge, drawn with a padding-box/border-box double
+                background — no pseudo-element, no extra DOM.
+              </Typography>
+            </Box>
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+              .bb-glass over AmbientGlow
+            </Typography>
+            <Box
+              sx={{
+                position: 'relative',
+                overflow: 'hidden',
+                borderRadius: 3,
+                minHeight: 240,
+                display: 'grid',
+                placeItems: 'center',
+                p: { xs: 2, md: 4 },
+                bgcolor: 'background.default',
+              }}
+            >
+              <AmbientGlow placement="hero" intensity="strong" />
+              <Box
+                className="bb-glass"
+                sx={{ position: 'relative', p: 3, maxWidth: 420, display: 'grid', gap: 0.5 }}
+              >
+                <Typography variant="subtitle2">Escrow-protected payment</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Glass needs something behind it to blur. Over a flat surface it degrades to a
+                  4% white wash with a {glassBorder} hairline, which is still a valid card edge.
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+              AmbientGlow placements
+            </Typography>
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+              }}
+            >
+              {AMBIENT_PLACEMENTS.map((placement) => (
+                <Box
+                  key={placement}
+                  sx={{
+                    position: 'relative',
+                    overflow: 'hidden',
+                    borderRadius: 2,
+                    minHeight: 140,
+                    border: 1,
+                    borderColor: 'divider',
+                    bgcolor: 'background.default',
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}
+                >
+                  <AmbientGlow placement={placement} intensity="medium" size="70%" />
+                  <Typography
+                    variant="caption"
+                    sx={{ position: 'relative', fontFamily: 'ui-monospace, Menlo, monospace' }}
+                  >
+                    {placement}
+                  </Typography>
+                </Box>
+              ))}
             </Box>
           </Box>
         </Stack>
@@ -322,7 +481,7 @@ export default function TokensGallery() {
 
       <GalleryBlock
         title="Buttons"
-        caption="Radius 10, weight 600, no uppercase. The gradient variant is the primary CTA treatment — hover lifts by 1px with a soft shadow. Tab through to check the focus ring."
+        caption="Radius 10, weight 600, no uppercase. The gradient variant is the primary CTA treatment — it rests with a purple halo and lifts 1px into both glows on hover. Solid buttons sit on the deeper brand shade so white labels clear AA. Tab through to check the #C084FC focus ring."
       >
         <Stack spacing={3}>
           <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
@@ -368,7 +527,7 @@ export default function TokensGallery() {
 
       <GalleryBlock
         title="Chips"
-        caption="Soft tinted fills — brand colors use their locked tints, semantic colors a 12% wash with darkened text."
+        caption="Soft tinted fills — a 14% wash of the hue with the brightened `light` shade as the label, which is the dark-theme inverse of the light theme's darkened text on a pale tint."
       >
         <Stack spacing={2}>
           <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
@@ -391,7 +550,7 @@ export default function TokensGallery() {
 
       <GalleryBlock
         title="Alerts"
-        caption="Standard severity alerts on soft tinted surfaces, radius 12."
+        caption="Standard severity alerts on dark tinted surfaces, radius 12. The icon inherits the label colour so each alert reads as one hue."
       >
         <Stack spacing={2}>
           <Alert severity="success">Delivery accepted — payment released to the creator.</Alert>
@@ -403,7 +562,7 @@ export default function TokensGallery() {
 
       <GalleryBlock
         title="Cards & elevation"
-        caption="Cards: radius 16, 1px divider border, shadow level 1. Three subtle elevation levels only."
+        caption="Cards: radius 16 on the elevated surface, 1px glass border, shadow level 1. Cards that own a CardActionArea lift 3px into a purple glow on hover; static cards stay put. Three elevation levels only, driven by deep black rather than ink."
       >
         <Box
           sx={{
@@ -462,7 +621,7 @@ export default function TokensGallery() {
 
       <GalleryBlock
         title="App bar, tabs & tooltip"
-        caption="Neutral blurless app bar, pill tab indicator, ink tooltip. Dialogs and toasts now live in the Components tab, built on ResponsiveDialog and ToastProvider."
+        caption="Translucent blurred app bar, gradient pill tab indicator, elevated tooltip. Dialogs and toasts live in the Components tab, built on ResponsiveDialog and ToastProvider."
       >
         <Stack spacing={3}>
           <Box sx={{ borderRadius: 1, overflow: 'hidden', border: 1, borderColor: 'divider' }}>
@@ -490,7 +649,7 @@ export default function TokensGallery() {
 
       <GalleryBlock
         title="Table primitives"
-        caption="Divider borders and a muted header row. Feature pages use DataTable (Components tab) rather than raw MUI tables."
+        caption="Divider borders and an opaque elevated header row — opaque because DataTable's header is sticky. Rows tint purple on hover. Feature pages use DataTable (Components tab) rather than raw MUI tables."
       >
         <TableContainer component={Paper} variant="outlined">
           <Table aria-label="Sample orders table" sx={{ minWidth: 560 }}>
@@ -520,7 +679,7 @@ export default function TokensGallery() {
 
       <GalleryBlock
         title="Logo"
-        caption="Temporary geometric mark — gradient tile with an abstract B, wordmark in Plus Jakarta Sans 700. Swappable via src/components/brand/Logo.jsx + src/assets/brand/."
+        caption="Temporary geometric mark — gradient tile with an abstract B, wordmark in Plus Jakarta Sans 700 with the neutral half on the light text token. Swappable via src/components/brand/Logo.jsx + src/assets/brand/."
       >
         <Stack spacing={3}>
           <Stack direction="row" spacing={4} alignItems="center" flexWrap="wrap" useFlexGap>
