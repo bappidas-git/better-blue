@@ -20,7 +20,10 @@ import Typography from '@mui/material/Typography'
  * @param {React.ReactNode} props.children body content (scrolls when it overflows)
  * @param {React.ReactNode} [props.actions] footer content, pinned to the bottom
  * @param {number} [props.width=420] desktop width in px (full width below md)
- * @param {'left'|'right'} [props.anchor='right'] which edge it slides from on desktop
+ * @param {'left'|'right'|'bottom'} [props.anchor='right'] which edge it slides
+ *   from. `bottom` turns it into a bottom sheet and expects the caller to pass
+ *   its own `PaperProps` — the default paper is sized for a side drawer
+ *   (`features/feeds/components/FeedFilterSheet.jsx`)
  */
 export default function SideSheet({
   open,
