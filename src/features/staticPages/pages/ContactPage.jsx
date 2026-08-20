@@ -135,7 +135,7 @@ export default function ContactPage() {
                       display: 'grid',
                       placeItems: 'center',
                       bgcolor: 'success.main',
-                      color: 'common.white',
+                      color: 'success.contrastText',
                     }}
                   >
                     <Icon icon="tabler:check" width={28} />

@@ -5,6 +5,7 @@ import { Box, Button, Card, CardContent, Divider, Paper, Stack, Typography } fro
 import { motion, useReducedMotion } from 'framer-motion'
 
 import StatCard from '@/components/data-display/StatCard'
+import AmbientGlow from '@/components/motion/AmbientGlow'
 import AnimatedNumber from '@/components/motion/AnimatedNumber'
 import FadeInView from '@/components/motion/FadeInView'
 import PageTransition from '@/components/motion/PageTransition'
@@ -89,7 +90,7 @@ function PresetsDemo() {
             variant="outlined"
             sx={{ p: 2.5 }}
           >
-            <Typography variant="subtitle2" color="primary.dark">
+            <Typography variant="subtitle2" color="primary.light">
               {tile.preset}
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -247,6 +248,38 @@ export default function MotionGallery() {
             <strong>{prefersReducedMotion ? 'on' : 'off'}</strong>
           </Typography>
         </Paper>
+      </GalleryBlock>
+
+      <GalleryBlock
+        title="AmbientGlow"
+        caption="Positioned radial blobs behind a hero or section header — pure CSS, no JS loop, aria-hidden and pointer-events: none, clipped to the parent so a blob can never widen a 360px page. Static by design, so reduced motion needs no special case."
+      >
+        <Box
+          sx={{
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: 3,
+            border: 1,
+            borderColor: 'divider',
+            bgcolor: 'background.default',
+            px: { xs: 3, md: 6 },
+            py: { xs: 6, md: 8 },
+          }}
+        >
+          <AmbientGlow placement="hero" intensity="medium" />
+          <Stack spacing={1.5} sx={{ position: 'relative', maxWidth: 520 }}>
+            <Typography variant="overline" component="p" color="secondary.light">
+              Behind a hero
+            </Typography>
+            <Typography variant="h3" component="p">
+              Commission content your brand can trust
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              The glow sits under the copy at z-index 0; everything above it needs
+              position: relative to stay on top.
+            </Typography>
+          </Stack>
+        </Box>
       </GalleryBlock>
 
       <GalleryBlock

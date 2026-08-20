@@ -261,7 +261,7 @@ export default function DisputeDetailPage() {
                 display: 'grid',
                 placeItems: 'center',
                 bgcolor: 'primary.lighter',
-                color: 'primary.dark',
+                color: 'primary.light',
               }}
             >
               <Icon icon="solar:shield-user-linear" width={22} />

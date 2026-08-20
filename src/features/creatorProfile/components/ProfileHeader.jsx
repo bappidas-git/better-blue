@@ -12,7 +12,6 @@ import MenuItem from '@mui/material/MenuItem'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
-import { alpha } from '@mui/material/styles'
 import { visuallyHidden } from '@mui/utils'
 import { Link as RouterLink } from 'react-router-dom'
 
@@ -328,7 +327,7 @@ export default function ProfileHeader({ profile, categoryNames = {}, cta, onRepo
           borderRadius: 2,
           border: 1,
           borderColor: 'divider',
-          bgcolor: (theme) => alpha(theme.palette.primary.surface, 0.6),
+          bgcolor: 'primary.surface',
         }}
       >
         {ratingCount > 0 ? (

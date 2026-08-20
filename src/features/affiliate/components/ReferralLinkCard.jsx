@@ -98,7 +98,7 @@ export default function ReferralLinkCard({ profile }) {
                 fontFamily: 'monospace',
                 fontSize: { xs: '0.875rem', md: '1rem' },
                 wordBreak: 'break-all',
-                color: 'primary.dark',
+                color: 'primary.light',
               }}
             >
               {url}

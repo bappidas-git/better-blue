@@ -47,7 +47,7 @@ const navItemSx = (collapsed) => ({
   '&:hover': { backgroundColor: 'action.hover', color: 'text.primary' },
   '&.active': {
     backgroundColor: 'primary.surface',
-    color: 'primary.dark',
+    color: 'primary.light',
     '& .MuiListItemIcon-root': { color: 'primary.main' },
     '&:hover': { backgroundColor: 'primary.lighter' },
   },
@@ -295,7 +295,7 @@ export default function SidebarNav({
                     mt: 0.25,
                     fontSize: '0.625rem',
                     bgcolor: 'primary.surface',
-                    color: 'primary.dark',
+                    color: 'primary.light',
                   }}
                 />
               </Box>

@@ -136,7 +136,7 @@ function PublishedOverlay() {
             display: 'grid',
             placeItems: 'center',
             bgcolor: 'success.main',
-            color: 'common.white',
+            color: 'success.contrastText',
           }}
         >
           <Icon icon="tabler:check" width={40} aria-hidden="true" />

@@ -1,15 +1,25 @@
-import { alpha, createTheme } from '@mui/material/styles'
+import { createTheme } from '@mui/material/styles'
 
 import { components } from './components'
-import { palette } from './palette'
+import { glowPink, glowPurple, palette } from './palette'
 import { typography } from './typography'
 
-// Three subtle elevation levels only (00 §6) — mirrored in tokens.css.
-const shadowInk = palette.text.primary
+// Elevation on a near-black page cannot lean on a soft ink shadow the way the
+// light theme did — a 5% black blur over #0B0710 is invisible. The dark scale
+// keeps the same three steps but drives them with deep, high-alpha black so the
+// surface separation is real, and pairs them with the brand glow tokens.
 const customShadows = {
-  z1: `0 1px 2px ${alpha(shadowInk, 0.05)}, 0 1px 3px ${alpha(shadowInk, 0.06)}`,
-  z2: `0 6px 16px ${alpha(shadowInk, 0.08)}`,
-  z3: `0 16px 40px ${alpha(shadowInk, 0.14)}`,
+  z1: '0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.36)',
+  z2: '0 8px 24px rgba(0, 0, 0, 0.55)',
+  z3: '0 24px 60px rgba(0, 0, 0, 0.66)',
+
+  /** Neon glow tokens — interactive emphasis only (docs/theme-v2.md §Glow). */
+  glowPurple,
+  glowPink,
+  /** Both glows at once: the strongest emphasis, for hovered/focused CTAs. */
+  glowBrand: `${glowPurple}, ${glowPink}`,
+  /** Ambient lift for a hovered card: depth first, a purple halo second. */
+  cardHover: `0 12px 32px rgba(0, 0, 0, 0.55), ${glowPurple}`,
 }
 
 const theme = createTheme({

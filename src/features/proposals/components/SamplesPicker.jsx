@@ -88,8 +88,14 @@ function Tile({ item, isSelected, isDisabled, onToggle }) {
               borderRadius: '50%',
               display: 'grid',
               placeItems: 'center',
-              bgcolor: isSelected ? 'primary.main' : 'rgba(255, 255, 255, 0.86)',
-              color: isSelected ? 'primary.contrastText' : 'text.secondary',
+              // Over a photo thumbnail, so the unselected chip is a dark scrim
+              // rather than the old near-white disc — on this theme the neutral
+              // text token is *light* and would have vanished into it.
+              bgcolor: (theme) =>
+                isSelected
+                  ? theme.palette.primary.main
+                  : alpha(theme.palette.common.black, 0.62),
+              color: 'common.white',
               boxShadow: 1,
             }}
           >

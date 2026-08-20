@@ -88,7 +88,7 @@ function AccountMenu({ user, profilePath, settingsPath, onLogout }) {
                 height: 20,
                 fontSize: '0.6875rem',
                 bgcolor: 'primary.surface',
-                color: 'primary.dark',
+                color: 'primary.light',
               }}
             />
             <Typography variant="caption" color="text.secondary" noWrap>
@@ -189,7 +189,7 @@ export default function TopBar({
               fontSize: '0.6875rem',
               fontWeight: 600,
               bgcolor: 'primary.surface',
-              color: 'primary.dark',
+              color: 'primary.light',
             }}
           />
         ) : null}

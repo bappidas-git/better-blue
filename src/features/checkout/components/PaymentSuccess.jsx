@@ -76,7 +76,7 @@ function NextStep({ index, icon, title, description }) {
           alignItems: 'center',
           justifyContent: 'center',
           bgcolor: 'primary.lighter',
-          color: 'primary.dark',
+          color: 'primary.light',
         }}
       >
         <Icon icon={icon} width={20} />

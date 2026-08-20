@@ -8,6 +8,12 @@ where a live check was possible.
 **Verdict: no unfixed criticals.** Three items are deferred with justification
 ([§11](#11-deferrals-and-documented-exceptions)); none of them reaches a user as a defect.
 
+> **Colour figures here are historical.** This pass was run against the light
+> palette. Storefront V2 re-themed the product dark; the current tokens and
+> their measured contrast live in [`theme-v2.md`](theme-v2.md). Everything else
+> in this document — forms, dialogs, keyboard journeys, 360px behaviour,
+> loading/empty/error coverage — still describes the shipped app.
+
 ---
 
 ## How the evidence was produced

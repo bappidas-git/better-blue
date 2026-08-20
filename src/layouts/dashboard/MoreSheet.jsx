@@ -81,7 +81,7 @@ export default function MoreSheet({ open, onClose, items = [], badges = {} }) {
                 color: 'text.primary',
                 '&.active': {
                   backgroundColor: 'primary.surface',
-                  color: 'primary.dark',
+                  color: 'primary.light',
                   '& .MuiListItemIcon-root': { color: 'primary.main' },
                 },
               }}
