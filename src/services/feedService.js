@@ -286,6 +286,33 @@ export const feedService = Object.freeze({
     return { feed: { ...request, dealStatus: getFeedDealStatus(request) }, buyer }
   },
 
+  /**
+   * **How many feeds a business has posted** — the figure on the buyer card of
+   * a feed's detail page (V2-08).
+   *
+   * Asks for one row and reads `total` off the envelope, so the answer costs a
+   * single request whatever the business has posted. Counting is all this is
+   * for; the rows come back and are thrown away.
+   *
+   * The same public-status set `listFeeds` uses, so a visitor's count never
+   * includes a draft they cannot open.
+   *
+   * @param {string} buyerId `usr_…` — the account a feed is posted by
+   * @returns {Promise<number>} public feeds by this business
+   *
+   * **Future endpoint:** `GET /feeds?buyer_id=…&per_page=1` → `meta.total`.
+   */
+  async countFeedsByBuyer(buyerId) {
+    if (!buyerId) return 0
+
+    const { total } = await requestService.list({
+      page: 1,
+      limit: 1,
+      filters: { buyerId, status: [...PUBLIC_FEED_STATUSES] },
+    })
+    return Number(total) || 0
+  },
+
   /* —— replies —————————————————————————————————————————————————————————— */
 
   /**
