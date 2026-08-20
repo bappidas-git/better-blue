@@ -1,10 +1,15 @@
 // Landing-page marketplace numbers — `docs/api-contract.md` §7.13.
 //
-// The public home page prints four counts: creator storefronts, categories,
-// completed orders, and briefs posted. No endpoint returns them, so under JSON
-// Server each one is a `_limit=1` request read for its `X-Total-Count` (00 §10,
-// the pattern documented in `adminService`) and the four run in parallel.
-// Laravel replaces the whole function with one cached `GET /stats/landing`.
+// The public home page prints three counts: creator storefronts, completed
+// orders, and briefs posted. No endpoint returns them, so under JSON Server each
+// one is a `_limit=1` request read for its `X-Total-Count` (00 §10, the pattern
+// documented in `adminService`) and the three run in parallel. Laravel replaces
+// the whole function with one cached `GET /stats/landing`.
+//
+// V2-04 dropped the fourth count — active categories. Categories no longer
+// appear anywhere in the storefront, and a public page that still asked for the
+// taxonomy would be the one request left proving otherwise. The collection, the
+// admin screens, and `categoryService` are untouched.
 //
 // Nothing here throws. A marketing page must render whatever it can, so a count
 // that fails resolves to `null` and the band simply drops that tile — the
@@ -12,7 +17,6 @@
 
 import { ORDER_STATUS } from '@/constants/statuses'
 
-import { categoryService } from './categoryService'
 import { creatorProfileService } from './creatorProfileService'
 import { orderService } from './orderService'
 import { requestService } from './requestService'
@@ -43,7 +47,6 @@ async function countOrNull(load) {
 /**
  * @typedef {object} LandingStats
  * @property {number|null} creators creator storefronts on the marketplace
- * @property {number|null} categories active categories
  * @property {number|null} completedOrders orders delivered, approved, and paid out
  * @property {number|null} contentRequests briefs buyers have posted
  */
@@ -60,9 +63,8 @@ export const landingService = Object.freeze({
   async getStats({ force = false } = {}) {
     if (cache && !force) return cache
 
-    const [creators, categories, completedOrders, contentRequests] = await Promise.all([
+    const [creators, completedOrders, contentRequests] = await Promise.all([
       countOrNull(async () => (await creatorProfileService.list(COUNT_PARAMS)).total),
-      countOrNull(async () => (await categoryService.listActive()).length),
       countOrNull(
         async () =>
           (
@@ -75,7 +77,7 @@ export const landingService = Object.freeze({
       countOrNull(async () => (await requestService.list(COUNT_PARAMS)).total),
     ])
 
-    const stats = { creators, categories, completedOrders, contentRequests }
+    const stats = { creators, completedOrders, contentRequests }
     if (Object.values(stats).every((value) => value !== null)) cache = stats
     return stats
   },

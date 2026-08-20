@@ -22,7 +22,7 @@ import { distances, durations } from '@/theme/motionTokens'
 // Elements opt in through data attributes rather than selector coupling:
 //   [data-landing-hero-copy]   staggered rise in the hero intro timeline
 //   [data-landing-hero-card]   floating cards: intro rise, then scroll parallax
-//   [data-landing-reveal]      batched scroll reveal, once (sections 3, 5, 7)
+//   [data-landing-reveal]      batched scroll reveal, once (featured, audience…)
 //   [data-landing-connector]   the how-it-works rail, drawn left to right
 
 gsap.registerPlugin(ScrollTrigger)
@@ -47,13 +47,22 @@ const REDUCED_MOTION_OFF = '(prefers-reduced-motion: no-preference)'
  * to. Runs once on mount and reverts everything — tweens, ScrollTriggers, and
  * the inline styles they wrote — when the page unmounts.
  *
+ * The scenes come in two waves, because the hero's cards do not exist at mount:
+ * they are featured creators fetched from the API (V2-04 §3). The page scenes
+ * bind on mount; the card scenes bind when `heroCardsReady` flips, which the
+ * hero raises from a layout effect so the cards are still unpainted when their
+ * hidden "from" state is written.
+ *
+ * @param {object} [options]
+ * @param {boolean} [options.heroCardsReady=false] the hero's creator cards are
+ *   in the DOM
  * @returns {React.MutableRefObject<HTMLElement|null>} ref for the page root
  *
  * @example
- * const rootRef = useLandingAnimations()
+ * const rootRef = useLandingAnimations({ heroCardsReady })
  * return <Box ref={rootRef}>…</Box>
  */
-export function useLandingAnimations() {
+export function useLandingAnimations({ heroCardsReady = false } = {}) {
   const rootRef = useRef(null)
 
   // Layout effect, not effect: the hidden "from" states must be written before
@@ -67,39 +76,18 @@ export function useLandingAnimations() {
     const mm = gsap.matchMedia()
 
     mm.add(REDUCED_MOTION_OFF, () => {
-      /* Hero intro — copy rises first, the card composition settles behind it */
+      /* Hero intro — the copy column rises, line by line */
       const copy = query('[data-landing-hero-copy]')
-      const cards = query('[data-landing-hero-card]')
-
-      const intro = gsap.timeline({
-        defaults: { ease: EASE, duration: seconds(durations.hero) },
-      })
 
       if (copy.length) {
-        intro.from(copy, { y: distances.lg, opacity: 0, stagger: 0.08 })
-      }
-      if (cards.length) {
-        intro.from(
-          cards,
-          { y: 56, opacity: 0, scale: 0.94, stagger: 0.09 },
-          // Overlap the copy so the hero reads as one movement, not two.
-          copy.length ? '-=0.45' : 0
-        )
-      }
-
-      /* Hero parallax — a gentle drift, scrubbed to the scroll position */
-      cards.forEach((card, index) => {
-        gsap.to(card, {
-          yPercent: PARALLAX_DEPTH[index % PARALLAX_DEPTH.length],
-          ease: 'none',
-          scrollTrigger: {
-            trigger: card.closest('[data-landing-hero-stage]') ?? card,
-            start: 'top top',
-            end: 'bottom top',
-            scrub: 0.6,
-          },
+        gsap.from(copy, {
+          y: distances.lg,
+          opacity: 0,
+          stagger: 0.08,
+          ease: EASE,
+          duration: seconds(durations.hero),
         })
-      })
+      }
 
       /* Scroll reveals — one batch for every opted-in block on the page */
       const reveals = query('[data-landing-reveal]')
@@ -147,6 +135,55 @@ export function useLandingAnimations() {
 
     return () => mm.revert()
   }, [])
+
+  // The hero's floating cards, once they have data. Their own matchMedia
+  // instance rather than the one above: this wave binds on a later commit, and
+  // an already-reverted context cannot take new tweens.
+  useLayoutEffect(() => {
+    if (!heroCardsReady) return undefined
+
+    const root = rootRef.current
+    if (!root) return undefined
+
+    const cards = Array.from(root.querySelectorAll('[data-landing-hero-card]'))
+    if (cards.length === 0) return undefined
+
+    const mm = gsap.matchMedia()
+
+    mm.add(REDUCED_MOTION_OFF, () => {
+      /* Intro — the composition settles in behind the copy */
+      gsap.from(cards, {
+        y: 56,
+        opacity: 0,
+        scale: 0.94,
+        stagger: 0.09,
+        ease: EASE,
+        duration: seconds(durations.hero),
+      })
+
+      /* Parallax — a gentle drift, scrubbed to the scroll position */
+      cards.forEach((card, index) => {
+        gsap.to(card, {
+          yPercent: PARALLAX_DEPTH[index % PARALLAX_DEPTH.length],
+          ease: 'none',
+          scrollTrigger: {
+            trigger: card.closest('[data-landing-hero-stage]') ?? card,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 0.6,
+          },
+        })
+      })
+
+      // The cards just replaced skeletons of the same size, but the photographs
+      // are still arriving: re-measure once the frame has settled.
+      const refresh = requestAnimationFrame(() => ScrollTrigger.refresh())
+
+      return () => cancelAnimationFrame(refresh)
+    })
+
+    return () => mm.revert()
+  }, [heroCardsReady])
 
   return rootRef
 }
