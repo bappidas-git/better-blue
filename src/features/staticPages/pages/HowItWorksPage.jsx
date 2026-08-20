@@ -122,7 +122,7 @@ export default function HowItWorksPage() {
 
       <InfoCtaBand
         title="Ready to brief your next campaign?"
-        description="Publishing a content request is free, and you only pay once you have accepted a proposal you are happy with."
+        description="Publishing a feed is free, and you only pay once you have accepted a proposal you are happy with."
         primary={{ label: 'Join BetterBlue', to: paths.REGISTER, icon: 'tabler:file-text' }}
         secondary={{ label: 'See pricing', to: paths.PRICING, icon: 'tabler:receipt' }}
       />

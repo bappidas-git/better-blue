@@ -20,7 +20,7 @@ const STEPS = [
   {
     key: 'post',
     icon: 'tabler:file-text',
-    title: 'Post a request',
+    title: 'Post a feed',
     description:
       'Describe the content you need, the budget you have, and the usage rights the work has to carry.',
   },

@@ -1,75 +1,107 @@
-import { Icon } from '@iconify/react'
-import Box from '@mui/material/Box'
 import Container from '@mui/material/Container'
 import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
 
-import PageHeader from '@/components/layout/PageHeader'
-import AmbientGlow from '@/components/motion/AmbientGlow'
+import { ROLES } from '@/constants/roles'
+import InfoCtaBand from '@/features/staticPages/components/InfoCtaBand'
+import InfoSection from '@/features/staticPages/components/InfoSection'
+import useApiQuery from '@/hooks/useApiQuery'
 import useDocumentTitle from '@/hooks/useDocumentTitle'
+import { paths } from '@/routes/paths'
+import { SETTINGS_FALLBACK, settingsService } from '@/services'
+import { formatCurrency } from '@/utils/formatters'
 
-// TEMP: replaced in V2-10.
+import WalletBenefits from '../components/WalletBenefits'
+import WalletExample from '../components/WalletExample'
+import WalletFaq from '../components/WalletFaq'
+import WalletHero from '../components/WalletHero'
+import WalletSteps from '../components/WalletSteps'
+import { WALLET_CTA } from '../content/wallet'
+import { buildWalletExample, WALLET_EXAMPLE_INPUT } from '../utils/walletExample'
+
+// **Wallet** — how paying for an order on BetterBlue actually works (V2-10).
 //
-// The Wallet is the sixth item in the storefront nav (V2-02) and the screen
-// behind it is not built yet, so this placeholder holds the route open — a nav
-// item that 404s is worse than one that says "not yet". Nothing here reads or
-// writes anything: no service call, no state, no balance.
+// This replaces the V2-02 stub. It is an *explainer*: there is no balance on
+// this page, no top-up button, and no call into the payment providers. The one
+// request it makes is for the platform's currency, so the worked example is
+// denominated the way Pricing's is — `settingsService` caches its response, so
+// arriving here from Pricing costs nothing. A failure falls back to the bundled
+// default silently: the currency symbol is the only thing at stake, and a
+// warning banner over a teaching example would be noise.
 //
-// It is a `.bb-glass` pane over an `AmbientGlow`, which is the one pairing that
-// makes glass read as glass (docs/theme-v2.md §6 — glass needs something behind
-// it to blur). One glow, on an otherwise empty page, is within the one-per-
-// viewport budget of §5.
+// Layout is the information-page shell taken apart: the hero is full-bleed so
+// its `AmbientGlow` can reach the edges of the viewport, and the sections below
+// sit in the same `lg` container the other storefront pages use. `InfoSection`
+// and `InfoCtaBand` come from `staticPages` so this page's headings and closing
+// panel are the ones How It Works and Pricing already have (00 §16.4).
 
 export default function WalletPage() {
   useDocumentTitle('Wallet')
 
+  const { data, error } = useApiQuery(() => settingsService.getSettings(), [])
+
+  const settings = data ?? (error ? SETTINGS_FALLBACK : null)
+  const currency = settings?.general?.currency ?? SETTINGS_FALLBACK.general.currency
+
+  const { shortfall } = buildWalletExample(WALLET_EXAMPLE_INPUT)
+
+  const money = (amount) => formatCurrency(amount, currency, { hideDecimals: true })
+
   return (
-    <Container maxWidth="md" sx={{ px: { xs: 2, md: 4 }, py: { xs: 4, md: 6 } }}>
-      <PageHeader
-        title="Wallet"
-        subtitle="Your BetterBlue balance, top-ups, and payment history — all in one place."
-      />
+    <>
+      <WalletHero />
 
-      <Box sx={{ position: 'relative', overflow: 'hidden', borderRadius: 4, py: { xs: 4, md: 8 } }}>
-        <AmbientGlow placement="center" intensity="subtle" />
+      <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 }, pb: { xs: 8, md: 12 } }}>
+        <Stack spacing={{ xs: 5, md: 7 }}>
+          <InfoSection
+            id="how-the-wallet-works"
+            title="How the wallet works"
+            description="Four steps, from signing in to a funded order. Nothing is charged until you accept work you want to go ahead with."
+          >
+            <WalletSteps />
+          </InfoSection>
 
-        <Box
-          className="bb-glass"
-          sx={{
-            position: 'relative',
-            p: { xs: 3, md: 5 },
-            maxWidth: 520,
-            mx: 'auto',
-            textAlign: 'center',
-          }}
-        >
-          <Stack spacing={1.5} alignItems="center">
-            <Box
-              aria-hidden="true"
-              sx={{
-                width: 56,
-                height: 56,
-                borderRadius: '50%',
-                display: 'grid',
-                placeItems: 'center',
-                bgcolor: 'primary.surface',
-                color: 'primary.main',
-              }}
-            >
-              <Icon icon="solar:wallet-money-linear" width={28} />
-            </Box>
+          <InfoSection
+            id="worked-example"
+            title="A worked example"
+            description={`A ${money(WALLET_EXAMPLE_INPUT.orderTotal)} order against a ${money(
+              WALLET_EXAMPLE_INPUT.openingBalance
+            )} balance — ${money(shortfall)} short, so a payment link covers the difference.`}
+          >
+            <WalletExample currency={currency} />
+          </InfoSection>
 
-            <Typography variant="h5" component="h2">
-              Wallet — coming in this release series
-            </Typography>
+          <InfoSection
+            id="why-a-wallet"
+            title="Why a wallet"
+            description="One funded balance behind every order, instead of a payment step per brief."
+          >
+            <WalletBenefits />
+          </InfoSection>
 
-            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: '46ch' }}>
-              We are building it now. Until then, funded orders, escrow, and released earnings
-              all live in your dashboard exactly as they do today.
-            </Typography>
-          </Stack>
-        </Box>
-      </Box>
-    </Container>
+          <InfoSection
+            id="wallet-questions"
+            title="Wallet questions"
+            description="The three that come up first. Orders, escrow, and fees are covered in full on How It Works and Pricing."
+          >
+            <WalletFaq />
+          </InfoSection>
+
+          {/* Both CTAs are the storefront's, not a member's: `registerAs` opens
+              the register form with "buyer" already chosen (V2-06), and a
+              signed-in visitor who presses it is sent on by `GuestRoute`
+              exactly as they are from the home page's pair. */}
+          <InfoCtaBand
+            title={WALLET_CTA.title}
+            description={WALLET_CTA.description}
+            primary={{
+              label: 'Register as a Buyer',
+              to: paths.registerAs(ROLES.BUYER),
+              icon: 'tabler:building-store',
+            }}
+            secondary={{ label: 'See pricing', to: paths.PRICING, icon: 'tabler:receipt' }}
+          />
+        </Stack>
+      </Container>
+    </>
   )
 }

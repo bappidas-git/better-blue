@@ -35,8 +35,8 @@ const CreatorProfilePage = lazy(() => import('@/features/creatorProfile/pages/Cr
 const FeedsPage = lazy(() => import('@/features/feeds/pages/FeedsPage'))
 const FeedDetailPage = lazy(() => import('@/features/feeds/pages/FeedDetailPage'))
 
-// Wallet (V2-02) — a stub, so the sixth item in the new top nav has somewhere
-// to land. V2-10 builds the real screen behind the same route.
+// Wallet (V2-10) — the storefront's explainer for wallet-funded orders, behind
+// the sixth item in the top nav. Informational only: no balance, no payment.
 const WalletPage = lazy(() => import('@/features/wallet/pages/WalletPage'))
 
 // Referral capture (Prompt 34) — `/r/:code` stores the code and redirects. It
@@ -85,7 +85,7 @@ export const publicRoutes = [
   { path: paths.FEEDS, element: <FeedsPage /> },
   { path: paths.FEED_DETAIL_PATTERN, element: <FeedDetailPage /> },
 
-  /* Wallet (V2-02 stub, V2-10 builds it). */
+  /* Wallet (V2-10). */
   { path: paths.WALLET, element: <WalletPage /> },
 
   /* V2: alias — the pre-rename board URLs. Redirects rather than deletions, so

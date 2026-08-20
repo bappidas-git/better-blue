@@ -36,7 +36,7 @@ export const paths = Object.freeze({
    */
   FEEDS: '/feeds',
   FEED_DETAIL_PATTERN: '/feeds/:feedId',
-  /** Wallet — stubbed by V2-02 so the new nav never lands on a 404, built in V2-10. */
+  /** Wallet — the storefront's wallet explainer (stubbed by V2-02, built in V2-10). */
   WALLET: '/wallet',
   // V2: alias — the pre-rename board paths. They no longer render the board;
   // `publicRoutes.jsx` mounts them as redirects to their `/feeds` twin so old
