@@ -10,6 +10,13 @@
 
 import { paths } from '@/routes/paths'
 
+/**
+ * The query key carrying the storefront a referral link was shared from
+ * (V2-09 §5). Spelled here and read by `ReferralRedirectPage`, so the two
+ * halves of the round trip cannot drift.
+ */
+export const REFERRAL_CREATOR_PARAM = 'creator'
+
 /** Where the app is served from, e.g. `https://betterblue.test`. */
 function origin() {
   if (typeof window === 'undefined' || !window.location) return ''
@@ -19,12 +26,25 @@ function origin() {
 /**
  * The full, shareable referral URL for a code.
  *
+ * `creatorId` is Storefront V2's addition (`prompts-v2/09` §5): the Promote
+ * button on a creator card shares the member's ordinary referral link with the
+ * storefront that prompted it hung off the end. **The code is still the whole
+ * of the attribution** — `/r/:code` reads the path parameter and nothing else,
+ * so a link with the extra parameter captures exactly as one without it, and a
+ * link that loses it on the way through somebody's messaging app still works.
+ * `ReferralRedirectPage` stores the id alongside the code for a future
+ * "which storefront sent them" report; nothing reads it yet.
+ *
  * @param {string} code an affiliate code, e.g. `'VERDE-K7'`
- * @returns {string} e.g. `https://betterblue.test/r/VERDE-K7`
+ * @param {object} [options]
+ * @param {string} [options.creatorId] `cpr_…` — the storefront being promoted
+ * @returns {string} e.g. `https://betterblue.test/r/VERDE-K7?creator=cpr_ava`
  */
-export function referralUrl(code) {
+export function referralUrl(code, { creatorId } = {}) {
   if (!code) return ''
-  return `${origin()}${paths.referral(code)}`
+
+  const url = `${origin()}${paths.referral(code)}`
+  return creatorId ? `${url}?${REFERRAL_CREATOR_PARAM}=${encodeURIComponent(creatorId)}` : url
 }
 
 /**
@@ -49,11 +69,15 @@ export const SHARE_MESSAGE =
  * @param {string} code the affiliate code
  * @param {object} [options]
  * @param {string} [options.subject] email subject line
+ * @param {string} [options.creatorId] `cpr_…` — see {@link referralUrl}
  * @returns {{key: string, label: string, shortLabel: string, ariaLabel: string, icon: string,
  *   href: string, external: boolean}[]}
  */
-export function shareTargets(code, { subject = 'A marketplace for business content' } = {}) {
-  const url = referralUrl(code)
+export function shareTargets(
+  code,
+  { subject = 'A marketplace for business content', creatorId } = {}
+) {
+  const url = referralUrl(code, { creatorId })
   if (!url) return []
 
   const encodedUrl = encodeURIComponent(url)

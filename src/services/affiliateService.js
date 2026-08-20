@@ -149,13 +149,29 @@ export async function getProgramSettings() {
  * also means it is per-browser, survives no device switch, and is trivially
  * editable. All three are documented in `docs/api-contract.md` §7 operation 10.
  *
+ * `creatorId` is Storefront V2's one-line addition (`prompts-v2/09` §5): a
+ * Promote link shared from a creator card carries `?creator=cpr_…`, and the id
+ * is stored **alongside** the code rather than folded into it. Attribution is
+ * unchanged — the code is still the whole of it, and registration reads only
+ * `code` — so this is a note about where a signup came *from*, kept for a
+ * future "which storefront sent them" report. Nothing reads it yet.
+ *
  * @param {string} code the affiliate code from the link
+ * @param {object} [options]
+ * @param {string} [options.creatorId] `cpr_…` — the storefront the link was
+ *   shared from, when the link named one
  * @returns {boolean} whether it was persisted
  */
-export function captureReferralCode(code) {
+export function captureReferralCode(code, { creatorId } = {}) {
   const value = String(code ?? '').trim()
   if (!value) return false
-  return setItem(REFERRAL_STORAGE_KEY, { code: value, at: nowIso() })
+
+  const storefront = String(creatorId ?? '').trim()
+  return setItem(REFERRAL_STORAGE_KEY, {
+    code: value,
+    at: nowIso(),
+    ...(storefront ? { creatorId: storefront } : null),
+  })
 }
 
 /**
@@ -168,14 +184,16 @@ export function captureReferralCode(code) {
  * it is treated as captured now.
  *
  * @param {number} attributionDays window length, from {@link getProgramSettings}
- * @returns {{code: string, at: string|null, expired: boolean}|null}
+ * @returns {{code: string, at: string|null, creatorId: string|null, expired: boolean}|null}
  */
 export function readCapturedReferral(attributionDays) {
   const stored = getItem(REFERRAL_STORAGE_KEY)
   if (!stored) return null
 
   const record =
-    typeof stored === 'string' ? { code: stored, at: null } : { code: stored.code, at: stored.at ?? null }
+    typeof stored === 'string'
+      ? { code: stored, at: null, creatorId: null }
+      : { code: stored.code, at: stored.at ?? null, creatorId: stored.creatorId ?? null }
   if (!record.code) {
     removeItem(REFERRAL_STORAGE_KEY)
     return null

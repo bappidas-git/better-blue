@@ -39,6 +39,7 @@ non-zero **without writing the file**.
 | `scripts/seed-data/portfolio.js` | `portfolioItems` |
 | `scripts/seed-data/requests.js` | `contentRequests` (+ the history engagement table, feed tags, and the headline offer) |
 | `scripts/seed-data/feedReplies.js` | `feedReplies` |
+| `scripts/seed-data/directMessages.js` | `directMessages` |
 | `scripts/seed-data/proposals.js` | `proposals` |
 | `scripts/seed-data/orders.js` | `orders`, `deliveries`, `revisions` |
 | `scripts/seed-data/finance.js` | `payments`, `transactions`, `commissions`, `payouts` |
@@ -211,7 +212,13 @@ renders through `StatusChip`.
    what the orders and the ledger actually contain, `contributionCounts` at or
    above their published portfolio, and `level` matches
    `getCreatorLevel` — with all three levels and several online creators present.
-8. **Content policy** — a term sweep over every string, so a careless edit
+8. **Direct messages** (Storefront V2) — every message body is inside the
+   20–600 characters `directMessagesService` accepts; the sender is a `buyer`;
+   nothing predates the account that wrote it or the storefront it was sent to;
+   no row is seeded twice; and the messages reach several storefronts with at
+   least one storefront holding more than one, so the inbox that eventually
+   reads them has a realistic list to open on.
+9. **Content policy** — a term sweep over every string, so a careless edit
    cannot introduce content that breaches 00 §1.
 
 ### Derived aggregates
@@ -590,6 +597,53 @@ creator to reply again later.
 (id, feed_reply_id, author_role, author_id, body, created_at)` with
 `ON DELETE CASCADE`, and the count on `content_requests.replies_count` is
 maintained in the same transaction as the insert.
+
+### `directMessages` — 8
+
+The opening message a buyer sends a creator from the creators page (Storefront
+V2, `prompts-v2/09` §4). Eight of them, from six buyers to seven storefronts,
+with one storefront contacted twice.
+
+**The simplest record in the database**, and the smallest thing that could
+honestly be called a message: no thread, no status, no read flag.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string | `dm_…` |
+| `buyerId` | FK → `users.id` | the account that wrote it |
+| `creatorId` | FK → `creatorProfiles.id` | **the storefront**, not the account — see §3 |
+| `body` | string | 20–600 characters, enforced by the service and the validator |
+| `createdAt` | datetime | when it was sent |
+
+**How it differs from the other two message-shaped collections.** A `proposal`
+is a priced offer on a brief; a `feedReply` is a creator-opened conversation
+under one. This travels the other way — buyer → creator — and is attached to no
+brief at all, because the whole point is that the work has not been written
+down yet.
+
+| | `proposals` | `feedReplies` | `directMessages` |
+|---|---|---|---|
+| Direction | creator → buyer | creator → buyer | **buyer → creator** |
+| Attached to | a brief | a feed | nothing |
+| Carries | price, timeline, samples | a message thread | one message |
+| Status | a state machine | none | none |
+| Service | `proposalService` | `feedService` | `directMessagesService` |
+
+**There is no creator-side inbox yet, and this is the honest version of that.**
+`directMessagesService.sendMessage` writes the row and raises a
+`direct_message_received` notification on the creator's bell; the notification
+deliberately carries **no** `entityType`/`entityId`, because there is no screen
+to deep-link into. The Send message dialog says so in as many words rather than
+implying a conversation is about to start. The reads that screen will need
+(`listForCreator`, `listFromBuyer`) already exist and already filter by owner in
+the query, so no surface can render somebody else's correspondence — **UX only**
+(00 §11), as always; the Laravel API must scope the same queries server-side.
+
+**MySQL** `direct_messages` — index `(creator_id, created_at DESC)` for the
+inbox and `(buyer_id, created_at DESC)` for the sender's sent list. No unique
+constraint: a buyer may write to the same creator more than once, and the
+service does not stop them. When threading arrives, this table becomes the
+first row of a `conversations` tree rather than being replaced.
 
 ### `proposals` — 116
 

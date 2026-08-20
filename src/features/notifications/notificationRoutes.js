@@ -81,6 +81,13 @@ const TYPE_TARGET = Object.freeze({
   // the buyer is future work. The brief is the nearest true destination, and it
   // is never a dead link.
   [NOTIFICATION_TYPE.FEED_REPLY_RECEIVED]: TARGET.REQUEST,
+  // Storefront V2 (V2-09): a buyer messaged this creator from `/creators`. It
+  // carries no `entityType`/`entityId` at all, because there is nothing to
+  // point at — **the creator-side inbox is future work**, and the message lives
+  // in `directMessages` with this notification as the only surface that
+  // mentions it. The dashboard home is the honest destination until that screen
+  // exists; it is never a dead link.
+  [NOTIFICATION_TYPE.DIRECT_MESSAGE_RECEIVED]: TARGET.OVERVIEW,
   [NOTIFICATION_TYPE.ORDER_PAID]: TARGET.ORDER,
   [NOTIFICATION_TYPE.DELIVERY_SUBMITTED]: TARGET.ORDER,
   [NOTIFICATION_TYPE.REVISION_REQUESTED]: TARGET.ORDER,

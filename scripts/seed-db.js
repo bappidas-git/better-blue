@@ -69,6 +69,7 @@ import { categories } from './seed-data/categories.js'
 import { portfolioItems } from './seed-data/portfolio.js'
 import { contentRequests } from './seed-data/requests.js'
 import { feedReplies } from './seed-data/feedReplies.js'
+import { directMessages } from './seed-data/directMessages.js'
 import { proposals } from './seed-data/proposals.js'
 import { deliveries, orders, revisions } from './seed-data/orders.js'
 import { commissions, payments, payouts, transactions } from './seed-data/finance.js'
@@ -107,6 +108,7 @@ const db = {
   categories,
   contentRequests,
   feedReplies,
+  directMessages,
   proposals,
   orders,
   deliveries,
@@ -307,6 +309,7 @@ const ID_PREFIXES = {
   categories: 'cat',
   contentRequests: 'req',
   feedReplies: 'frp',
+  directMessages: 'dm',
   proposals: 'prp',
   orders: 'ord',
   deliveries: 'dlv',
@@ -374,6 +377,11 @@ const FOREIGN_KEYS = [
   ['feedReplies', 'feedId', 'contentRequests'],
   ['feedReplies', 'creatorId', 'creatorProfiles'],
   ['feedReplies', 'buyerId', 'users'],
+  // Storefront V2 — a direct message belongs to the buyer who wrote it and the
+  // storefront it was addressed to. Same split as `feedReplies`: `buyerId` is
+  // an account, `creatorId` is a profile (see docs/data-model.md §3).
+  ['directMessages', 'buyerId', 'users'],
+  ['directMessages', 'creatorId', 'creatorProfiles'],
   ['proposals', 'requestId', 'contentRequests'],
   ['proposals', 'creatorId', 'users'],
   ['proposals', 'sampleItemIds', 'portfolioItems', { many: true }],
@@ -1529,6 +1537,70 @@ function validateFeeds() {
 }
 
 /* ========================================================================== */
+/* Validation: Storefront V2 direct messages                                  */
+/* ========================================================================== */
+
+/**
+ * Length bounds on one message, restated from
+ * `src/services/directMessagesService.js`. Restated rather than imported
+ * because this script runs in plain Node and that module reaches for `@/`
+ * aliases and the API client (00 §5) — the same reason the seed restates the
+ * reply bounds it checks above. A seeded row the service would refuse to
+ * create is a row no screen should ever have to render.
+ */
+const DM_BODY_MIN = 20
+const DM_BODY_MAX = 600
+
+function validateDirectMessages() {
+  const storefrontById = byId(creatorProfiles)
+  const seenPairs = new Set()
+
+  directMessages.forEach((message) => {
+    const body = typeof message.body === 'string' ? message.body.trim() : ''
+    if (body.length < DM_BODY_MIN || body.length > DM_BODY_MAX) {
+      fail(
+        `directMessages ${message.id}: body is ${body.length} characters, ` +
+          `outside the ${DM_BODY_MIN}–${DM_BODY_MAX} the service accepts (V2-09 §4)`
+      )
+    }
+
+    const sender = userById.get(message.buyerId)
+    if (sender && sender.role !== ROLES.BUYER) {
+      fail(`directMessages ${message.id}: ${message.buyerId} is a ${sender.role}, not a buyer`)
+    }
+    if (sender && ms(message.createdAt) < ms(sender.createdAt)) {
+      fail(`directMessages ${message.id} predates the account that sent it`)
+    }
+
+    const storefront = storefrontById.get(message.creatorId)
+    if (storefront && ms(message.createdAt) < ms(storefront.createdAt)) {
+      fail(`directMessages ${message.id} predates the storefront it was sent to`)
+    }
+
+    // Not a uniqueness rule — a buyer may message a creator more than once, and
+    // the service does not stop them. This catches the *seed* accidentally
+    // shipping the same row twice, which would look like a bug in the inbox
+    // that eventually reads them.
+    const pair = `${message.buyerId}→${message.creatorId}@${message.createdAt}`
+    if (seenPairs.has(pair)) fail(`directMessages: ${pair} is seeded twice`)
+    seenPairs.add(pair)
+  })
+
+  // The inbox this collection is waiting on should open on a storefront that
+  // has more than one message in it, and on more than one storefront.
+  const byCreator = directMessages.reduce(
+    (counts, message) => counts.set(message.creatorId, (counts.get(message.creatorId) ?? 0) + 1),
+    new Map()
+  )
+  if (byCreator.size < 3) {
+    fail(`directMessages reach only ${byCreator.size} storefront(s); several should be addressed`)
+  }
+  if (![...byCreator.values()].some((count) => count > 1)) {
+    fail('no storefront has received more than one direct message')
+  }
+}
+
+/* ========================================================================== */
 /* Validation: content policy                                                 */
 /* ========================================================================== */
 
@@ -1568,6 +1640,7 @@ if (failures.length === 0) {
   validateChronology()
   validateWorkflow()
   validateFeeds()
+  validateDirectMessages()
   validateContentPolicy()
 }
 

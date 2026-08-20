@@ -44,7 +44,13 @@ export { proposalService } from './proposalService'
 // Storefront V2 (prompts-v2/03): the feed board is a façade over
 // `requestService` + the `feedReplies` collection — no collection was renamed.
 export { feedService, FEED_SORT, REPLY_BODY_MIN, REPLY_BODY_MAX } from './feedService'
-export { creatorMetaService } from './creatorMetaService'
+export { creatorMetaService, CREATOR_FEED_SORT } from './creatorMetaService'
+// Storefront V2 (prompts-v2/09): buyer → creator messages from `/creators`.
+export {
+  directMessagesService,
+  DIRECT_MESSAGE_MAX,
+  DIRECT_MESSAGE_MIN,
+} from './directMessagesService'
 
 /* Orders and delivery ----------------------------------------------------- */
 export { orderService, ORDER_EVENT_TYPE } from './orderService'
