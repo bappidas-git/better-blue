@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { Icon } from '@iconify/react'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Chip from '@mui/material/Chip'
 import IconButton from '@mui/material/IconButton'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
@@ -193,16 +192,14 @@ export function ProfileActions({ cta, fullWidth = false, onReport }) {
 /**
  * @param {object} props
  * @param {object} props.profile the `creatorProfiles` record
- * @param {Object<string, string>} [props.categoryNames] category id → display name
  * @param {object} props.cta the result of `useCreatorRequestCta`
  * @param {() => void} [props.onReport] opens the report dialog (Prompt 30)
  */
-export default function ProfileHeader({ profile, categoryNames = {}, cta, onReport }) {
+export default function ProfileHeader({ profile, cta, onReport }) {
   const rating = Number(profile.ratingAvg) || 0
   const ratingCount = Number(profile.ratingCount) || 0
   const completedOrders = Number(profile.completedOrders) || 0
   const responseHours = Number(profile.responseTimeHours) || 0
-  const categories = profile.categories ?? []
 
   return (
     <Box component="header">
@@ -288,19 +285,6 @@ export default function ProfileHeader({ profile, categoryNames = {}, cta, onRepo
                   </Box>
                 ))}
             </Stack>
-
-            {categories.length > 0 ? (
-              <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
-                {categories.map((categoryId) => (
-                  <Chip
-                    key={categoryId}
-                    label={categoryNames[categoryId] ?? categoryId}
-                    size="small"
-                    variant="outlined"
-                  />
-                ))}
-              </Stack>
-            ) : null}
           </Box>
         </Stack>
 

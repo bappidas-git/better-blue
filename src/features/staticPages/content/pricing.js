@@ -6,7 +6,7 @@
 export const EXAMPLE_ORDER_AMOUNT = 400
 
 export const PRICING_INTRO =
-  'One commission, taken once, on completed work. Buyers pay the price they accepted; creators receive that price minus the platform commission. There is no listing fee, no subscription, and no charge for a request that never becomes an order.'
+  'One commission, taken once, on completed work. Buyers pay the price they accepted; creators receive that price minus the platform commission. There is no listing fee, no subscription, and no charge for a feed that never becomes an order.'
 
 /** The three-card summary of how money moves. */
 export const PRICING_PRINCIPLES = Object.freeze([
@@ -29,7 +29,7 @@ export const PRICING_PRINCIPLES = Object.freeze([
     icon: 'tabler:gift',
     title: 'Free to post and to propose',
     description:
-      'Publishing a content request, receiving proposals, building a portfolio, and sending proposals all cost nothing. You are only charged on an order you agreed to.',
+      'Publishing a feed, receiving proposals, building a portfolio, and sending proposals all cost nothing. You are only charged on an order you agreed to.',
   }),
 ])
 

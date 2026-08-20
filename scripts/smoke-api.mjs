@@ -390,12 +390,15 @@ async function checkSeedFileClean() {
     !JSON.stringify(db).includes(SCRATCH_ID),
     'run `npm run seed` to restore it'
   )
-  // Bumped to 27 by Storefront V2-03, which added `feedReplies`. The number is
-  // a tripwire for a truncated or half-written file, so it moves whenever a
-  // collection is legitimately added — and only then.
+  // Bumped to 27 by Storefront V2-03 (`feedReplies`) and to 28 by V2-09
+  // (`directMessages`, behind Send message on a creator card) — the V2-09 pass
+  // added the collection without moving the tripwire, so this check had been
+  // failing since; V2-10 caught it. The number is a tripwire for a truncated or
+  // half-written file, so it moves whenever a collection is legitimately
+  // added — and only then.
   check(
-    'server/db.json still has all 27 collections',
-    Object.keys(db).length === 27,
+    'server/db.json still has all 28 collections',
+    Object.keys(db).length === 28,
     `found ${Object.keys(db).length}`
   )
 }

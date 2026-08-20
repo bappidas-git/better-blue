@@ -13,7 +13,7 @@ export const BUYER_JOURNEY = Object.freeze([
   Object.freeze({
     key: 'create-request',
     icon: 'tabler:file-text',
-    title: 'Create a content request',
+    title: 'Post a feed',
     description:
       'Describe the deliverables, the budget, the deadline, and the usage rights you need. A clear brief is what gets you comparable proposals.',
   }),
@@ -68,7 +68,7 @@ export const CREATOR_JOURNEY = Object.freeze([
     icon: 'tabler:send',
     title: 'Propose on briefs',
     description:
-      'Browse open content requests and send a proposal: your price, your delivery date, the revisions you include, and samples that fit the brief.',
+      'Browse the open feeds and send a proposal: your price, your delivery date, the revisions you include, and samples that fit the brief.',
   }),
   Object.freeze({
     key: 'deliver',
