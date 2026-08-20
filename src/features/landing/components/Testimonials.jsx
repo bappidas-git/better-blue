@@ -73,6 +73,7 @@ export default function Testimonials() {
       eyebrow="What people say"
       title="Teams commission here because the process holds"
       description="Clear briefs, priced proposals, and payment that only moves when the work is approved."
+      headerProps={{ 'data-landing-reveal': true }}
     >
       <StaggerList
         inView

@@ -34,7 +34,18 @@ function StatTile({ label, value, isLoading }) {
       data-landing-reveal
       sx={{ textAlign: { xs: 'left', md: 'center' }, minWidth: 0 }}
     >
-      <Typography variant="h2" component="p" sx={{ color: 'primary.light' }}>
+      {/* The figure carries the brand gradient rather than a flat purple: an
+          h2 is a display size, which is the one place theme-v2 §7 allows
+          `.bb-gradient-text` (and the utility is reduced-motion safe on its
+          own). `primary.light` stays underneath as the resting colour — it is
+          what a browser without `background-clip: text` renders, and what the
+          skeleton sits on while the counts are in flight. */}
+      <Typography
+        variant="h2"
+        component="p"
+        className={isLoading ? undefined : 'bb-gradient-text'}
+        sx={{ color: 'primary.light' }}
+      >
         {isLoading ? (
           <Skeleton variant="text" width="4ch" sx={{ display: 'inline-block' }} />
         ) : (
@@ -59,7 +70,11 @@ export default function StatsBand() {
   if (stats.length < MIN_STATS) return null
 
   return (
-    <LandingSection tone="tint" title="The marketplace, in numbers">
+    <LandingSection
+      tone="tint"
+      title="The marketplace, in numbers"
+      headerProps={{ 'data-landing-reveal': true }}
+    >
       <Box
         sx={{
           display: 'grid',

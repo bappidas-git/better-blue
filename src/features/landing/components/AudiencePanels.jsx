@@ -7,8 +7,9 @@ import Typography from '@mui/material/Typography'
 import { Link as RouterLink } from 'react-router-dom'
 
 import FadeInView from '@/components/motion/FadeInView'
+import { ROLES } from '@/constants/roles'
+import { paths } from '@/routes/paths'
 
-import useLandingCtas from '../hooks/useLandingCtas'
 import LandingSection from './LandingSection'
 
 // Both sides of the marketplace, side by side, because the same page has to
@@ -62,6 +63,23 @@ const CREATOR_POINTS = [
       'The buyer funds the order before you shoot, and earnings are released to you on approval.',
   },
 ]
+
+// One pair of buttons, for everybody. Both cards open the register form with the
+// account type already chosen (V2-06 §1) — the storefront asks visitors to join,
+// so a signed-in member sees the same two doors rather than a dashboard link.
+// The icons are `RoleChoiceCards`', so the card that is already selected on
+// arrival is visibly the one that was pressed.
+const BUYER_CTA = Object.freeze({
+  label: 'Register as a Buyer',
+  to: paths.registerAs(ROLES.BUYER),
+  icon: 'tabler:building-store',
+})
+
+const CREATOR_CTA = Object.freeze({
+  label: 'Register as a Creator',
+  to: paths.registerAs(ROLES.CREATOR),
+  icon: 'tabler:camera',
+})
 
 function Panel({ eyebrow, title, description, points, cta, variant }) {
   return (
@@ -127,14 +145,13 @@ function Panel({ eyebrow, title, description, points, cta, variant }) {
 }
 
 export default function AudiencePanels() {
-  const { primary, secondary, isAuthenticated } = useLandingCtas()
-
   return (
     <LandingSection
       tone="paper"
       eyebrow="Built for both sides"
       title="One workflow, two very different jobs"
       description="Buyers need content they can publish. Creators need work that is scoped and paid. BetterBlue holds the middle."
+      headerProps={{ 'data-landing-reveal': true }}
     >
       <Box
         sx={{
@@ -145,22 +162,22 @@ export default function AudiencePanels() {
       >
         <FadeInView sx={{ height: '100%' }}>
           <Panel
-            eyebrow="For businesses"
+            eyebrow="For Buyers"
             title="Commission content without the agency overhead"
             description="Post once, compare priced proposals, and keep the whole project — files, revisions, and payment — in one place."
             points={BUYER_POINTS}
-            cta={primary}
+            cta={BUYER_CTA}
             variant="gradient"
           />
         </FadeInView>
 
         <FadeInView delay={0.08} sx={{ height: '100%' }}>
           <Panel
-            eyebrow="For creators"
-            title="Get paid properly for commercial work"
+            eyebrow="For Creators"
+            title="Get paid properly for your work done"
             description="Browse briefs that match what you shoot, propose your own price, and deliver into a funded order."
             points={CREATOR_POINTS}
-            cta={isAuthenticated ? primary : secondary}
+            cta={CREATOR_CTA}
             variant="outlined"
           />
         </FadeInView>

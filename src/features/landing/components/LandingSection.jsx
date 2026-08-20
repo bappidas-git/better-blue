@@ -17,9 +17,9 @@ import Typography from '@mui/material/Typography'
 const TONE_SX = {
   /** Page background — the default band. */
   default: null,
-  /** White, for bands that need to lift off the page background. */
+  /** The base panel surface, one step up from the page (docs/theme-v2.md §2). */
   paper: { bgcolor: 'background.paper' },
-  /** The faint brand wash (00 §6) — used sparingly, for one or two bands. */
+  /** The faint brand wash (theme-v2 §3) — used sparingly, for one or two bands. */
   tint: { bgcolor: 'primary.surface' },
 }
 

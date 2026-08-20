@@ -15,11 +15,11 @@ import Link from '@mui/material/Link'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { motion } from 'framer-motion'
-import { Link as RouterLink } from 'react-router-dom'
+import { Link as RouterLink, useSearchParams } from 'react-router-dom'
 
 import FormTextField from '@/components/inputs/FormTextField'
 import { fadeInUp } from '@/components/motion/motionPresets'
-import { ROLES } from '@/constants/roles'
+import { ROLE_META, ROLES } from '@/constants/roles'
 import { useAuth } from '@/context/AuthContext'
 import PasswordField from '@/features/auth/components/PasswordField'
 import RoleChoiceCards from '@/features/auth/components/RoleChoiceCards'
@@ -48,8 +48,29 @@ import {
 //
 // `AuthContext.register()` creates the account, its profile row, and the
 // session; `GuestRoute` performs the redirect. This page decides neither.
+//
+// V2-06 added one way in from outside: `/register?role=buyer|creator` answers
+// step one before the page opens, so a visitor who pressed "Register as a
+// Creator" on the storefront lands on the details for that account rather than
+// being asked the question they just answered. The choice stays theirs — the
+// step header names the account being created and offers "Change" back to step
+// one — and anything the parameter does not recognise is ignored.
 
 const STEP = { ROLE: 0, DETAILS: 1 }
+
+/**
+ * URL parameter that preselects the account type. `paths.registerAs(role)`
+ * builds the links; the landing page's audience panels, its closing band, and
+ * `RoleGateDialog` are what send them.
+ */
+export const ROLE_PARAM = 'role'
+
+/**
+ * The roles a visitor may create for themselves. Admins are provisioned by the
+ * admin team (Prompt 36), never registered, so a `?role=admin` URL falls
+ * through to the role step like any other unrecognised value.
+ */
+const JOINABLE_ROLES = [ROLES.BUYER, ROLES.CREATOR]
 
 /** Card body floor, so stepping forward never snaps the card shorter. */
 const MIN_BODY_HEIGHT = 300
@@ -105,10 +126,24 @@ export default function RegisterPage() {
   useDocumentTitle('Create your account')
 
   const { register } = useAuth()
-  const [step, setStep] = useState(STEP.ROLE)
-  const [role, setRole] = useState('')
+  const [searchParams] = useSearchParams()
+
+  // The `?role=` parameter is read once, at mount, and the chosen role is plain
+  // state from there on: a visitor who steps back and picks the other card is
+  // not fighting the URL that opened the page, and nothing has to rewrite it.
+  const [role, setRole] = useState(() => {
+    const requested = searchParams.get(ROLE_PARAM)
+    return JOINABLE_ROLES.includes(requested) ? requested : ''
+  })
+  const [step, setStep] = useState(() => (role ? STEP.DETAILS : STEP.ROLE))
   const [roleError, setRoleError] = useState(null)
   const [error, setError] = useState(null)
+
+  // Whether step two should take focus when it mounts — true once the visitor
+  // has *stepped* into it, false when a `?role=` link opened the page there.
+  // Moving focus into a field on page load would carry a screen reader past the
+  // heading, the step's explanation, and the "Change" affordance (00 §13).
+  const [focusDetails, setFocusDetails] = useState(false)
 
   const profileField = PROFILE_FIELD[role] ?? PROFILE_FIELD[ROLES.BUYER]
 
@@ -138,6 +173,7 @@ export default function RegisterPage() {
       setRoleError(ROLE_REQUIRED_MESSAGE)
       return
     }
+    setFocusDetails(true)
     setStep(STEP.DETAILS)
   }
 
@@ -159,6 +195,7 @@ export default function RegisterPage() {
   })
 
   const isRoleStep = step === STEP.ROLE
+  const roleLabel = ROLE_META[role]?.label
 
   return (
     <Card component={motion.div} variants={fadeInUp} initial="hidden" animate="visible">
@@ -176,6 +213,39 @@ export default function RegisterPage() {
                 ? 'Tell us how you plan to use BetterBlue. Each account is one or the other.'
                 : 'A few details and you are in. The rest of your profile can wait.'}
             </Typography>
+
+            {/* Which account is being created, and the way to change it — the
+                answer to step one is otherwise invisible to someone a `?role=`
+                link dropped straight onto step two. Outside the <form>, so it
+                is never mistaken for one of its fields; the submit button below
+                is the only thing Enter reaches. */}
+            {isRoleStep || !roleLabel ? null : (
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                flexWrap="wrap"
+                useFlexGap
+                sx={{ pt: 0.5 }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Creating a{' '}
+                  <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                    {roleLabel}
+                  </Box>{' '}
+                  account
+                </Typography>
+                <Button
+                  variant="text"
+                  size="small"
+                  disabled={form.isSubmitting}
+                  onClick={() => setStep(STEP.ROLE)}
+                  startIcon={<Icon icon="tabler:pencil" width={16} />}
+                >
+                  Change
+                </Button>
+              </Stack>
+            )}
           </Stack>
 
           {error ? (
@@ -226,16 +296,18 @@ export default function RegisterPage() {
                   </Stack>
                 ) : (
                   <Stack spacing={2.5}>
-                    {/* Step two opens with focus here, so a keyboard or screen
-                        reader user carries on where the form did rather than at
-                        the top of the document. `autoFocus` fires exactly when
-                        this field mounts, which an effect on `step` cannot
-                        promise. Step one is always the first render, so nothing
-                        is stolen from anyone arriving at the page. */}
+                    {/* Stepping forward puts focus here, so a keyboard or
+                        screen reader user carries on where the form did rather
+                        than at the top of the document. `autoFocus` fires
+                        exactly when this field mounts, which an effect on `step`
+                        cannot promise. It is off for the one render that is not
+                        a step at all — a `?role=` link opening the page here,
+                        where taking focus would skip the heading (see
+                        `focusDetails`). */}
                     <FormTextField
                       label="Your name"
                       autoComplete="name"
-                      autoFocus
+                      autoFocus={focusDetails}
                       required
                       {...form.fieldProps('name')}
                     />
