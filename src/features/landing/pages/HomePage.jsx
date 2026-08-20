@@ -5,20 +5,27 @@ import Box from '@mui/material/Box'
 import useDocumentTitle from '@/hooks/useDocumentTitle'
 
 import AudiencePanels from '../components/AudiencePanels'
-import FeaturedCreators from '../components/FeaturedCreators'
 import FinalCta from '../components/FinalCta'
 import Hero from '../components/Hero'
 import HowItWorksSection from '../components/HowItWorksSection'
+import LatestFeedsSection from '../components/LatestFeedsSection'
 import StatsBand from '../components/StatsBand'
 import Testimonials from '../components/Testimonials'
+import TopCreatorsSection from '../components/TopCreatorsSection'
 import useLandingAnimations from '../hooks/useLandingAnimations'
 
-// The landing page: seven bands, composed here and implemented one file each.
+// The landing page: eight bands, composed here and implemented one file each.
 //
 // V2-04 removed two of the original nine — the "Trusted by growing brands"
 // strip and the category grid. Categories are gone from the storefront entirely
 // (the collection, the admin screens, and the dashboard forms keep them), which
 // is why this page no longer fetches the taxonomy at all.
+//
+// V2-05 swapped the editorial featured-creators grid for the two social bands
+// that follow "How it works": the latest ten feeds as a timeline column, and
+// the top storefronts as full-width rows with a slider of their published work.
+// The grid it replaced is gone rather than hidden — `FeaturedCreators` was only
+// ever rendered here.
 //
 // One thing this file owns, and nothing else does: **the GSAP root**.
 // `useLandingAnimations` binds every marketing scene on the page to this
@@ -43,7 +50,8 @@ export default function HomePage() {
     <Box ref={rootRef}>
       <Hero onCardsReady={handleHeroCardsReady} />
       <HowItWorksSection />
-      <FeaturedCreators />
+      <LatestFeedsSection />
+      <TopCreatorsSection />
       <AudiencePanels />
       <StatsBand />
       <Testimonials />

@@ -12,7 +12,7 @@ import Typography from '@mui/material/Typography'
 // is its marketing counterpart rather than a second copy of it.
 //
 // Every band is a labelled `<section>`: the heading gets an id and the section
-// points at it, so a screen-reader rotor lists the page as nine named regions.
+// points at it, so a screen-reader rotor lists the page as named regions.
 
 const TONE_SX = {
   /** Page background — the default band. */
