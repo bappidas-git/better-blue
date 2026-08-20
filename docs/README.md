@@ -15,6 +15,7 @@ Start here.
 | to verify the product works | [`e2e-walkthrough.md`](e2e-walkthrough.md) |
 | to know why the code looks like this | [`../prompts/00-architecture-and-rules.md`](../prompts/00-architecture-and-rules.md) |
 | to build a screen that matches the design | [`theme-v2.md`](theme-v2.md) |
+| to know what the Storefront V2 sweep verified | [`qa-storefront-v2.md`](qa-storefront-v2.md) |
 
 ---
 
@@ -73,6 +74,14 @@ fixes made during certification.
 dialogs, keyboard journeys, focus rings, colour contrast, responsive behaviour
 at 360 px, loading/empty/error coverage, and the professional-content sweep —
 with the findings that were fixed.
+
+### [`qa-storefront-v2.md`](qa-storefront-v2.md)
+**The Storefront V2 sweep.** The final audit of everything the V2 series
+changed: the Feeds naming sweep, the category removal, dark-theme consistency
+across public pages and every V2 dialog, the re-run gating matrix for Reply /
+Send message / Promote, keyboard and reduced-motion passes, the responsive grid
+at 360/768/1280, and the seed and build verification — with the seven findings
+that were fixed and the deliberate keeps.
 
 ### [`notifications-audit.md`](notifications-audit.md)
 **Notification emit coverage.** Every workflow event, which notification type it

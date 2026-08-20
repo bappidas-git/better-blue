@@ -327,7 +327,7 @@ export default function PricingPage() {
 
       <InfoCtaBand
         title="No fee to find out what your brief is worth"
-        description="Publish a content request and compare priced proposals from creators who have done the work before."
+        description="Publish a feed and compare priced proposals from creators who have done the work before."
         primary={{ label: 'Join BetterBlue', to: paths.REGISTER, icon: 'tabler:file-text' }}
         secondary={{ label: 'Read the FAQ', to: paths.FAQ, icon: 'tabler:help-circle' }}
       />

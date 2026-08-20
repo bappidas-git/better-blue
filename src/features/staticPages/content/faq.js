@@ -31,17 +31,17 @@ export const FAQ_GROUPS = Object.freeze([
         key: 'cost-to-start',
         question: 'What does it cost to get started?',
         answer:
-          'Nothing. Creating an account, publishing a content request, receiving proposals, building a portfolio, and sending proposals are all free. Money only changes hands when a buyer accepts a proposal and funds the resulting order.',
+          'Nothing. Creating an account, publishing a feed, receiving proposals, building a portfolio, and sending proposals are all free. Money only changes hands when a buyer accepts a proposal and funds the resulting order.',
       }),
       Object.freeze({
         key: 'browse-without-account',
         question: 'Do I need an account to look around?',
         answer:
-          'No. You can browse creators and open content requests while signed out. An account is needed to publish a request, send a proposal, or take part in an order.',
+          'No. You can browse creators and the open feeds while signed out. An account is needed to publish a feed, send a proposal, or take part in an order.',
       }),
       Object.freeze({
         key: 'writing-a-brief',
-        question: 'What makes a good content request?',
+        question: 'What makes a good brief?',
         answer:
           'Say what you need produced, how many pieces, in what format, by when, and where the content will be used. The clearer the deliverables and usage rights, the more comparable the proposals you get back — and the less there is to argue about later.',
       }),

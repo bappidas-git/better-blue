@@ -137,6 +137,21 @@ export default function WorksSlider({
   }, [])
 
   /**
+   * The arrows at the ends of the strip are `aria-disabled`, not `disabled`.
+   *
+   * A real `disabled` arrow is the standard way to lose a keyboard user: press
+   * "show more" until the strip reaches the end, the button disables under the
+   * caret, the browser blurs it, and focus lands on `<body>` — the next Tab
+   * starts again from the top of the page. `aria-disabled` announces the same
+   * unavailable state, keeps the tab stop, and leaves the caret where the
+   * reader put it; the handler below is what actually makes the press inert.
+   */
+  const pressArrow = (direction, enabled) => () => {
+    if (!enabled) return
+    scrollStrip(direction)
+  }
+
+  /**
    * The strip's focus ring is drawn on the wrapper below rather than on the
    * strip itself, because an outline paints *outside* the border box and the
    * edge-fade mask clips everything the strip paints — a ring on the strip is
@@ -167,7 +182,13 @@ export default function WorksSlider({
     border: 1,
     borderColor: 'divider',
     '&:hover': { bgcolor: 'background.paper' },
-    '&.Mui-disabled': { opacity: 0.35, bgcolor: 'background.elevated' },
+    '&:disabled, &[aria-disabled="true"]': {
+      opacity: 0.35,
+      bgcolor: 'background.elevated',
+      // The press is already inert; this stops the surface answering a hover
+      // that will not do anything.
+      '&:hover': { bgcolor: 'background.elevated' },
+    },
   }
 
   return (
@@ -186,8 +207,8 @@ export default function WorksSlider({
       {canScroll ? (
         <IconButton
           size="small"
-          onClick={() => scrollStrip(-1)}
-          disabled={!edges.start}
+          onClick={pressArrow(-1, edges.start)}
+          aria-disabled={!edges.start}
           aria-label={`Show earlier work by ${creatorName}`}
           sx={{ ...arrowSx, left: 0 }}
         >
@@ -249,8 +270,8 @@ export default function WorksSlider({
       {canScroll ? (
         <IconButton
           size="small"
-          onClick={() => scrollStrip(1)}
-          disabled={!edges.end}
+          onClick={pressArrow(1, edges.end)}
+          aria-disabled={!edges.end}
           aria-label={`Show more work by ${creatorName}`}
           sx={{ ...arrowSx, right: 0 }}
         >

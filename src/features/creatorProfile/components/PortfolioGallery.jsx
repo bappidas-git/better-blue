@@ -19,12 +19,9 @@ import ReportDialog from '@/features/reports/components/ReportDialog'
 import { durations } from '@/theme/motionTokens'
 
 import {
-  buildCategoryOptions,
   buildTypeOptions,
-  CATEGORY_FILTER_THRESHOLD,
   CONTENT_TYPE_ICONS,
   DEFAULT_PORTFOLIO_FILTER,
-  FILTER_ALL,
   filterPortfolioItems,
 } from '../utils/portfolioFilters'
 import PortfolioFilterBar from './PortfolioFilterBar'
@@ -66,11 +63,9 @@ const THUMB = IMAGE_SIZES.thumbnail
 const LIGHTBOX_MEDIA_TYPE = 'image'
 
 /** Everything the viewer says about an item beneath the media. */
-function toCaption(item, categoryNames) {
+function toCaption(item) {
   const parts = [item.description]
 
-  const category = categoryNames[item.categoryId]
-  if (category) parts.push(`Category: ${category}`)
   if (item.tags?.length) parts.push(`Tags: ${item.tags.join(', ')}`)
 
   return parts.filter(Boolean).join(' · ')
@@ -194,7 +189,6 @@ function GalleryTile({ item, onOpen }) {
 /**
  * @param {object} props
  * @param {object[]} [props.items] published portfolio items, newest first
- * @param {Object<string, string>} [props.categoryNames] category id → display name
  * @param {string} props.creatorName used in the empty-state copy
  * @param {boolean} [props.isLoading=false] the published set is in flight
  * @param {object} [props.error] an `ApiError` from the portfolio request
@@ -202,7 +196,6 @@ function GalleryTile({ item, onOpen }) {
  */
 export default function PortfolioGallery({
   items,
-  categoryNames = {},
   creatorName,
   isLoading = false,
   error,
@@ -219,24 +212,11 @@ export default function PortfolioGallery({
 
   const typeOptions = useMemo(() => buildTypeOptions(published), [published])
 
-  // The type filter narrows first, so the category counts describe the grid the
-  // visitor is actually looking at.
-  const typeFiltered = useMemo(
-    () => filterPortfolioItems(published, { type: filter.type, category: FILTER_ALL }),
-    [published, filter.type]
-  )
-
-  const categoryOptions = useMemo(
-    () =>
-      published.length > CATEGORY_FILTER_THRESHOLD
-        ? buildCategoryOptions(typeFiltered, categoryNames)
-        : [],
-    [published.length, typeFiltered, categoryNames]
-  )
-
+  // Content type is the only axis the storefront filters on (V2-10 removed the
+  // category sub-filter), so what the grid shows is one pass over the set.
   const visible = useMemo(
-    () => filterPortfolioItems(typeFiltered, { category: filter.category }),
-    [typeFiltered, filter.category]
+    () => filterPortfolioItems(published, { type: filter.type }),
+    [published, filter.type]
   )
 
   const lightboxItems = useMemo(
@@ -251,7 +231,7 @@ export default function PortfolioGallery({
           // beside it has to be phrasing content — a `<button>` is, a `<div>`
           // wrapper would not be.
           <>
-            {toCaption(item, categoryNames)}
+            {toCaption(item)}
             <Button
               size="small"
               color="inherit"
@@ -264,7 +244,7 @@ export default function PortfolioGallery({
           </>
         ),
       })),
-    [visible, categoryNames]
+    [visible]
   )
 
   const changeFilter = (next) => {
@@ -314,12 +294,7 @@ export default function PortfolioGallery({
 
     return (
       <>
-        <PortfolioFilterBar
-          value={filter}
-          onChange={changeFilter}
-          typeOptions={typeOptions}
-          categoryOptions={categoryOptions}
-        />
+        <PortfolioFilterBar value={filter} onChange={changeFilter} typeOptions={typeOptions} />
 
         <Box sx={gridSx}>
           {visible.map((item, index) => (
@@ -337,7 +312,7 @@ export default function PortfolioGallery({
       title="Portfolio"
       description={
         published.length > 0
-          ? 'Published sample work. Open any piece for the full brief, category, and tags.'
+          ? 'Published sample work. Open any piece for the full brief and its tags.'
           : undefined
       }
       spacing="md"

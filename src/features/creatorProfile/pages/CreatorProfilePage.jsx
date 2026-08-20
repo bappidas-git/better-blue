@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 import { Icon } from '@iconify/react'
 import Alert from '@mui/material/Alert'
@@ -24,7 +24,6 @@ import NotFoundPage from '@/features/staticPages/pages/NotFoundPage'
 import { paths } from '@/routes/paths'
 import {
   API_ERROR_CODE,
-  categoryService,
   creatorProfileService,
   portfolioService,
   reviewService,
@@ -40,10 +39,14 @@ import { useCreatorRequestCta } from '../hooks/useCreatorRequestCta'
 
 // The public storefront — the page where a buyer decides.
 //
-// Four requests, deliberately independent, so no section can hold another one
-// hostage: the profile (which everything else is gated on), the taxonomy that
-// names the category chips, the published portfolio, and the reviews. A failure
-// in any of the last three costs its own section and nothing else (§13).
+// Three requests, deliberately independent, so no section can hold another one
+// hostage: the profile (which everything else is gated on), the published
+// portfolio, and the reviews. A failure in either of the last two costs its own
+// section and nothing else (§13).
+//
+// V2-10 removed a fourth: the category taxonomy this page used to fetch to name
+// the chips under the creator's headline. Categories are gone from the whole
+// storefront — the collection and the admin console still have them.
 //
 // Reviews key on `profile.userId`, not on the `cpr_…` in the URL: a review
 // belongs to the *account* (contract §6.18), while portfolio items belong to the
@@ -110,13 +113,6 @@ export default function CreatorProfilePage() {
   } = useApiQuery(() => creatorProfileService.getPublicProfile(creatorId), [creatorId])
 
   useDocumentTitle(profile?.displayName ?? 'Creator profile')
-
-  const { data: categories } = useApiQuery(() => categoryService.listActive(), [])
-
-  const categoryNames = useMemo(
-    () => Object.fromEntries((categories ?? []).map((category) => [category.id, category.name])),
-    [categories]
-  )
 
   // The portfolio belongs to the storefront, so it can start from the URL alone
   // — in parallel with the profile request rather than behind it.
@@ -272,12 +268,7 @@ export default function CreatorProfilePage() {
           </Alert>
         ) : null}
 
-        <ProfileHeader
-          profile={profile}
-          categoryNames={categoryNames}
-          cta={cta}
-          onReport={() => setReportOpen(true)}
-        />
+        <ProfileHeader profile={profile} cta={cta} onReport={() => setReportOpen(true)} />
 
         {/* Each `Section` owns its own bottom rhythm, but wrapping one in a
             reveal makes it an only child — so the rhythm is set here instead,
@@ -290,7 +281,6 @@ export default function CreatorProfilePage() {
           <FadeInView>
             <PortfolioGallery
               items={portfolio?.items}
-              categoryNames={categoryNames}
               creatorName={profile.displayName}
               isLoading={isPortfolioLoading}
               error={portfolioError}

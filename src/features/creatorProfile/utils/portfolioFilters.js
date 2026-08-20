@@ -8,12 +8,6 @@ import { CONTENT_TYPE, STATUS_META } from '@/constants/statuses'
 /** The "no filter" token, used by both chip rows. */
 export const FILTER_ALL = 'all'
 
-/**
- * Published items above which the category sub-filter appears. Below it the
- * grid is small enough to scan whole, and a second chip row is just noise.
- */
-export const CATEGORY_FILTER_THRESHOLD = 8
-
 /** Iconify names per content type — labels come from `STATUS_META` (00 §2.5). */
 export const CONTENT_TYPE_ICONS = Object.freeze({
   [CONTENT_TYPE.PHOTO]: 'tabler:photo',
@@ -21,11 +15,15 @@ export const CONTENT_TYPE_ICONS = Object.freeze({
   [CONTENT_TYPE.BUNDLE]: 'tabler:package',
 })
 
-/** The default (unfiltered) selection. */
-export const DEFAULT_PORTFOLIO_FILTER = Object.freeze({
-  type: FILTER_ALL,
-  category: FILTER_ALL,
-})
+/**
+ * The default (unfiltered) selection.
+ *
+ * V2-10: content type is the only axis left. The category sub-filter went with
+ * every other category control on the storefront — the taxonomy still exists in
+ * the database and in the admin console, it is simply not something a visitor
+ * browses by any more.
+ */
+export const DEFAULT_PORTFOLIO_FILTER = Object.freeze({ type: FILTER_ALL })
 
 /**
  * Content-type chips, in enum order and **only for the types this creator
@@ -56,46 +54,15 @@ export function buildTypeOptions(items = []) {
 }
 
 /**
- * Category chips for the sub-filter, counted against the items left after the
- * type filter so the numbers match what a click will actually show.
- *
- * @param {object[]} items items the type filter already narrowed to
- * @param {Object<string, string>} [categoryNames] category id → display name
- * @returns {{value: string, label: string, count: number}[]}
- */
-export function buildCategoryOptions(items = [], categoryNames = {}) {
-  const counts = new Map()
-  items.forEach((item) => {
-    if (!item.categoryId) return
-    counts.set(item.categoryId, (counts.get(item.categoryId) ?? 0) + 1)
-  })
-
-  if (counts.size < 2) return []
-
-  const options = [...counts.entries()]
-    .map(([categoryId, count]) => ({
-      value: categoryId,
-      label: categoryNames[categoryId] ?? categoryId,
-      count,
-    }))
-    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
-
-  return [{ value: FILTER_ALL, label: 'All work', count: items.length }, ...options]
-}
-
-/**
  * Applies a selection to the published set.
  *
  * @param {object[]} items published portfolio items
- * @param {{type?: string, category?: string}} [filter]
+ * @param {{type?: string}} [filter]
  * @returns {object[]} the items the gallery shows, in the order given
  */
 export function filterPortfolioItems(items = [], filter = DEFAULT_PORTFOLIO_FILTER) {
-  const { type = FILTER_ALL, category = FILTER_ALL } = filter
+  const { type = FILTER_ALL } = filter
+  if (type === FILTER_ALL) return items
 
-  return items.filter((item) => {
-    if (type !== FILTER_ALL && item.contentType !== type) return false
-    if (category !== FILTER_ALL && item.categoryId !== category) return false
-    return true
-  })
+  return items.filter((item) => item.contentType === type)
 }
