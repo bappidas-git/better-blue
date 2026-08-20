@@ -10,6 +10,7 @@ import FormsGallery from '@/features/dashboard/components/devGallery/FormsGaller
 import MotionGallery from '@/features/dashboard/components/devGallery/MotionGallery'
 import PaymentsGallery from '@/features/dashboard/components/devGallery/PaymentsGallery'
 import TokensGallery from '@/features/dashboard/components/devGallery/TokensGallery'
+import V2Gallery from '@/features/dashboard/components/devGallery/V2Gallery'
 import WidgetsGallery from '@/features/dashboard/components/devGallery/WidgetsGallery'
 import useDocumentTitle from '@/hooks/useDocumentTitle'
 
@@ -28,6 +29,9 @@ const TABS = [
   { value: 'widgets', label: 'Widgets', Panel: WidgetsGallery },
   { value: 'api', label: 'API', Panel: ApiGallery },
   { value: 'payments', label: 'Payments', Panel: PaymentsGallery },
+  // Storefront V2 (prompts-v2/03): the feed data layer and the components
+  // prompts 04–10 are built on.
+  { value: 'v2', label: 'V2', Panel: V2Gallery },
 ]
 
 export default function DevDesignPage() {

@@ -206,6 +206,14 @@ const CREATOR_SOURCE = [
     verified: true,
     payoutLast4: '4821',
     createdDaysAgo: 113,
+    // Storefront V2 (prompts-v2/03) — presence and the record carried
+    // over from before BetterBlue. See the block below the source array.
+    isOnline: true,
+    priorDeliveries: 34,
+    priorEarned: 9180,
+    extraImages: 106,
+    extraVideos: 64,
+
   },
   {
     key: 'liam',
@@ -224,6 +232,14 @@ const CREATOR_SOURCE = [
     verified: true,
     payoutLast4: '7310',
     createdDaysAgo: 112,
+    // Storefront V2 (prompts-v2/03) — presence and the record carried
+    // over from before BetterBlue. See the block below the source array.
+    isOnline: false,
+    priorDeliveries: 26,
+    priorEarned: 11340,
+    extraImages: 41,
+    extraVideos: 118,
+
   },
   {
     key: 'zoe',
@@ -242,6 +258,14 @@ const CREATOR_SOURCE = [
     verified: true,
     payoutLast4: '5566',
     createdDaysAgo: 111,
+    // Storefront V2 (prompts-v2/03) — presence and the record carried
+    // over from before BetterBlue. See the block below the source array.
+    isOnline: true,
+    priorDeliveries: 23,
+    priorEarned: 8760,
+    extraImages: 88,
+    extraVideos: 52,
+
   },
   {
     key: 'diego',
@@ -260,6 +284,14 @@ const CREATOR_SOURCE = [
     verified: true,
     payoutLast4: '9042',
     createdDaysAgo: 110,
+    // Storefront V2 (prompts-v2/03) — presence and the record carried
+    // over from before BetterBlue. See the block below the source array.
+    isOnline: false,
+    priorDeliveries: 12,
+    priorEarned: 4120,
+    extraImages: 18,
+    extraVideos: 71,
+
   },
   {
     key: 'isla',
@@ -278,6 +310,14 @@ const CREATOR_SOURCE = [
     verified: true,
     payoutLast4: '2287',
     createdDaysAgo: 109,
+    // Storefront V2 (prompts-v2/03) — presence and the record carried
+    // over from before BetterBlue. See the block below the source array.
+    isOnline: true,
+    priorDeliveries: 16,
+    priorEarned: 6240,
+    extraImages: 124,
+    extraVideos: 9,
+
   },
   {
     key: 'noah',
@@ -296,6 +336,14 @@ const CREATOR_SOURCE = [
     verified: true,
     payoutLast4: '6133',
     createdDaysAgo: 108,
+    // Storefront V2 (prompts-v2/03) — presence and the record carried
+    // over from before BetterBlue. See the block below the source array.
+    isOnline: true,
+    priorDeliveries: 12,
+    priorEarned: 3980,
+    extraImages: 63,
+    extraVideos: 27,
+
   },
   {
     key: 'yuki',
@@ -314,6 +362,14 @@ const CREATOR_SOURCE = [
     verified: true,
     payoutLast4: '3874',
     createdDaysAgo: 107,
+    // Storefront V2 (prompts-v2/03) — presence and the record carried
+    // over from before BetterBlue. See the block below the source array.
+    isOnline: false,
+    priorDeliveries: 9,
+    priorEarned: 2760,
+    extraImages: 79,
+    extraVideos: 6,
+
   },
   {
     key: 'amara',
@@ -332,6 +388,14 @@ const CREATOR_SOURCE = [
     verified: true,
     payoutLast4: '4409',
     createdDaysAgo: 106,
+    // Storefront V2 (prompts-v2/03) — presence and the record carried
+    // over from before BetterBlue. See the block below the source array.
+    isOnline: true,
+    priorDeliveries: 22,
+    priorEarned: 8410,
+    extraImages: 57,
+    extraVideos: 44,
+
   },
   {
     key: 'sara',
@@ -350,6 +414,14 @@ const CREATOR_SOURCE = [
     verified: true,
     payoutLast4: '7712',
     createdDaysAgo: 105,
+    // Storefront V2 (prompts-v2/03) — presence and the record carried
+    // over from before BetterBlue. See the block below the source array.
+    isOnline: false,
+    priorDeliveries: 9,
+    priorEarned: 2340,
+    extraImages: 12,
+    extraVideos: 48,
+
   },
   {
     key: 'chloe',
@@ -370,6 +442,14 @@ const CREATOR_SOURCE = [
     verified: true,
     payoutLast4: '8890',
     createdDaysAgo: 104,
+    // Storefront V2 (prompts-v2/03) — presence and the record carried
+    // over from before BetterBlue. See the block below the source array.
+    isOnline: true,
+    priorDeliveries: 4,
+    priorEarned: 1020,
+    extraImages: 34,
+    extraVideos: 5,
+
   },
   {
     key: 'mateo',
@@ -388,6 +468,14 @@ const CREATOR_SOURCE = [
     // Still working through the first portfolio review round.
     verified: false,
     createdDaysAgo: 44,
+    // Storefront V2 (prompts-v2/03) — presence and the record carried
+    // over from before BetterBlue. See the block below the source array.
+    isOnline: false,
+    priorDeliveries: 2,
+    priorEarned: 560,
+    extraImages: 9,
+    extraVideos: 14,
+
   },
   {
     key: 'ethan',
@@ -405,6 +493,14 @@ const CREATOR_SOURCE = [
     featured: false,
     verified: false,
     createdDaysAgo: 38,
+    // Storefront V2 (prompts-v2/03) — presence and the record carried
+    // over from before BetterBlue. See the block below the source array.
+    isOnline: false,
+    priorDeliveries: 0,
+    priorEarned: 0,
+    extraImages: 4,
+    extraVideos: 1,
+
   },
 ]
 
@@ -429,6 +525,16 @@ export const creatorProfiles = CREATOR_SOURCE.map((source) =>
     ratingAvg: 0,
     ratingCount: 0,
     completedOrders: 0,
+    // Storefront V2 (prompts-v2/03). `isOnline` is a plain seeded flag — there
+    // is no presence service in the prototype, so the storefront shows a state
+    // rather than tracking one. The other four are **derived** in seed-db.js
+    // from the ledger, the orders, and the portfolio (plus the carried-over
+    // record below), so a creator's level can never contradict their history.
+    isOnline: Boolean(source.isOnline),
+    deliveriesCount: 0,
+    totalEarned: 0,
+    contributionCounts: { images: 0, videos: 0 },
+    level: 0,
     payoutMethod: source.payoutLast4
       ? {
           type: PAYOUT_METHOD_TYPE,
@@ -438,6 +544,39 @@ export const creatorProfiles = CREATOR_SOURCE.map((source) =>
       : undefined,
     createdAt: daysAgo(source.createdDaysAgo, 11, 5),
   })
+)
+
+/**
+ * What each creator brought with them — Storefront V2 (prompts-v2/03).
+ *
+ * A storefront's headline figures are "how much work have you delivered" and
+ * "how much have you earned", and the seeded marketplace is only four months
+ * old: nobody in it has 25 deliveries, so every creator would sit at Level 1
+ * and the level system would have nothing to show. These four numbers are the
+ * record each creator carried over when they joined — deliveries and earnings
+ * from before BetterBlue, and the portfolio they had already shot.
+ *
+ * They are **padding, and they are honest about it**: `seed-db.js` adds them to
+ * the figures it computes from this database rather than replacing them, and
+ * asserts that every published total stays at or above what the ledger and the
+ * orders actually contain. The Laravel backend has no equivalent — a real
+ * creator's totals are the sum of their real orders — so this map has no
+ * counterpart to migrate.
+ *
+ * Keyed by `creatorProfiles.id`.
+ */
+export const CREATOR_CARRIED_OVER = Object.freeze(
+  Object.fromEntries(
+    CREATOR_SOURCE.map((source) => [
+      source.id,
+      Object.freeze({
+        deliveries: source.priorDeliveries ?? 0,
+        earned: source.priorEarned ?? 0,
+        images: source.extraImages ?? 0,
+        videos: source.extraVideos ?? 0,
+      }),
+    ])
+  )
 )
 
 /** `creatorProfileId('ava')` → `cpr_ava`. */

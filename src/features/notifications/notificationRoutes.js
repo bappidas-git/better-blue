@@ -74,6 +74,13 @@ const TYPE_TARGET = Object.freeze({
   // to the buyer who wrote it, carries `entityType: 'request'`, and the thing
   // they will want is the brief itself and the reason on it.
   [NOTIFICATION_TYPE.REQUEST_CLOSED]: TARGET.REQUEST,
+  // Storefront V2: a creator replied on one of this buyer's feeds. It carries
+  // `entityType: 'request'` and the feed's `req_…`, so it lands the buyer on
+  // that brief. **Honest limitation:** the thread itself has no buyer-facing
+  // screen yet — V2-08 builds the creator's side of it, and reading replies as
+  // the buyer is future work. The brief is the nearest true destination, and it
+  // is never a dead link.
+  [NOTIFICATION_TYPE.FEED_REPLY_RECEIVED]: TARGET.REQUEST,
   [NOTIFICATION_TYPE.ORDER_PAID]: TARGET.ORDER,
   [NOTIFICATION_TYPE.DELIVERY_SUBMITTED]: TARGET.ORDER,
   [NOTIFICATION_TYPE.REVISION_REQUESTED]: TARGET.ORDER,

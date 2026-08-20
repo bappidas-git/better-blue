@@ -14,6 +14,10 @@ export const ID_PREFIX = Object.freeze({
   PORTFOLIO_ITEM: 'pfi',
   CATEGORY: 'cat',
   REQUEST: 'req',
+  // Storefront V2: the private conversation a creator opens under a feed. A
+  // feed *is* a `contentRequests` record, so a reply's `feedId` carries a
+  // `req_…` — the collection was never renamed (prompts-v2/03).
+  FEED_REPLY: 'frp',
   PROPOSAL: 'prp',
   ORDER: 'ord',
   DELIVERY: 'dlv',
@@ -46,6 +50,10 @@ export const ID_PREFIX = Object.freeze({
   // URLs on `contentRequests.referenceUrls` rather than as records, so — like
   // `pim_` above — the id only ever labels the upload itself.
   REQUEST_REFERENCE: 'rrf',
+  // One message inside a `feedReplies` thread. Embedded on `feedReplies.
+  // messages` rather than stored as its own collection (contract §1.4), like
+  // `dfl_` and `evd_` above, and minted by `feedService`.
+  FEED_REPLY_MESSAGE: 'frm',
 })
 
 /**

@@ -390,9 +390,12 @@ async function checkSeedFileClean() {
     !JSON.stringify(db).includes(SCRATCH_ID),
     'run `npm run seed` to restore it'
   )
+  // Bumped to 27 by Storefront V2-03, which added `feedReplies`. The number is
+  // a tripwire for a truncated or half-written file, so it moves whenever a
+  // collection is legitimately added — and only then.
   check(
-    'server/db.json still has all 26 collections',
-    Object.keys(db).length === 26,
+    'server/db.json still has all 27 collections',
+    Object.keys(db).length === 27,
     `found ${Object.keys(db).length}`
   )
 }

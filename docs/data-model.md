@@ -37,7 +37,8 @@ non-zero **without writing the file**.
 | `scripts/seed-data/profiles.js` | `buyerProfiles`, `creatorProfiles` |
 | `scripts/seed-data/categories.js` | `categories` |
 | `scripts/seed-data/portfolio.js` | `portfolioItems` |
-| `scripts/seed-data/requests.js` | `contentRequests` (+ the history engagement table) |
+| `scripts/seed-data/requests.js` | `contentRequests` (+ the history engagement table, feed tags, and the headline offer) |
+| `scripts/seed-data/feedReplies.js` | `feedReplies` |
 | `scripts/seed-data/proposals.js` | `proposals` |
 | `scripts/seed-data/orders.js` | `orders`, `deliveries`, `revisions` |
 | `scripts/seed-data/finance.js` | `payments`, `transactions`, `commissions`, `payouts` |
@@ -99,6 +100,11 @@ account and a profile:
 - **`contentRequests.invitedCreatorId` → `creatorProfiles.id`** (Prompt 16).
   It is copied from the storefront the buyer clicked "Start a request" on, so
   it names the profile, not the account. See §5 `contentRequests`.
+- **`feedReplies.creatorId` → `creatorProfiles.id`** (Storefront V2). A reply is
+  written *from* a storefront — the buyer clicks through to the profile, not to
+  an account — so it names the profile, like portfolio work does. The messages
+  inside it are the other way round: `feedReplies.messages[].authorId` →
+  `users.id`, because a message is written by a person.
 - **Every other `creatorId` and every `buyerId` → `users.id`** (proposals,
   orders, reviews, payouts, disputes, moderation reviews, affiliate records).
   Those flows involve accounts: authentication, notifications, money, and
@@ -172,7 +178,7 @@ renders through `StatusChip`.
 
 1. **Shape** — every collection is a non-empty array (`platformSettings` is a
    singleton object), every id is unique and carries the right prefix.
-2. **Foreign keys** — 52 declared relations plus polymorphic
+2. **Foreign keys** — 55 declared relations plus polymorphic
    `entityType`/`subjectType` references and nested author ids
    (`moderationReviews.history[].byId`, `supportTickets.replies[].byId`,
    `disputes.resolution.resolvedById`).
@@ -194,7 +200,18 @@ renders through `StatusChip`.
    payment status matches order status; disputes belong to a party on the
    order; resolved disputes carry a resolution and vice versa; reviews only
    exist on completed orders; demo accounts exist and can sign in.
-7. **Content policy** — a term sweep over every string, so a careless edit
+7. **Feeds, replies, and levels** (Storefront V2) — every feed carries 3–6
+   kebab-case tags with no repeats; `offerPrice` equals the budget it is derived
+   from and is absent only on a draft; `repliesCount` equals the number of
+   `feedReplies` pointing at the feed; all three deal statuses are represented;
+   one reply per creator per feed, opened by the creator, two-sided, 2–6
+   messages, each authored by the right account and dated after the feed was
+   published and after the storefront existed; the demo creator has at least two
+   threads; every creator's `deliveriesCount` and `totalEarned` sit at or above
+   what the orders and the ledger actually contain, `contributionCounts` at or
+   above their published portfolio, and `level` matches
+   `getCreatorLevel` — with all three levels and several online creators present.
+8. **Content policy** — a term sweep over every string, so a careless edit
    cannot introduce content that breaches 00 §1.
 
 ### Derived aggregates
@@ -206,8 +223,14 @@ contradict the underlying rows:
 |---|---|
 | `contentRequests.proposalsCount` | count of proposals on the request |
 | `contentRequests.awardedProposalId` | the accepted proposal, else `null` |
+| `contentRequests.repliesCount` | count of `feedReplies` on the feed |
+| `contentRequests.offerPrice` | `budgetMax ?? budgetMin` — the headline offer |
 | `creatorProfiles.ratingAvg` / `ratingCount` | reviews for that creator (avg to 1 decimal) |
 | `creatorProfiles.completedOrders` | orders with status `completed` |
+| `creatorProfiles.deliveriesCount` | `completedOrders` + the carried-over record (below) |
+| `creatorProfiles.totalEarned` | `release` + `commission` ledger rows + the carried-over record |
+| `creatorProfiles.contributionCounts` | published portfolio items by media type + the carried-over record |
+| `creatorProfiles.level` | `getCreatorLevel({ deliveriesCount, totalEarned })` |
 | `buyerProfiles.totalSpent` | payments held/released/partially-refunded, net of refunds |
 | `transactions.balanceAfter` | running BetterBlue balance for creators and affiliates |
 | `affiliateProfiles.pendingEarnings` / `approvedEarnings` / `paidEarnings` | affiliate earnings by status |
@@ -280,9 +303,40 @@ The creator's storefront: what they sell, where, and how well it has gone.
 | `languages` | string[] | |
 | `responseTimeHours` | int | |
 | `availability`, `featured`, `verified` | bool | |
+| `isOnline` | bool | Storefront V2 — see below |
 | `ratingAvg`, `ratingCount`, `completedOrders` | number | **derived** |
+| `deliveriesCount` | int | **derived** — Storefront V2 |
+| `totalEarned` | decimal | **derived** — lifetime earnings net of commission |
+| `contributionCounts` | object | **derived** — `{ images, videos }` |
+| `level` | 1 \| 2 \| 3 | **derived** — `src/constants/creatorLevels.js` |
 | `payoutMethod` | object? | `{ type: 'bank', accountName, accountMasked }` — masked tail only, never an account number |
 | `createdAt` | datetime | |
+
+The last five were **added by Storefront V2** (`prompts-v2/03`) and are additive:
+nothing that read a creator profile before now reads them, and the dashboard,
+discovery, and admin screens are unchanged.
+
+- `level` is not stored independently of the figures behind it.
+  `getCreatorLevel({ deliveriesCount, totalEarned })` is the single rule —
+  **Level 3** at ≥25 deliveries *and* ≥$10,000 earned, **Level 2** at ≥10 *and*
+  ≥$2,000, **Level 1** otherwise — and the seed calls the same function the app
+  does, so the two cannot disagree. Both figures have to be met: forty cheap
+  deliveries and one five-figure commission are each half of what Level 3
+  claims.
+- `isOnline` is a **seeded flag, not a live session** (`MOCK-PRESENCE`). There
+  is no presence channel in the prototype, so `OnlineDot` renders a state
+  rather than tracking one. Laravel would drive the same field from a heartbeat
+  and nothing above the field changes.
+- `deliveriesCount`, `totalEarned`, and `contributionCounts` are each **what
+  this database contains plus the record the creator carried over when they
+  joined** (`CREATOR_CARRIED_OVER` in `scripts/seed-data/profiles.js`). The
+  seeded marketplace is four months old, so nobody in it has 25 deliveries and
+  every creator would sit at Level 1 with nothing to show. The padding is
+  declared in one table, and the validator asserts that every published total
+  stays at or above the orders, the ledger, and the portfolio it is built on —
+  so the figures can be generous but never contradict the data. A real backend
+  has no equivalent: the totals are the sum of the real rows, and that table
+  has nothing to migrate.
 
 **MySQL** `creator_profiles` — `user_id` UNIQUE FK; `categories` becomes
 `creator_profile_categories(creator_profile_id, category_id)` and
@@ -400,10 +454,13 @@ history (see §6).
 | `referenceUrls` | string[] | |
 | `budgetType` | enum | `BUDGET_TYPE`; `fixed` sets `budgetMin === budgetMax` |
 | `budgetMin`, `budgetMax` | decimal | + `currency` |
+| `offerPrice` | decimal? | **derived** — the headline offer; see below |
+| `tags` | string[] | 3–6 kebab-case slugs; see below |
 | `deadline` | datetime | **may be in the future** |
 | `invitedCreatorId` | FK? → `creatorProfiles.id` | optional; see below |
 | `status` | enum | `REQUEST_STATUS` |
 | `proposalsCount` | int | **derived** |
+| `repliesCount` | int | **derived** — `feedReplies` on this feed |
 | `awardedProposalId` | FK? → `proposals.id` | **derived**; `null` until awarded |
 | `createdAt` | datetime | |
 | `publishedAt` | datetime | `null` while a draft |
@@ -435,11 +492,104 @@ above, alongside `portfolioItems.creatorId`. It is a **hint, not an award**: the
 brief still goes to the whole marketplace, and Prompt 23 uses it only to badge
 that creator's proposal as "Invited".
 
+`offerPrice`, `tags`, and `repliesCount` were **added by Storefront V2**
+(`prompts-v2/03`), which renders a `contentRequests` row as a *feed*. The
+collection was not renamed and the record is not reshaped — `/feeds/:feedId`
+carries a `req_…` and every existing consumer reads exactly what it read
+before.
+
+- **`offerPrice`** is derived from the budget rather than stored beside it, so
+  the two cannot disagree: a `fixed` brief offers its one price, and a `range`
+  brief offers the **top** of the range, which is the figure a creator decides
+  whether to answer. It is absent on a draft that has not answered the budget
+  question — an absent offer, never `$0` — and present on everything else. The
+  wizard, the buyer's request list, and the admin console keep reading
+  `budgetMin`/`budgetMax`.
+- **`tags`** are lowercase kebab-case slugs (`product-photo`, `social-media`),
+  rendered as stored — the convention creators recognise from every other
+  marketplace, so there is no display-name lookup behind them. Note this differs
+  from `portfolioItems.tags`, which are free-text words (`food styling`); those
+  are a creator's own labels on their own work and were never a filter
+  vocabulary. Scenario feeds carry hand-written tags; the archive derives four
+  from content type, category, and placement.
+- **`requestStatus` → deal status.** The storefront shows three states rather
+  than six: `open` → **open**, `awarded`/`closed`/`cancelled` → **closed**,
+  `completed` → **delivered**. That projection lives in
+  `src/constants/feedStatus.js` and is presentation only — the stored status is
+  untouched, and the state machine, the dashboard, and the admin console are
+  unaffected. A `draft` has no deal status because it never reaches a feed
+  surface.
+
 **MySQL** `content_requests` — `reference_urls` becomes
 `content_request_references`; index `(status, published_at DESC)` for the board
 and `(buyer_id, status)` for "my requests". `awarded_proposal_id` and
 `invited_creator_id` are nullable FKs; add `awarded_proposal_id` after
-`proposals` exists to avoid a circular constraint at migration time.
+`proposals` exists to avoid a circular constraint at migration time. `tags`
+becomes `content_request_tags`; index `(status, replies_count DESC)` and
+`(status, offer_price)` for the feed board's sorts.
+
+### `feedReplies` — 31
+
+The private conversation a creator opens under a feed (Storefront V2). Thirty-one
+threads: two to five on each of the nine open feeds, plus two on a feed that has
+since been awarded and two on one that has been delivered — because a reply and
+a deal status are independent, and a thread outlives the deal.
+
+**A reply is not a proposal.** This is the distinction the collection exists to
+keep:
+
+| | `proposals` | `feedReplies` |
+|---|---|---|
+| What it is | A priced, formal offer | An informal message thread |
+| Carries | Price, timeline, deliverables, samples | Messages, nothing else |
+| Status | A `PROPOSAL_STATUS` state machine | None |
+| Leads to | Award → order → escrow → delivery | Nothing — it is a conversation |
+| Who can read it | The buyer, and the creator who sent it | The buyer, and the creator who wrote it |
+| Service | `proposalService` | `feedService` |
+
+Neither collection reads the other and neither validates against the other. A
+creator may reply to a feed, propose on it, both, or neither, and deleting a
+reply does not touch a proposal. Prompts 18 and 23 are untouched by any of this.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | string | `frp_…` |
+| `feedId` | FK → `contentRequests.id` | the feed being answered |
+| `creatorId` | FK → `creatorProfiles.id` | **the profile**, not the account — see §3 |
+| `buyerId` | FK → `users.id` | the account that posted the feed |
+| `messages` | object[] | see below; 2–6 in the seed, unbounded in the app |
+| `createdAt` | datetime | the first message |
+| `updatedAt` | datetime | the most recent message |
+
+`messages[]` is embedded rather than its own collection (contract §1.4), like
+`deliveries.files`: `{ id: 'frm_…', authorRole: 'creator'|'buyer', authorId
+(→ users.id), body, at }`. The first message of a thread is always the
+creator's — a reply is something a creator starts.
+
+**One reply per creator per feed.** `feedService.createReply` refuses a second
+one with `conflict`; the seed validator enforces the same rule; MySQL enforces
+it with a unique index.
+
+**Privacy.** A thread belongs to exactly two people. Every read in
+`feedService` (`getMyReply`, `listMyReplies`) carries `creatorId` as a *query
+filter*, not as a post-fetch check, so the provider never returns another
+creator's thread. As with every ownership check in this prototype that is
+**UX only** (00 §11) — the Laravel API must scope the same queries to the
+signed-in creator, because anything the browser filters, the browser can
+unfilter.
+
+**Deletion is hard**, unlike everything else in BetterBlue, where removal is a
+status transition (contract §1.7). A withdrawn conversation should leave nothing
+behind, and no order, payment, or audit record depends on one. `deleteMyReply`
+removes the row and decrements the feed's `repliesCount`, which frees the
+creator to reply again later.
+
+**MySQL** `feed_replies` — `UNIQUE (feed_id, creator_id)`, index
+`(creator_id, updated_at DESC)` for the creator's conversation list and
+`(feed_id)` for the counter. `messages` becomes `feed_reply_messages
+(id, feed_reply_id, author_role, author_id, body, created_at)` with
+`ON DELETE CASCADE`, and the count on `content_requests.replies_count` is
+maintained in the same transaction as the insert.
 
 ### `proposals` — 116
 
@@ -727,6 +877,17 @@ The in-app bell feed, generated from events that exist in the data.
 | `entityType`, `entityId` | polymorphic? | the deep link; both omitted for a general announcement |
 | `read` | bool | |
 | `createdAt` | datetime | never before the event it announces |
+
+Storefront V2 added one type, `feed_reply_received`, emitted by
+`feedService.createReply` when a creator opens a thread on one of the buyer's
+feeds. It is deliberately **not** `proposal_received`: telling a buyer they have
+an offer to review when what arrived is a message would be wrong. It is filed
+under the existing "Requests & proposals" preference category, so no new toggle
+row appears, and it carries `entityType: 'request'` with the feed's `req_…`.
+**Honest limitation:** there is no buyer-facing screen for the thread itself
+yet — V2-08 builds the creator's side — so the notification lands the buyer on
+the brief, which is the nearest true destination and never a dead link. No
+notification of this type is seeded; it only exists at runtime.
 
 **MySQL** `notifications` — index `(user_id, read, created_at DESC)`, which is
 the exact query the bell menu runs. `entity_type` + `entity_id` is a
@@ -1047,6 +1208,28 @@ computed from.
 stored counter would be a second source of truth that drifts on the first
 missed update. `GET /notifications?userId=…&read=false` answers the question
 directly, and MySQL indexes `(user_id, read, created_at)` for it.
+
+**Replies and proposals are separate systems.** Storefront V2 added a
+conversation to the public feed and deliberately did not run it through
+`proposals`. A proposal is a priced offer with a state machine, an award, an
+order, and escrow behind it; a reply is a message. Overloading one collection to
+mean both would have put "I might be interested" and "here is my quote for
+$900" under the same status, the same notification, and the same buyer inbox.
+The `feedReplies` section in §5 sets the two side by side.
+
+**A feed is a content request.** The V2 storefront renames nothing: `/feeds`
+lists `contentRequests`, `:feedId` is a `req_…`, and `feedService` is a façade
+over `requestService`. What V2 added is three additive fields and one
+presentation-layer projection (six request statuses shown as three deal
+statuses). That is what keeps the buyer dashboard, the admin console, and the
+Laravel migration reading the records they already read.
+
+**Storefront figures are padded, and say so.** `deliveriesCount`, `totalEarned`,
+and `contributionCounts` add a declared carried-over record to what the database
+holds, because a four-month-old marketplace cannot demonstrate a level system
+honestly and inventing the whole figure would have been worse. The padding lives
+in one table, the validator asserts every total stays at or above the real rows,
+and the mechanism has no counterpart to migrate.
 
 **Money is settled, not just agreed.** `orders.commissionAmount` always follows
 the 00 §9 rule against the agreed price, while `commissions.baseAmount` follows

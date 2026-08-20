@@ -41,6 +41,10 @@ export { portfolioService } from './portfolioService'
 export { categoryService } from './categoryService'
 export { requestService } from './requestService'
 export { proposalService } from './proposalService'
+// Storefront V2 (prompts-v2/03): the feed board is a façade over
+// `requestService` + the `feedReplies` collection — no collection was renamed.
+export { feedService, FEED_SORT, REPLY_BODY_MIN, REPLY_BODY_MAX } from './feedService'
+export { creatorMetaService } from './creatorMetaService'
 
 /* Orders and delivery ----------------------------------------------------- */
 export { orderService, ORDER_EVENT_TYPE } from './orderService'
