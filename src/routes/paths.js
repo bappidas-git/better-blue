@@ -154,6 +154,18 @@ export const paths = Object.freeze({
   requestDetail: (requestId) => paths.feedDetail(requestId),
   /** Affiliate referral landing, e.g. `/r/NORA25`. */
   referral: (code) => fill(paths.REFERRAL_PATTERN, { code }),
+  /**
+   * Registration with the account type already chosen — `/register?role=creator`
+   * (V2-06). The register form preselects the role and opens on its details
+   * step; anything it does not recognise falls back to the role step, so a
+   * hand-edited URL can never produce an account of the wrong kind.
+   *
+   * The key is `RegisterPage`'s exported `ROLE_PARAM`, spelled here rather than
+   * imported for the same reason `buyerRequestDraft` spells `draft`: linking to
+   * a screen should not pull that screen's module into the page doing the
+   * linking. Rename it in both places. Values come from `ROLES`.
+   */
+  registerAs: (role) => `${paths.REGISTER}?role=${encodeURIComponent(String(role))}`,
 
   buyerRequestDetail: (requestId) => fill(paths.BUYER_REQUEST_DETAIL_PATTERN, { requestId }),
   /**
