@@ -54,6 +54,11 @@ export const ID_PREFIX = Object.freeze({
   // messages` rather than stored as its own collection (contract §1.4), like
   // `dfl_` and `evd_` above, and minted by `feedService`.
   FEED_REPLY_MESSAGE: 'frm',
+  // Storefront V2 (prompts-v2/09): a buyer's opening message to a creator from
+  // the creators page. Its own collection rather than an embedded record —
+  // there is no thread to embed it in, because the creator-side inbox is future
+  // work and a message is one row until then.
+  DIRECT_MESSAGE: 'dm',
 })
 
 /**

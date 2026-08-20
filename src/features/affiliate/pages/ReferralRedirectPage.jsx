@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-import { Navigate, useParams } from 'react-router-dom'
+import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 
 import AppLoader from '@/app/AppLoader'
 import { useToast } from '@/components/feedback/ToastProvider'
@@ -8,6 +8,8 @@ import useApiQuery from '@/hooks/useApiQuery'
 import useDocumentTitle from '@/hooks/useDocumentTitle'
 import { paths } from '@/routes/paths'
 import { affiliateService, captureReferralCode } from '@/services/affiliateService'
+
+import { REFERRAL_CREATOR_PARAM } from '../utils/referralLink'
 
 // `/r/:code` — the whole of referral capture, and the only page in BetterBlue
 // that exists to redirect (Prompt 34 §4.1).
@@ -24,6 +26,10 @@ import { affiliateService, captureReferralCode } from '@/services/affiliateServi
 // `referredByCode` on the account, and writes the `pending` referral
 // (`authService.register` → `affiliateService.recordReferral`).
 //
+// V2-09 hangs an optional `?creator=cpr_…` off the link when it is shared from
+// a creator card. It is tolerated rather than acted on: the code decides
+// everything, and the storefront id is recorded beside it for later.
+//
 // MOCK-ATTRIBUTION: capture is client-side, so it is per-browser and per-device,
 // and the click counter is approximate — both are documented on
 // `captureReferralCode` and `affiliateService.recordClick`. Laravel does this
@@ -33,8 +39,17 @@ import { affiliateService, captureReferralCode } from '@/services/affiliateServi
 
 export default function ReferralRedirectPage() {
   const { code } = useParams()
+  const [searchParams] = useSearchParams()
   const toast = useToast()
   useDocumentTitle('Welcome to BetterBlue')
+
+  // Storefront V2 (V2-09 §5): a Promote link shared from a creator card adds
+  // `?creator=cpr_…`. The capture flow is **unchanged** — the code in the path
+  // is still the whole of the attribution, and an unknown, malformed, or
+  // missing parameter changes nothing about where this page sends anybody. It
+  // is stored next to the code for a future "which storefront sent them"
+  // report; nothing reads it yet.
+  const sharedByCreatorId = searchParams.get(REFERRAL_CREATOR_PARAM)
 
   // The lookup is the gate: only an **active** affiliate on a **switched-on**
   // program can capture, so a suspended code stops working the moment an admin
@@ -54,7 +69,7 @@ export default function ReferralRedirectPage() {
     if (isLoading || handled.current || !profile) return
     handled.current = true
 
-    captureReferralCode(profile.code)
+    captureReferralCode(profile.code, { creatorId: sharedByCreatorId })
     // Fire-and-forget: the redirect must not wait on a vanity metric, and
     // `recordClick` swallows its own failures.
     affiliateService.recordClick(profile)
@@ -63,7 +78,7 @@ export default function ReferralRedirectPage() {
       description:
         'Create your account to start commissioning content — your invitation is already applied.',
     })
-  }, [isLoading, profile, toast])
+  }, [isLoading, profile, sharedByCreatorId, toast])
 
   if (isLoading) return <AppLoader label="Opening your invitation" />
 

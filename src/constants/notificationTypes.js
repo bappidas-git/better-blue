@@ -32,6 +32,10 @@ export const NOTIFICATION_TYPE = Object.freeze({
   // reply is a conversation, not a priced offer, and putting the two under one
   // type would tell a buyer they have an offer to review when they do not.
   FEED_REPLY_RECEIVED: 'feed_reply_received',
+  // Storefront V2 addition (prompts-v2/09): a buyer opened a conversation with
+  // a creator from the creators page. Separate from `feed_reply_received` — it
+  // travels the other way and is not attached to a brief at all.
+  DIRECT_MESSAGE_RECEIVED: 'direct_message_received',
   ORDER_PAID: 'order_paid',
   DELIVERY_SUBMITTED: 'delivery_submitted',
   REVISION_REQUESTED: 'revision_requested',
@@ -122,6 +126,12 @@ export const NOTIFICATION_META = Object.freeze({
   [NOTIFICATION_TYPE.FEED_REPLY_RECEIVED]: Object.freeze({
     label: 'New reply on your feed',
     icon: 'solar:chat-round-line-linear',
+    tone: 'info',
+    category: NOTIFICATION_CATEGORY.MARKETPLACE,
+  }),
+  [NOTIFICATION_TYPE.DIRECT_MESSAGE_RECEIVED]: Object.freeze({
+    label: 'New message from a buyer',
+    icon: 'solar:letter-linear',
     tone: 'info',
     category: NOTIFICATION_CATEGORY.MARKETPLACE,
   }),

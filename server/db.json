@@ -267,7 +267,7 @@
       "avatarUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23F5F3FF%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%237C3AED%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3ENW%3C%2Ftext%3E%3C%2Fsvg%3E",
       "phone": "+1 503 555 0142",
       "createdAt": "2026-04-22T10:15:00.000Z",
-      "lastLoginAt": "2026-08-20T09:57:12.871Z",
+      "lastLoginAt": "2026-08-14T08:30:00.000Z",
       "notificationPrefs": {
         "marketplace": {
           "inApp": true
@@ -693,7 +693,7 @@
       "avatarUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22128%22%20height%3D%22128%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20width%3D%22128%22%20height%3D%22128%22%20fill%3D%22%23E5E2EC%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dy%3D%220.35em%22%20text-anchor%3D%22middle%22%20fill%3D%22%23171223%22%20font-family%3D%22system-ui%2C%20-apple-system%2C%20'Segoe%20UI'%2C%20Roboto%2C%20Helvetica%2C%20Arial%2C%20sans-serif%22%20font-size%3D%2251%22%20font-weight%3D%22600%22%20letter-spacing%3D%221%22%3EAM%3C%2Ftext%3E%3C%2Fsvg%3E",
       "phone": "+1 512 555 0110",
       "createdAt": "2026-04-23T10:15:00.000Z",
-      "lastLoginAt": "2026-08-20T09:57:25.158Z",
+      "lastLoginAt": "2026-08-14T08:30:00.000Z",
       "notificationPrefs": {
         "marketplace": {
           "inApp": true
@@ -6650,6 +6650,64 @@
       ],
       "createdAt": "2026-07-13T02:30:00.000Z",
       "updatedAt": "2026-07-14T00:30:00.000Z"
+    }
+  ],
+  "directMessages": [
+    {
+      "id": "dm_001",
+      "buyerId": "usr_buyer_verde",
+      "creatorId": "cpr_ava",
+      "body": "Hello Ava — we run a small group of neighbourhood restaurants and are refreshing our menu photography before the autumn launch. Roughly twenty dishes across two sites, shot in daylight. Would that fit a single day with you, and is early October still open?",
+      "createdAt": "2026-08-11T10:00:00.000Z"
+    },
+    {
+      "id": "dm_002",
+      "buyerId": "usr_buyer_nimbus",
+      "creatorId": "cpr_liam",
+      "body": "Hi Liam — Nimbus Fitness here. We are putting together a short campaign film for our new class timetable and liked the pacing in your studio work. We have the space for a half day and would need a sixty-second cut plus vertical versions. Could you share your availability?",
+      "createdAt": "2026-08-09T14:07:00.000Z"
+    },
+    {
+      "id": "dm_003",
+      "buyerId": "usr_buyer_atlas",
+      "creatorId": "cpr_zoe",
+      "body": "Good morning Zoe — Atlas Travel. We are commissioning hotel and destination stills for next season’s brochure and website. Six properties, spread over three weeks, all interiors and exteriors. Do you take multi-location bookings, and would you quote per property or per day?",
+      "createdAt": "2026-08-07T09:14:00.000Z"
+    },
+    {
+      "id": "dm_004",
+      "buyerId": "usr_buyer_bloom",
+      "creatorId": "cpr_ava",
+      "body": "Hi Ava — Bloom Beauty. We are launching a skincare range in November and need clean product stills on a neutral set, plus a handful of lifestyle frames for social. Is that something you shoot in studio, and what does your usual turnaround look like?",
+      "createdAt": "2026-08-05T16:21:00.000Z"
+    },
+    {
+      "id": "dm_005",
+      "buyerId": "usr_buyer_craftware",
+      "creatorId": "cpr_noah",
+      "body": "Hello Noah — Craftware Tools. We make hand tools for trade customers and want short demonstration videos, one per product, filmed on a workbench. Around eight in total. Would you be able to keep a consistent look across them if we film in batches?",
+      "createdAt": "2026-08-02T11:28:00.000Z"
+    },
+    {
+      "id": "dm_006",
+      "buyerId": "usr_buyer_urbannest",
+      "creatorId": "cpr_yuki",
+      "body": "Hi Yuki — Urban Nest. We are photographing three furnished apartments for a new listing page and admired the way you light interiors. Natural light where possible, and we would need both wide room shots and detail frames. Are you taking bookings for next month?",
+      "createdAt": "2026-07-29T13:35:00.000Z"
+    },
+    {
+      "id": "dm_007",
+      "buyerId": "usr_buyer_cocoa",
+      "creatorId": "cpr_amara",
+      "body": "Hello Amara — Cocoa & Co. We are a small chocolate maker preparing a gifting campaign. What we need most is a set of warm, textured product photographs and one short film of the wrapping process. Could you tell us what a package like that usually costs?",
+      "createdAt": "2026-07-24T15:42:00.000Z"
+    },
+    {
+      "id": "dm_008",
+      "buyerId": "usr_buyer_harborlane",
+      "creatorId": "cpr_isla",
+      "body": "Hi Isla — we are a new account here, opening a coastal cafe next spring and starting our marketing from nothing. Interiors, a few plates, and one short film for the launch. Where would you suggest a business at this stage begins?",
+      "createdAt": "2026-08-13T12:49:00.000Z"
     }
   ],
   "proposals": [

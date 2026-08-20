@@ -1,339 +1,221 @@
 import { useCallback, useMemo, useState } from 'react'
 
-import { Icon } from '@iconify/react'
 import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
+import Chip from '@mui/material/Chip'
 import Container from '@mui/material/Container'
-import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
+import { NavigationType, useNavigationType } from 'react-router-dom'
 
-import { visuallyHidden } from '@mui/utils'
-import PaginationControl from '@/components/data-display/PaginationControl'
-import EmptyState from '@/components/feedback/EmptyState'
-import ErrorState from '@/components/feedback/ErrorState'
-import FilterChipGroup from '@/components/inputs/FilterChipGroup'
-import SearchInput from '@/components/inputs/SearchInput'
-import SortSelect from '@/components/inputs/SortSelect'
+import RoleGateDialog from '@/components/feedback/RoleGateDialog'
 import PageHeader from '@/components/layout/PageHeader'
-import StaggerList from '@/components/motion/StaggerList'
-import { appConfig } from '@/config/appConfig'
-import useApiQuery from '@/hooks/useApiQuery'
+import { ROLES } from '@/constants/roles'
+import { useAuth } from '@/context/AuthContext'
+import BackToTopButton from '@/features/feeds/components/BackToTopButton'
 import useDocumentTitle from '@/hooks/useDocumentTitle'
-import { paths } from '@/routes/paths'
-import { categoryService, creatorProfileService } from '@/services'
+import useInfiniteList from '@/hooks/useInfiniteList'
+import { creatorMetaService } from '@/services'
 import { formatNumber } from '@/utils/formatters'
 
-import ActiveFilterChips from '../components/ActiveFilterChips'
-import CreatorCard, { CreatorCardSkeleton } from '../components/CreatorCard'
-import FilterRail from '../components/FilterRail'
-import FilterSheet from '../components/FilterSheet'
+import CreatorFilterBar from '../components/CreatorFilterBar'
+import CreatorFilterSheet from '../components/CreatorFilterSheet'
+import CreatorTimeline from '../components/CreatorTimeline'
+import PromoteCreatorDialog from '../components/PromoteCreatorDialog'
+import SendMessageDialog from '../components/SendMessageDialog'
 import { useDiscoveryParams } from '../hooks/useDiscoveryParams'
 import {
-  CONTENT_TYPE_OPTIONS,
-  CREATOR_PARAM,
+  CREATORS_CONTENT_MAX_WIDTH,
   CREATORS_PAGE_SIZE,
-  creatorDiscoverySchema,
-  SORT_OPTIONS,
-  toCreatorSearchParams,
+  creatorsSchema,
+  toCreatorListParams,
 } from '../utils/creatorFilters'
 
-// The creator marketplace — 00 §12's list pattern at full size: PageHeader →
-// toolbar → filters + grid → PaginationControl, with every piece of state in
-// the query string so a result set is a link somebody can send.
+// **Creators** — every open storefront on BetterBlue as a social column
+// (V2-09).
 //
-// Three requests drive it, and they are deliberately independent: the taxonomy
-// (cached for the session by `categoryService`), the page of storefronts, and
-// the portfolio thumbnails for whatever that page turned out to contain. The
-// grid therefore paints as soon as the storefronts land instead of waiting on
-// the slowest thumbnail query.
+// This replaces the Prompt 12 discovery grid: the four-column card grid, the
+// category rail, the price and rating filters, the search box, and the
+// paginator are gone. What is left is the question a buyer actually arrives
+// with — *who can do this, and are they any good* — answered by one column of
+// full-width creator cards that keeps loading as you scroll, seven chips, and a
+// sort.
+//
+// The page owns three decisions and delegates everything else: which creators
+// to ask for (`toCreatorListParams`), what "Send message" and "Promote" mean
+// for whoever is reading (below), and what the column says while it has nothing
+// yet (`CreatorTimeline`).
 
-/** Skeletons while the first page loads — one full grid at the widest layout. */
-const SKELETON_COUNT = CREATORS_PAGE_SIZE
+/** Anchor the back-to-top button returns focus to. */
+const TOP_ANCHOR_ID = 'creators-top'
 
-/** Desktop filter rail width (§11). */
-const RAIL_WIDTH = 280
+/**
+ * The restore cache's key (see `useInfiniteList`). One column, one key: the
+ * accumulated pages survive a trip to a storefront and back, and nothing else
+ * in the app shares the slot.
+ */
+const RESTORE_KEY = 'creators-column'
+
+/** Which dialog a card's action opened, and for whom. */
+const ACTION = Object.freeze({ NONE: 'none', MESSAGE: 'message', PROMOTE: 'promote' })
 
 export default function CreatorsPage() {
-  useDocumentTitle('Find creators')
+  useDocumentTitle('Creators')
+
+  const { user } = useAuth()
+  const navigationType = useNavigationType()
 
   const [isSheetOpen, setSheetOpen] = useState(false)
+  const [action, setAction] = useState(ACTION.NONE)
+  const [gateAction, setGateAction] = useState(null)
+  const [selected, setSelected] = useState(null)
 
-  const { data: categories, isLoading: isCategoriesLoading } = useApiQuery(
-    () => categoryService.listActive(),
-    []
+  const { values, setValues, clearFilters, isFiltered } = useDiscoveryParams(creatorsSchema)
+
+  const listParams = useMemo(
+    () => toCreatorListParams(values, { limit: CREATORS_PAGE_SIZE }),
+    [values]
   )
 
-  const categoryList = useMemo(() => (Array.isArray(categories) ? categories : []), [categories])
+  const list = useInfiniteList(creatorMetaService.listCreators, {
+    params: listParams,
+    limit: CREATORS_PAGE_SIZE,
+    cacheKey: RESTORE_KEY,
+    // Only a *back* navigation restores. A fresh load has an empty cache
+    // anyway, and arriving from a link should start at the top of a fresh
+    // column rather than in the middle of the last one.
+    restore: navigationType === NavigationType.Pop,
+  })
 
-  // Validates `?category=` against the live taxonomy: a stale or invented id is
-  // dropped rather than sent to the API. Until the list arrives the context is
-  // empty and nothing is dropped, so a deep link never loses its filter to a
-  // race with its own first render.
-  const paramContext = useMemo(
-    () =>
-      categoryList.length > 0
-        ? { categoryIds: new Set(categoryList.map((category) => category.id)) }
-        : null,
-    [categoryList]
+  const isBuyer = user?.role === ROLES.BUYER
+
+  /**
+   * The two gated actions, for whoever is reading (§4, §5).
+   *
+   * A signed-in **buyer** gets the dialog; everybody else — guest, creator,
+   * admin — meets the role gate, which is the same gate the feeds page uses for
+   * Reply and offers the same two ways out. The card renders both buttons
+   * either way and asks us what they mean, which is why the decision is here
+   * rather than inside it.
+   *
+   * SECURITY: the gate is UX (00 §11). `directMessagesService.sendMessage` and
+   * the affiliate service enforce the same rules on their own, and the Laravel
+   * API must too.
+   */
+  const openFor = useCallback(
+    (creator, next, gateVerb) => {
+      setSelected(creator)
+      if (isBuyer) {
+        setAction(next)
+        return
+      }
+      setGateAction(gateVerb)
+    },
+    [isBuyer]
   )
 
-  const categoryNames = useMemo(
-    () => Object.fromEntries(categoryList.map((category) => [category.id, category.name])),
-    [categoryList]
+  const handleSendMessage = useCallback(
+    (creator) => openFor(creator, ACTION.MESSAGE, 'send a message to this creator'),
+    [openFor]
   )
 
-  const { values, setValue, setValues, clearFilters, activeFilterCount, isFiltered } =
-    useDiscoveryParams(creatorDiscoverySchema, { context: paramContext, pageKey: CREATOR_PARAM.PAGE })
-
-  const searchParams = useMemo(() => toCreatorSearchParams(values), [values])
-  const searchKey = useMemo(() => JSON.stringify(searchParams), [searchParams])
-
-  const {
-    data: page,
-    isLoading,
-    error,
-    refetch,
-  } = useApiQuery(() => creatorProfileService.search(searchParams), [searchKey])
-
-  const creators = page?.items ?? []
-  const total = page?.total ?? 0
-
-  // Second pass over whatever the page returned. Keyed on the ids so it reruns
-  // when the page changes but not when an unrelated render happens.
-  const creatorIds = creators.map((creator) => creator.id)
-  const previewKey = creatorIds.join(',')
-
-  const { data: previews } = useApiQuery(
-    () => creatorProfileService.listPortfolioPreviews(creatorIds),
-    [previewKey],
-    { enabled: creatorIds.length > 0 }
+  const handlePromote = useCallback(
+    (creator) => openFor(creator, ACTION.PROMOTE, 'promote this creator with a referral link'),
+    [openFor]
   )
 
-  // "Ready" is asked of the data, not of a loading flag: while a new page is
-  // resolving, `previews` still holds the *previous* page's strips, and the
-  // effect that starts the next batch runs a frame after those cards render.
-  // Checking that every id on screen is accounted for keeps the strips in their
-  // skeleton across both gaps instead of collapsing and reflowing the grid.
-  const isPreviewReady = creatorIds.every((id) => Boolean(previews) && id in previews)
+  const closeAction = useCallback(() => setAction(ACTION.NONE), [])
+  const closeGate = useCallback(() => setGateAction(null), [])
 
-  const patch = useCallback((changes) => setValues(changes), [setValues])
-
+  const handleFilterChange = useCallback((patch) => setValues(patch), [setValues])
   const closeSheet = useCallback(() => setSheetOpen(false), [])
-
-  const countLabel = isLoading
-    ? 'Searching creators…'
-    : `${formatNumber(total)} ${total === 1 ? 'creator' : 'creators'}`
-
-  const renderGrid = () => {
-    if (error) {
-      return (
-        <ErrorState
-          title="We could not load creators"
-          message="The directory is temporarily unavailable. Your filters are kept in the address bar, so a retry picks up exactly where you were."
-          error={error}
-          onRetry={refetch}
-        />
-      )
-    }
-
-    if (!isLoading && creators.length === 0) {
-      return (
-        <EmptyState
-          icon="tabler:users-search"
-          title="No creators match these filters"
-          description="Try removing a filter or widening the price range — or post a content request and let creators come to you."
-          primaryAction={
-            isFiltered ? { label: 'Clear all filters', onClick: clearFilters } : undefined
-          }
-          secondaryAction={{ label: 'Post a content request', to: paths.REGISTER }}
-        />
-      )
-    }
-
-    return (
-      <StaggerList
-        stagger={0.04}
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: {
-            xs: '1fr',
-            sm: 'repeat(2, 1fr)',
-            lg: 'repeat(3, 1fr)',
-            xl: 'repeat(4, 1fr)',
-          },
-          gap: { xs: 2, md: 2.5 },
-        }}
-      >
-        {isLoading
-          ? Array.from({ length: SKELETON_COUNT }, (_, index) => (
-              <CreatorCardSkeleton key={`skeleton-${index}`} />
-            ))
-          : creators.map((creator) => (
-              <CreatorCard
-                key={creator.id}
-                profile={creator}
-                categoryNames={categoryNames}
-                preview={previews?.[creator.id]}
-                isPreviewLoading={!isPreviewReady}
-              />
-            ))}
-      </StaggerList>
-    )
-  }
+  const openSheet = useCallback(() => setSheetOpen(true), [])
 
   return (
-    <Container maxWidth="xl" sx={{ px: { xs: 2, md: 4 }, py: { xs: 4, md: 6 } }}>
-      <PageHeader
-        title="Find creators"
-        subtitle="Browse verified creators who shoot commercial content for businesses — photography, video, and full campaign bundles, with published portfolios and rates up front."
-      />
-
-      {/* Toolbar. Sticks under the public top nav so search, sort, and the
-          mobile "Filters" affordance stay reachable while the grid scrolls. */}
-      <Box
-        sx={{
-          position: 'sticky',
-          top: { xs: appConfig.topNavHeight.xs, md: appConfig.topNavHeight.md },
-          zIndex: (theme) => theme.zIndex.appBar - 1,
-          bgcolor: 'background.default',
-          // Bleeds into the container gutters so cards scroll *under* the
-          // toolbar rather than past its edges.
-          mx: { xs: -2, md: -4 },
-          px: { xs: 2, md: 4 },
-          pt: 1,
-          pb: 1.5,
-          mb: 1,
-        }}
-      >
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems="stretch">
-          <SearchInput
-            value={values[CREATOR_PARAM.SEARCH]}
-            onChange={(next) => setValue(CREATOR_PARAM.SEARCH, next)}
-            placeholder="Search by name or specialty"
-            label="Search creators"
-            size="medium"
-            sx={{ flexGrow: 1 }}
-          />
-
-          <Stack direction="row" spacing={1.5} sx={{ flexShrink: 0 }}>
-            <Button
-              onClick={() => setSheetOpen(true)}
-              variant="outlined"
-              size="large"
-              startIcon={<Icon icon="tabler:adjustments-horizontal" width={20} />}
-              aria-haspopup="dialog"
-              sx={{ display: { lg: 'none' }, flexGrow: { xs: 1, sm: 0 } }}
-            >
-              {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
-            </Button>
-
-            <SortSelect
-              value={values[CREATOR_PARAM.SORT]}
-              onChange={(next) => setValue(CREATOR_PARAM.SORT, next)}
-              options={SORT_OPTIONS}
-              size="medium"
-              minWidth={{ xs: 0, sm: 210 }}
-              sx={{ flexGrow: { xs: 1, sm: 0 } }}
-            />
-          </Stack>
-        </Stack>
-
-        {/* Quick content-type filters, mirroring the rail's chips. Below lg the
-            rail is behind the sheet, so the most-used filter stays in reach. */}
-        <FilterChipGroup
-          multiple
-          label="Content type"
-          options={CONTENT_TYPE_OPTIONS}
-          value={values[CREATOR_PARAM.CONTENT_TYPE]}
-          onChange={(next) => setValue(CREATOR_PARAM.CONTENT_TYPE, next)}
-          sx={{ display: { lg: 'none' }, mt: 1 }}
-        />
-      </Box>
-
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', lg: `${RAIL_WIDTH}px minmax(0, 1fr)` },
-          gap: { xs: 0, lg: 5 },
-          alignItems: 'start',
-        }}
-      >
-        <Box
-          component="aside"
-          aria-label="Creator filters"
+    <Box sx={{ position: 'relative' }}>
+      <Container maxWidth="lg" sx={{ px: { xs: 2, md: 4 }, py: { xs: 3, md: 5 } }}>
+        {/* No AmbientGlow behind this header: the intro paragraph runs the width
+            of it, and a glow behind body copy is the one thing §5 of
+            docs/theme-v2.md rules out. The level badges and the online dots in
+            the column carry the brand instead. */}
+        <PageHeader
+          id={TOP_ANCHOR_ID}
+          tabIndex={-1}
+          // Same axis as the filter bar and the column below it.
           sx={{
-            display: { xs: 'none', lg: 'block' },
-            position: 'sticky',
-            // Clears the top nav and the sticky toolbar above it.
-            top: (theme) => `calc(${appConfig.topNavHeight.md}px + ${theme.spacing(12)})`,
-            maxHeight: (theme) => `calc(100vh - ${appConfig.topNavHeight.md}px - ${theme.spacing(14)})`,
-            overflowY: 'auto',
-            pr: 1,
+            maxWidth: CREATORS_CONTENT_MAX_WIDTH,
+            mx: 'auto',
+            outline: 'none',
+            mb: { xs: 2, md: 3 },
           }}
-        >
-          <FilterRail
-            values={values}
-            onChange={patch}
-            categories={categoryList}
-            isCategoriesLoading={isCategoriesLoading}
-          />
-        </Box>
-
-        <Box sx={{ minWidth: 0 }}>
-          <ActiveFilterChips
-            values={values}
-            onChange={patch}
-            onClear={clearFilters}
-            categoryNames={categoryNames}
-            sx={{ mb: 1 }}
-          />
-
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            role="status"
-            aria-live="polite"
-            sx={{ mb: 2 }}
-          >
-            {countLabel}
-          </Typography>
-
-          {/* Names the results region in the outline, so the page reads
-              h1 → h2 → the card's own h3 rather than skipping a level
-              (00 §13). Visually hidden: the count line above already says
-              this to anyone who can see it. */}
-          <Typography component="h2" sx={visuallyHidden}>
-            Creators
-          </Typography>
-
-          {renderGrid()}
-
-          {!error && creators.length > 0 ? (
-            <PaginationControl
-              page={values[CREATOR_PARAM.PAGE]}
-              pageSize={CREATORS_PAGE_SIZE}
-              total={total}
-              onPageChange={(next) => setValues({ [CREATOR_PARAM.PAGE]: next })}
-              itemLabel="creators"
-              disabled={isLoading}
-              hideOnSinglePage
+          title="Creators"
+          subtitle="Every creator taking commercial work on BetterBlue — their level, what they have published, and what buyers have said about it. Filter the column or just keep scrolling; it loads as you go."
+          meta={
+            <Chip
+              // The header's copy of the count. The filter bar's line is the
+              // live region, so this one is silent and the number is announced
+              // once rather than twice.
+              label={
+                list.isLoading && list.total === 0
+                  ? 'Loading…'
+                  : `${formatNumber(list.total)} ${list.total === 1 ? 'creator' : 'creators'}`
+              }
+              size="small"
+              color="primary"
+              variant="outlined"
             />
-          ) : null}
-        </Box>
-      </Box>
+          }
+        />
 
-      <FilterSheet
+        <CreatorFilterBar
+          values={values}
+          onChange={handleFilterChange}
+          onClear={clearFilters}
+          isFiltered={isFiltered}
+          total={list.total}
+          isLoading={list.isLoading}
+          onOpenSheet={openSheet}
+        />
+
+        <CreatorTimeline
+          list={list}
+          onSendMessage={handleSendMessage}
+          onPromote={handlePromote}
+          isFiltered={isFiltered}
+          onClear={clearFilters}
+        />
+      </Container>
+
+      <CreatorFilterSheet
         open={isSheetOpen}
         onClose={closeSheet}
         values={values}
-        onChange={patch}
+        onChange={handleFilterChange}
         onClear={clearFilters}
         isFiltered={isFiltered}
-        total={total}
-        isLoading={isLoading}
-        categories={categoryList}
-        isCategoriesLoading={isCategoriesLoading}
+        total={list.total}
+        isLoading={list.isLoading}
       />
-    </Container>
+
+      <BackToTopButton targetId={TOP_ANCHOR_ID} />
+
+      <SendMessageDialog
+        open={action === ACTION.MESSAGE}
+        onClose={closeAction}
+        creator={selected}
+        buyerId={user?.id}
+      />
+
+      <PromoteCreatorDialog
+        open={action === ACTION.PROMOTE}
+        onClose={closeAction}
+        creator={selected}
+        buyerId={user?.id}
+      />
+
+      <RoleGateDialog
+        open={Boolean(gateAction)}
+        onClose={closeGate}
+        requiredRole={ROLES.BUYER}
+        action={gateAction ?? undefined}
+      />
+    </Box>
   )
 }
