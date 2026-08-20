@@ -17,11 +17,6 @@
   background-color: var(--bb-primary-surface);
 }
 
-/* Category tiles. */
-.ratioTile {
-  aspect-ratio: 16 / 10;
-}
-
 /* Creator cover images. */
 .ratioWide {
   aspect-ratio: 16 / 9;

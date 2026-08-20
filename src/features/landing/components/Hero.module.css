@@ -7,36 +7,8 @@
 
 .hero {
   position: relative;
+  /* The ambient blobs clip to this box, so one can never widen the page. */
   overflow: hidden;
-  /* Keeps the negative-z glows behind the hero content but in front of the
-     page background, without dragging them under the page itself. */
-  isolation: isolate;
-}
-
-/* Soft brand accent behind the composition — the token gradient at low opacity
-   (00 §6: gradient is a hero accent, never a full surface wash). */
-.glow {
-  position: absolute;
-  z-index: -1;
-  aspect-ratio: 1;
-  border-radius: var(--bb-radius-pill);
-  background-image: var(--bb-gradient-brand);
-  filter: blur(90px);
-  pointer-events: none;
-}
-
-.glowPrimary {
-  top: -14%;
-  right: -10%;
-  width: 46%;
-  opacity: 0.18;
-}
-
-.glowSecondary {
-  bottom: -22%;
-  left: -12%;
-  width: 32%;
-  opacity: 0.1;
 }
 
 /* The floating card composition: two columns, the second dropped so the cards
@@ -62,9 +34,10 @@
 .card {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--bb-divider);
+  /* Container edge, so it matches every Card on the page (theme-v2 §2). */
+  border: 1px solid var(--bb-glass-border);
   border-radius: var(--bb-radius-lg);
-  background-color: var(--bb-paper);
+  background-color: var(--bb-elevated);
   box-shadow: var(--bb-shadow-2);
   /* Four elements only — these are the ones GSAP moves on scroll. */
   will-change: transform;
@@ -89,23 +62,26 @@
   padding: 10px 12px 12px;
 }
 
+/* The creator's name — the only interactive target in the composition. Resting
+   it on `text.primary` keeps the caption reading as a card label; the brand
+   colour and its halo are the hover state, which is the one place theme-v2 §5
+   allows a glow (interactive emphasis, one element at a time). */
+.creatorLink {
+  display: block;
+  color: var(--bb-text);
+  transition:
+    color var(--bb-duration-fast) var(--bb-ease),
+    text-shadow var(--bb-duration-fast) var(--bb-ease);
+}
+
+.creatorLink:hover,
+.creatorLink:focus-visible {
+  color: var(--bb-primary-light);
+  text-decoration: underline;
+  text-shadow: var(--bb-glow-purple);
+}
+
 @media (max-width: 899.95px) {
-  /* Cheaper raster on phones, and one accent instead of two. */
-  .glow {
-    filter: blur(60px);
-  }
-
-  .glowPrimary {
-    top: -6%;
-    right: -18%;
-    width: 72%;
-    opacity: 0.14;
-  }
-
-  .glowSecondary {
-    display: none;
-  }
-
   .stage {
     gap: 12px;
   }

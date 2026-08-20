@@ -1,11 +1,8 @@
-import { useMemo } from 'react'
-
 import { Icon } from '@iconify/react'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardActionArea from '@mui/material/CardActionArea'
-import Chip from '@mui/material/Chip'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { visuallyHidden } from '@mui/utils'
@@ -28,19 +25,18 @@ import media from './LandingMedia.module.css'
 // The editorial shelf — storefronts an admin has flagged `featured` (contract
 // §6.4), best-rated first. Entirely API-driven: flip the flag in the database
 // and the shelf changes on the next load.
+//
+// V2-04 removed the category chips from these cards: categories no longer
+// appear anywhere in the storefront, so the tile now carries the storefront's
+// own signals — rating and starting price — and nothing borrowed from the
+// taxonomy. V2-05 restyles the section itself.
 
 const FEATURED_LIMIT = 6
-const MAX_CATEGORY_CHIPS = 2
 
 const COVER_WIDTH = 640
 const COVER_HEIGHT = 360
 
-function CreatorCard({ profile, categoryNames }) {
-  const chips = (profile.categories ?? [])
-    .slice(0, MAX_CATEGORY_CHIPS)
-    .map((categoryId) => categoryNames[categoryId])
-    .filter(Boolean)
-
+function CreatorCard({ profile }) {
   return (
     <Card sx={[cardLiftSx, { height: '100%' }]}>
       {/* One link for the whole card: a single tab stop, and the announced name
@@ -107,14 +103,6 @@ function CreatorCard({ profile, categoryNames }) {
 
           <RatingStars value={profile.ratingAvg} count={profile.ratingCount} size="sm" />
 
-          {chips.length ? (
-            <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-              {chips.map((name) => (
-                <Chip key={name} label={name} size="small" color="primary" />
-              ))}
-            </Stack>
-          ) : null}
-
           <Typography variant="body2" color="text.secondary" sx={{ mt: 'auto' }}>
             From{' '}
             <Box component="span" sx={{ color: 'text.primary', fontWeight: 700 }}>
@@ -127,19 +115,10 @@ function CreatorCard({ profile, categoryNames }) {
   )
 }
 
-/**
- * @param {object} props
- * @param {object[]} [props.categories] active categories, used for the chip labels
- */
-export default function FeaturedCreators({ categories }) {
+export default function FeaturedCreators() {
   const { data, isLoading, error } = useApiQuery(
     () => creatorProfileService.listFeatured(FEATURED_LIMIT),
     []
-  )
-
-  const categoryNames = useMemo(
-    () => Object.fromEntries((categories ?? []).map((category) => [category.id, category.name])),
-    [categories]
   )
 
   const profiles = Array.isArray(data) ? data : []
@@ -188,11 +167,7 @@ export default function FeaturedCreators({ categories }) {
                 <CardSkeleton key={`skeleton-${index}`} lines={2} label="Loading creator" />
               ))
             : profiles.map((profile) => (
-                <CreatorCard
-                  key={profile.id}
-                  profile={profile}
-                  categoryNames={categoryNames}
-                />
+                <CreatorCard key={profile.id} profile={profile} />
               ))}
         </Box>
       )}

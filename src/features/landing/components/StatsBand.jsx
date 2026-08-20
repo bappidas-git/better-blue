@@ -10,10 +10,10 @@ import { formatNumber } from '@/utils/formatters'
 
 import LandingSection from './LandingSection'
 
-// Four counts, computed from the API by `landingService.getStats` (contract
+// Three counts, computed from the API by `landingService.getStats` (contract
 // §7.13). Nothing here is a marketing figure: the numbers are whatever the
-// marketplace currently holds, which is also why the hero above says "vetted
-// creators" rather than inventing a headline number.
+// marketplace currently holds. V2-04 dropped the fourth, "Categories covered",
+// along with the rest of the taxonomy's presence in the storefront.
 
 /**
  * Below this many readable counts the band is dropped instead of shown: one
@@ -23,7 +23,6 @@ const MIN_STATS = 2
 
 const STATS = [
   { key: 'creators', label: 'Creator storefronts' },
-  { key: 'categories', label: 'Categories covered' },
   { key: 'completedOrders', label: 'Orders completed' },
   { key: 'contentRequests', label: 'Briefs posted' },
 ]
