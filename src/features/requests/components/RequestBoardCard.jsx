@@ -150,7 +150,7 @@ export default function RequestBoardCard({
         >
           <Link
             component={RouterLink}
-            to={paths.requestDetail(request.id)}
+            to={paths.feedDetail(request.id)}
             underline="hover"
             color="inherit"
             sx={{ '&::after': { content: '""', position: 'absolute', inset: 0, zIndex: 0 } }}

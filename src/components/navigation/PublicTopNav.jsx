@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { Icon } from '@iconify/react'
 import AppBar from '@mui/material/AppBar'
@@ -25,25 +25,38 @@ import { listItem, staggerContainer } from '@/components/motion/motionPresets'
 import { appConfig } from '@/config/appConfig'
 import { ROLE_META } from '@/constants/roles'
 import { useAuth } from '@/context/AuthContext'
-import useFeatureFlag from '@/hooks/useFeatureFlag'
 import { paths } from '@/routes/paths'
 import { cssEasing, durations } from '@/theme/motionTokens'
+import { brandGradient } from '@/theme/palette'
 
 // The signed-out top navigation: sticky, 64px on desktop and 56px on mobile,
 // flat until the page scrolls past 8px and then lifted by one elevation step.
-// Below `md` the links collapse into a full-height drawer — MUI's Drawer brings
+// Below `lg` the links collapse into a full-height drawer — MUI's Drawer brings
 // the focus trap, Escape handling, and focus return with it, and Framer only
 // staggers the links inside so the panel feels native rather than animated.
+//
+// The bar collapses at `lg`, not `md`: V2-02's six items plus the wordmark and
+// both auth CTAs need about 1100px to sit on one line, and at 900px they wrap
+// into a two-line bar. The drawer carries exactly the same six links, so
+// nothing is lost between 900px and 1200px — it is one tap away instead.
 
+// The storefront menu (V2-02), in this order on desktop and in the drawer.
+//
+// `end` marks the one link that must match exactly: every path starts with
+// `/`, so Home would otherwise be "active" on every page. Every other link
+// matches its subtree, which is what makes `/feeds/req_…` highlight Feeds.
+//
+// Feeds is listed unconditionally. Before V2 it was hidden while
+// `features.publicRequestBoard` was off; the flag still governs what the page
+// *shows* (`BoardUnavailable`), but the nav is now a fixed six items — a link
+// to a page that explains itself beats a menu that changes shape.
 const NAV_LINKS = [
-  { key: 'creators', label: 'Find Creators', to: paths.CREATORS },
-  // Prompt 23: hidden while `features.publicRequestBoard` is off, because the
-  // page it points at would only tell the visitor the board is not public
-  // today. `flag` is read through `useFeatureFlag`, the single sanctioned
-  // reader of the settings singleton (00 §5).
-  { key: 'requests', label: 'Browse Requests', to: paths.REQUESTS, flag: 'publicRequestBoard' },
+  { key: 'home', label: 'Home', to: paths.HOME, end: true },
+  { key: 'feeds', label: 'Feeds', to: paths.FEEDS },
+  { key: 'creators', label: 'Creators', to: paths.CREATORS },
   { key: 'how-it-works', label: 'How It Works', to: paths.HOW_IT_WORKS },
   { key: 'pricing', label: 'Pricing', to: paths.PRICING },
+  { key: 'wallet', label: 'Wallet', to: paths.WALLET },
 ]
 
 const MENU_ID = 'public-nav-menu'
@@ -152,21 +165,52 @@ function AccountMenu({ user, onLogout }) {
 }
 
 // `NavLink` sets aria-current="page" and an `active` class on the matching link
-// on its own — the styles below just make that state visible.
+// on its own — the styles below just make that state visible. The accent is the
+// V2 brand gradient (docs/theme-v2.md §4): a 2px underline on desktop, a rail
+// down the left edge in the drawer. Both are `::after`/`::before` decoration,
+// so nothing moves and no layout shifts between states.
 const desktopLinkSx = {
+  position: 'relative',
   px: 1.75,
   color: 'text.secondary',
   '&:hover': { color: 'text.primary' },
-  '&.active': { color: 'primary.light', backgroundColor: 'primary.surface' },
+  '&.active': {
+    color: 'primary.light',
+    backgroundColor: 'primary.surface',
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      left: 10,
+      right: 10,
+      bottom: 4,
+      height: 2,
+      borderRadius: 1,
+      background: brandGradient,
+    },
+  },
 }
 
 const drawerLinkSx = {
+  position: 'relative',
   justifyContent: 'flex-start',
   minHeight: 48,
   px: 2,
   color: 'text.primary',
   fontSize: '1rem',
-  '&.active': { color: 'primary.light', backgroundColor: 'primary.surface' },
+  '&.active': {
+    color: 'primary.light',
+    backgroundColor: 'primary.surface',
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      left: 0,
+      top: 8,
+      bottom: 8,
+      width: 3,
+      borderRadius: 4,
+      background: brandGradient,
+    },
+  },
 }
 
 export default function PublicTopNav() {
@@ -177,15 +221,6 @@ export default function PublicTopNav() {
   // the signed-in nav is correct immediately — a returning member never sees
   // "Log in" flash before their avatar (Prompt 09).
   const { user, isAuthenticated, logout } = useAuth()
-
-  // One flag is enough for now, so it is read directly rather than through a
-  // loop of hooks. A flag whose value has not arrived yet reads as *off*, which
-  // keeps the nav from flashing a link that is about to disappear.
-  const { isEnabled: isBoardPublic } = useFeatureFlag('publicRequestBoard')
-  const navLinks = useMemo(
-    () => NAV_LINKS.filter((link) => link.flag !== 'publicRequestBoard' || isBoardPublic),
-    [isBoardPublic]
-  )
 
   // Navigating from inside the drawer should leave it behind.
   useEffect(() => {
@@ -217,10 +252,16 @@ export default function PublicTopNav() {
           <Box
             component="nav"
             aria-label="Primary"
-            sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', ml: 2, gap: 0.5 }}
+            sx={{ display: { xs: 'none', lg: 'flex' }, alignItems: 'center', ml: 2, gap: 0.5 }}
           >
-            {navLinks.map((link) => (
-              <Button key={link.key} component={NavLink} to={link.to} sx={desktopLinkSx}>
+            {NAV_LINKS.map((link) => (
+              <Button
+                key={link.key}
+                component={NavLink}
+                to={link.to}
+                end={link.end}
+                sx={desktopLinkSx}
+              >
                 {link.label}
               </Button>
             ))}
@@ -238,7 +279,7 @@ export default function PublicTopNav() {
               direction="row"
               spacing={1}
               alignItems="center"
-              sx={{ display: { xs: 'none', md: 'flex' } }}
+              sx={{ display: { xs: 'none', lg: 'flex' } }}
             >
               <Button component={NavLink} to={paths.LOGIN} sx={{ color: 'text.primary' }}>
                 Log in
@@ -255,7 +296,7 @@ export default function PublicTopNav() {
             aria-haspopup="dialog"
             aria-expanded={menuOpen}
             aria-controls={menuOpen ? MENU_ID : undefined}
-            sx={{ display: { md: 'none' }, width: 44, height: 44 }}
+            sx={{ display: { lg: 'none' }, width: 44, height: 44 }}
           >
             <Icon icon="tabler:menu-2" width={24} />
           </IconButton>
@@ -304,9 +345,15 @@ export default function PublicTopNav() {
               animate="visible"
               sx={{ listStyle: 'none', m: 0, p: 0 }}
             >
-              {navLinks.map((link) => (
+              {NAV_LINKS.map((link) => (
                 <Box component={motion.li} key={link.key} variants={listItem}>
-                  <Button component={NavLink} to={link.to} fullWidth sx={drawerLinkSx}>
+                  <Button
+                    component={NavLink}
+                    to={link.to}
+                    end={link.end}
+                    fullWidth
+                    sx={drawerLinkSx}
+                  >
                     {link.label}
                   </Button>
                 </Box>

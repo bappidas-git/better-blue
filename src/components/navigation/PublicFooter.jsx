@@ -16,11 +16,15 @@ import { paths } from '@/routes/paths'
 const FOOTER_COLUMNS = [
   {
     key: 'marketplace',
+    // V2-02: the same four storefront destinations the top nav leads with, in
+    // the same order and under the same names. Pricing moved out of this column
+    // and is reached from the nav, the info pages, and the CTA bands.
     title: 'Marketplace',
     links: [
-      { key: 'creators', label: 'Find Creators', to: paths.CREATORS },
-      { key: 'requests', label: 'Browse Requests', to: paths.REQUESTS },
-      { key: 'pricing', label: 'Pricing', to: paths.PRICING },
+      { key: 'home', label: 'Home', to: paths.HOME },
+      { key: 'feeds', label: 'Feeds', to: paths.FEEDS },
+      { key: 'creators', label: 'Creators', to: paths.CREATORS },
+      { key: 'wallet', label: 'Wallet', to: paths.WALLET },
     ],
   },
   {

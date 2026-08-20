@@ -7,6 +7,8 @@ import AppLoader from '@/app/AppLoader'
 import PageHeader from '@/components/layout/PageHeader'
 import { ROLES } from '@/constants/roles'
 import { useAuth } from '@/context/AuthContext'
+import BoardUnavailable from '@/features/requests/components/BoardUnavailable'
+import RequestBoard from '@/features/requests/components/RequestBoard'
 import useApiQuery from '@/hooks/useApiQuery'
 import useDocumentTitle from '@/hooks/useDocumentTitle'
 import useFeatureFlag from '@/hooks/useFeatureFlag'
@@ -14,23 +16,25 @@ import { paths } from '@/routes/paths'
 import { creatorProfileService } from '@/services/creatorProfileService'
 import { proposalService } from '@/services/proposalService'
 
-import BoardUnavailable from '../components/BoardUnavailable'
-import RequestBoard from '../components/RequestBoard'
-
-// The public request board — every open brief on BetterBlue, readable by
-// anyone, with the actions behind each one gated on who is reading (§4.2).
+// **Feeds** — every open brief on BetterBlue, readable by anyone, with the
+// actions behind each one gated on who is reading (Prompt 23 §4.2).
 //
-// Prompt 11 mounted this route with a placeholder so the top nav and the footer
-// had somewhere to land; this is the screen it promised. The route entry in
-// `publicRoutes.jsx` is unchanged.
+// V2-02 renamed this screen: it was `RequestBoardPage` at `/requests`, it is
+// `FeedsPage` at `/feeds`, and the old URLs redirect here. The rename is
+// **presentation only** — a feed *is* a `contentRequests` record, the board
+// underneath is still `RequestBoard` (shared with the creator dashboard, which
+// keeps calling them requests), and `requestService` is untouched. The page
+// lives under `features/feeds` because V2-03 and V2-07 build the rest of the
+// storefront's feed surface there; what stays in `features/requests` is what
+// the dashboards share.
 //
 // Behind `features.publicRequestBoard` (contract §6.27). With the flag off a
-// visitor is told the board is not public today, and a *creator* — who has
-// their own board inside the dashboard, which the flag does not touch — is sent
+// visitor is told feeds are not public today, and a *creator* — who has their
+// own board inside the dashboard, which the flag does not touch — is sent
 // straight there rather than shown a wall.
 
-export default function RequestBoardPage() {
-  useDocumentTitle('Browse content requests')
+export default function FeedsPage() {
+  useDocumentTitle('Feeds')
 
   const { user } = useAuth()
   const { isEnabled, isLoading: isFlagLoading } = useFeatureFlag('publicRequestBoard')
@@ -64,7 +68,7 @@ export default function RequestBoardPage() {
   )
 
   if (isFlagLoading) {
-    return <AppLoader label="Loading the request board" />
+    return <AppLoader label="Loading feeds" />
   }
 
   if (!isEnabled) {
@@ -74,8 +78,8 @@ export default function RequestBoardPage() {
   return (
     <Container maxWidth="xl" sx={{ px: { xs: 2, md: 4 }, py: { xs: 4, md: 6 } }}>
       <PageHeader
-        title="Open content requests"
-        subtitle="Businesses post the commercial content they need — the deliverables, the budget, the deadline, and the usage rights — and creators answer with a priced proposal. Everything here is open and taking proposals right now."
+        title="Latest feeds"
+        subtitle="Businesses post the commercial content they need — the deliverables, the budget, the deadline, and the usage rights — and creators answer with a priced proposal. Every feed here is open and taking proposals right now."
       />
 
       <RequestBoard

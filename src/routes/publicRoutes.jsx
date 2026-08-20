@@ -1,6 +1,7 @@
 import { lazy } from 'react'
 
 import { paths } from './paths'
+import { LegacyFeedRedirect } from './redirects'
 
 // Route tables for the signed-out surface. Later prompts append entries to
 // these arrays — they never restructure the router in ./index.jsx.
@@ -28,14 +29,15 @@ const CreatorsPage = lazy(() => import('@/features/discovery/pages/CreatorsPage'
 // featured shelf tile, and every shared profile link lands.
 const CreatorProfilePage = lazy(() => import('@/features/creatorProfile/pages/CreatorProfilePage'))
 
-// The public request board (Prompt 23) — the supply-side twin of creator
-// discovery. Mounted as a stub by Prompt 11 so the top nav and the footer had
-// somewhere to land; the route entries are unchanged, the pages are now real.
-// Both are gated on `features.publicRequestBoard` inside the pages themselves.
-const RequestBoardPage = lazy(() => import('@/features/requests/pages/RequestBoardPage'))
-const RequestBoardDetailPage = lazy(
-  () => import('@/features/requests/pages/RequestBoardDetailPage')
-)
+// Feeds (Prompt 23, renamed by V2-02) — the supply-side twin of creator
+// discovery, and the storefront's name for the public content-request board.
+// Both pages are gated on `features.publicRequestBoard` inside themselves.
+const FeedsPage = lazy(() => import('@/features/feeds/pages/FeedsPage'))
+const FeedDetailPage = lazy(() => import('@/features/feeds/pages/FeedDetailPage'))
+
+// Wallet (V2-02) — a stub, so the sixth item in the new top nav has somewhere
+// to land. V2-10 builds the real screen behind the same route.
+const WalletPage = lazy(() => import('@/features/wallet/pages/WalletPage'))
 
 // Referral capture (Prompt 34) — `/r/:code` stores the code and redirects. It
 // renders nothing a visitor reads, so it is public and lives here rather than
@@ -77,11 +79,20 @@ export const publicRoutes = [
   { path: paths.TERMS, element: <TermsPage /> },
   { path: paths.PRIVACY, element: <PrivacyPage /> },
 
-  /* Marketplace discovery — creators (Prompt 12/13) and briefs (Prompt 23). */
+  /* Marketplace discovery — creators (Prompt 12/13) and feeds (Prompt 23). */
   { path: paths.CREATORS, element: <CreatorsPage /> },
   { path: paths.CREATOR_PROFILE_PATTERN, element: <CreatorProfilePage /> },
-  { path: paths.REQUESTS, element: <RequestBoardPage /> },
-  { path: paths.REQUEST_DETAIL_PATTERN, element: <RequestBoardDetailPage /> },
+  { path: paths.FEEDS, element: <FeedsPage /> },
+  { path: paths.FEED_DETAIL_PATTERN, element: <FeedDetailPage /> },
+
+  /* Wallet (V2-02 stub, V2-10 builds it). */
+  { path: paths.WALLET, element: <WalletPage /> },
+
+  /* V2: alias — the pre-rename board URLs. Redirects rather than deletions, so
+     a bookmark, a shared link, an email, or a dashboard link that still builds
+     `/requests/:id` lands on the feed instead of the 404 (./redirects.jsx). */
+  { path: paths.REQUESTS, element: <LegacyFeedRedirect /> },
+  { path: paths.REQUEST_DETAIL_PATTERN, element: <LegacyFeedRedirect /> },
 
   /* Referral capture (Prompt 34) — stores the code, then redirects. */
   { path: paths.REFERRAL_PATTERN, element: <ReferralRedirectPage /> },

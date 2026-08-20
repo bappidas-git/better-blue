@@ -11,6 +11,10 @@ import { paths } from '@/routes/paths'
 // points at the two doors that *are* open: creator sign-up and the directory.
 // Creators are never sent here; they browse from their dashboard, which is not
 // behind the flag.
+//
+// Storefront-only (both callers are public pages), so V2-02 gave it the
+// storefront's vocabulary: this surface is called Feeds. The flag keeps its
+// name — it is a settings key, not a label.
 
 /**
  * @param {object} [props]
@@ -18,7 +22,7 @@ import { paths } from '@/routes/paths'
  * @param {string} [props.description]
  */
 export default function BoardUnavailable({
-  title = 'The public request board is unavailable',
+  title = 'Feeds are not public right now',
   description = 'Businesses are still posting briefs — they are just not listed publicly at the moment. Create a creator account and you will see every open brief from your dashboard.',
 }) {
   return (

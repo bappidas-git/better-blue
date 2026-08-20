@@ -28,6 +28,20 @@ export const paths = Object.freeze({
   HOME: '/',
   CREATORS: '/creators',
   CREATOR_PROFILE_PATTERN: '/creators/:creatorId',
+  /**
+   * The feed board and one feed, Storefront V2's name for the public content
+   * request board (V2-02). The rename is **presentation only**: a feed *is* a
+   * `contentRequests` record, so `:feedId` carries a `req_…` id and every
+   * service call behind these screens is unchanged.
+   */
+  FEEDS: '/feeds',
+  FEED_DETAIL_PATTERN: '/feeds/:feedId',
+  /** Wallet — stubbed by V2-02 so the new nav never lands on a 404, built in V2-10. */
+  WALLET: '/wallet',
+  // V2: alias — the pre-rename board paths. They no longer render the board;
+  // `publicRoutes.jsx` mounts them as redirects to their `/feeds` twin so old
+  // links, bookmarks, and any dashboard link that still builds a `/requests`
+  // URL keep working. Kept exported for the same reason.
   REQUESTS: '/requests',
   REQUEST_DETAIL_PATTERN: '/requests/:requestId',
   HOW_IT_WORKS: '/how-it-works',
@@ -129,8 +143,15 @@ export const paths = Object.freeze({
 
   /** Public creator profile, e.g. `/creators/cpr_ava_martinez`. */
   creatorProfile: (creatorId) => fill(paths.CREATOR_PROFILE_PATTERN, { creatorId }),
-  /** Public content-request detail, e.g. `/requests/req_verde_reels`. */
-  requestDetail: (requestId) => fill(paths.REQUEST_DETAIL_PATTERN, { requestId }),
+  /** One public feed, e.g. `/feeds/req_verde_reels` (the id is a `req_…`). */
+  feedDetail: (feedId) => fill(paths.FEED_DETAIL_PATTERN, { feedId }),
+  /**
+   * V2: alias — pre-rename spelling of `feedDetail`, kept so the dashboard and
+   * admin screens that link to a public brief keep compiling. It builds the
+   * **new** `/feeds/:feedId` URL, so those links land on the canonical path
+   * rather than bouncing through the legacy redirect.
+   */
+  requestDetail: (requestId) => paths.feedDetail(requestId),
   /** Affiliate referral landing, e.g. `/r/NORA25`. */
   referral: (code) => fill(paths.REFERRAL_PATTERN, { code }),
 
